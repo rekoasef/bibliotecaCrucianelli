@@ -3,8 +3,23 @@
 import "dotenv/config";
 import { eq } from "drizzle-orm";
 import { sendInvitation } from "@/lib/auth/invitations";
+import { slugify } from "@/lib/text";
 import { db } from "./index";
-import { usuarios } from "./schema";
+import {
+  SEED_MAQUINAS,
+  SEED_SISTEMAS,
+  SEED_TEMAS,
+  SEED_TIPOS,
+} from "./seed-data";
+import {
+  lineas,
+  modelos,
+  segmentos,
+  sistemas,
+  temas,
+  tipos,
+  usuarios,
+} from "./schema";
 
 async function seedAdmin() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -30,9 +45,74 @@ async function seedAdmin() {
   console.info(`Admin ${email} creado. Se envió la invitación.`);
 }
 
+// Inserta solo lo que falta (por slug): no pisa cambios hechos desde el panel.
+async function seedMaquinas() {
+  for (const [i, s] of SEED_MAQUINAS.entries()) {
+    await db
+      .insert(segmentos)
+      .values({
+        nombre: s.segmento,
+        slug: slugify(s.segmento),
+        orden: i,
+        activo: s.activo,
+      })
+      .onConflictDoNothing();
+    const [segmento] = await db
+      .select()
+      .from(segmentos)
+      .where(eq(segmentos.slug, slugify(s.segmento)));
+
+    for (const [j, l] of s.lineas.entries()) {
+      await db
+        .insert(lineas)
+        .values({
+          segmentoId: segmento.id,
+          nombre: l.nombre,
+          slug: slugify(l.nombre),
+          orden: j,
+        })
+        .onConflictDoNothing();
+      const [linea] = await db
+        .select()
+        .from(lineas)
+        .where(eq(lineas.slug, slugify(l.nombre)));
+
+      for (const [k, m] of l.modelos.entries()) {
+        await db
+          .insert(modelos)
+          .values({ lineaId: linea.id, nombre: m, slug: slugify(m), orden: k })
+          .onConflictDoNothing();
+      }
+    }
+  }
+  console.info("Máquinas: listo.");
+}
+
+async function seedCatalogos() {
+  const catalogos = [
+    [tipos, SEED_TIPOS],
+    [sistemas, SEED_SISTEMAS],
+    [temas, SEED_TEMAS],
+  ] as const;
+  for (const [tabla, nombres] of catalogos) {
+    await db
+      .insert(tabla)
+      .values(
+        nombres.map((nombre, orden) => ({
+          nombre,
+          slug: slugify(nombre),
+          orden,
+        })),
+      )
+      .onConflictDoNothing();
+  }
+  console.info("Tipos, sistemas y temas: listo.");
+}
+
 async function main() {
   await seedAdmin();
-  // TODO(Fase 2): segmentos, líneas, modelos y taxonomía (docs/04).
+  await seedMaquinas();
+  await seedCatalogos();
 }
 
 main()

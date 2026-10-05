@@ -87,6 +87,21 @@ export function EstadoBadge({ estado }: { estado: EstadoUsuario }) {
   );
 }
 
+/** Marca compacta para ítems desactivados en listas. */
+export function InactivoBadge({ className }: { className?: string }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "h-6 border-border bg-muted text-muted-foreground",
+        className,
+      )}
+    >
+      Inactivo
+    </Badge>
+  );
+}
+
 export function ActivoBadge({ activo }: { activo: boolean }) {
   return <EstadoBadge estado={activo ? "activo" : "inactivo"} />;
 }

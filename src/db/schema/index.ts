@@ -2,3 +2,5 @@
 export * from "./usuarios";
 export * from "./auth";
 export * from "./limites";
+export * from "./maquinas";
+export * from "./taxonomia";

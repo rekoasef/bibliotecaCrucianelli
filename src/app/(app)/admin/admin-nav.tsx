@@ -3,6 +3,8 @@
 import {
   Building2,
   LayoutDashboard,
+  Tags,
+  Tractor,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -14,6 +16,8 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/concesionarios", label: "Concesionarios", icon: Building2 },
+  { href: "/admin/maquinas", label: "Máquinas", icon: Tractor },
+  { href: "/admin/taxonomia", label: "Taxonomía", icon: Tags },
 ];
 
 // Menú lateral en escritorio; pestañas con scroll horizontal en celular.

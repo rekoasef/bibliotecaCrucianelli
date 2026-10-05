@@ -67,7 +67,7 @@ Sin SMTP configurado, en desarrollo los mails (invitaciones, recuperación) se i
 | `npm run db:generate` | Genera una migración a partir de `src/db/schema` |
 | `npm run db:migrate` | Aplica las migraciones de `src/db/migrations` |
 | `npm run db:studio` | Drizzle Studio |
-| `npm run db:seed` | Crea el admin de `ADMIN_EMAIL` y le envía la invitación (idempotente) |
+| `npm run db:seed` | Admin de `ADMIN_EMAIL` (con invitación), máquinas y taxonomía de `docs/04`. Idempotente |
 
 Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx drizzle-kit generate --custom --name=<nombre>`.
 

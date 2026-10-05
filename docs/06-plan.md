@@ -38,10 +38,10 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 
 ## Fase 2 · Máquinas y taxonomía
 
-- [ ] Migraciones: `segmentos`, `lineas`, `modelos`, `tipos`, `sistemas`, `temas`, `etiquetas`
-- [ ] Seed según `04-taxonomia.md`
-- [ ] Admin: árbol de máquinas
-- [ ] Admin: taxonomía (incluida la fusión de etiquetas)
+- [x] Migraciones: `segmentos`, `lineas`, `modelos`, `tipos`, `sistemas`, `temas`, `etiquetas`
+- [x] Seed según `04-taxonomia.md`
+- [x] Admin: árbol de máquinas
+- [x] Admin: taxonomía (incluida la fusión de etiquetas)
 
 ## Fase 3 · Documentos y Drive
 
@@ -55,6 +55,8 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 - [ ] Videos embebidos con botón "Abrir en Drive"
 - [ ] Advertencia de video público en documento "Solo fábrica"
 - [ ] Nueva versión y obsoletos
+- [ ] Foto opcional de la línea elegida desde Drive (`lineas.imagen_drive_file_id`; quedó pendiente de la fase 2 porque necesita el cliente de Drive)
+- [ ] Fusión y borrado de etiquetas: mover/limpiar `documento_etiquetas` (TODO en `admin/taxonomia/actions.ts`)
 
 ## Fase 4 · Búsqueda y navegación
 

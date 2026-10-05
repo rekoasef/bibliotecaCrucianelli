@@ -1,6 +1,6 @@
 # 04 · Taxonomía
 
-Todas las listas de este documento son **administrables desde el panel** y se cargan como seed inicial. Son un punto de partida: la clasificación definitiva se ajusta durante el relevamiento de la documentación real, evitando crear categorías que no se usen.
+Todas las listas de este documento son **administrables desde el panel** (`/admin/maquinas` y `/admin/taxonomia`) y se cargan como seed inicial (`npm run db:seed`, idempotente: solo agrega lo que falta). Son un punto de partida: la clasificación definitiva se ajusta durante el relevamiento de la documentación real, evitando crear categorías que no se usen.
 
 ## Máquinas
 
@@ -79,8 +79,13 @@ Cero, uno o varios por documento.
 
 Texto libre con autocompletado. Sirven para términos técnicos que ayuden a encontrar el documento y que no encajan en las listas anteriores: *dosificador, sensor, semillas, placas, monitor, cardán, rodamiento…*
 
-- Se normalizan (minúsculas, sin acentos) para evitar duplicados.
-- No repetir como etiqueta algo que ya es tipo, sistema, tema o máquina.
+- Se normalizan (minúsculas, sin acentos, espacios simples) para evitar duplicados.
+- No repetir como etiqueta algo que ya es tipo, sistema, tema o máquina: el panel lo rechaza.
+- Duplicadas con distinta forma ("dosificador" / "dosificadores"): se unen con "Fusionar en…".
+
+## Slugs
+
+Segmentos, líneas, modelos, tipos, sistemas y temas tienen un `slug` único que se usa en URLs y filtros (`/maquinas/gringa`, `/buscar?tipo=manual`). Se genera del nombre al crear y **no cambia al renombrar**, para no romper links compartidos; el admin puede editarlo a mano si hace falta.
 
 ## Visibilidad
 

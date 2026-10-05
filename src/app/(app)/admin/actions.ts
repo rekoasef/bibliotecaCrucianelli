@@ -103,14 +103,11 @@ export async function createUsuario(
 
   let usuario: { id: string; email: string; nombre: string };
   try {
-    [usuario] = await db
-      .insert(usuarios)
-      .values(parsed.data)
-      .returning({
-        id: usuarios.id,
-        email: usuarios.email,
-        nombre: usuarios.nombre,
-      });
+    [usuario] = await db.insert(usuarios).values(parsed.data).returning({
+      id: usuarios.id,
+      email: usuarios.email,
+      nombre: usuarios.nombre,
+    });
   } catch (error) {
     if (isUniqueViolation(error)) {
       return {

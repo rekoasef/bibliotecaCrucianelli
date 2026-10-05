@@ -9,22 +9,13 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { timestamps } from "./columns";
 
 export const rolUsuario = pgEnum("rol_usuario", [
   "admin",
   "fabrica",
   "concesionario",
 ]);
-
-const timestamps = {
-  creadoEn: timestamp("creado_en", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  actualizadoEn: timestamp("actualizado_en", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-};
 
 export const concesionarios = pgTable("concesionarios", {
   id: uuid("id").primaryKey().defaultRandom(),

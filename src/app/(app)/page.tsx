@@ -1,45 +1,18 @@
 import Link from "next/link";
-import {
-  BookOpen,
-  ChevronRight,
-  ClipboardList,
-  FileText,
-  Newspaper,
-  PlayCircle,
-  Puzzle,
-  Wrench,
-} from "lucide-react";
+import { ChevronRight, FileText } from "lucide-react";
 import { SearchForm } from "@/components/search/search-form";
+import { tipoIcon } from "@/components/tipo-icon";
+import {
+  getSegmentosActivosConLineas,
+  listTiposActivos,
+} from "@/db/queries/taxonomia";
 
-// TODO(Fase 2): reemplazar por segmentos y líneas activos de la base (docs/04-taxonomia.md).
-const segmentos = [
-  { nombre: "Granos gruesos", lineas: ["Gringa", "Plantor", "Domina"] },
-  { nombre: "Granos finos", lineas: ["Pionera", "Drilor", "Mixia"] },
-];
+export default async function HomePage() {
+  const [segmentos, tipos] = await Promise.all([
+    getSegmentosActivosConLineas(),
+    listTiposActivos(),
+  ]);
 
-// TODO(Fase 2): tomar los tipos de la base.
-const accesosPorTipo = [
-  { label: "Manuales", slug: "manual", icon: BookOpen },
-  { label: "Instructivos", slug: "instructivo", icon: ClipboardList },
-  { label: "Despieces", slug: "despiece", icon: Puzzle },
-  { label: "Videos", slug: "video", icon: PlayCircle },
-  { label: "Boletines técnicos", slug: "boletin-tecnico", icon: Newspaper },
-  {
-    label: "Solución de problemas",
-    slug: "solucion-de-problemas",
-    icon: Wrench,
-  },
-];
-
-function slugify(text: string) {
-  return text
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/\s+/g, "-");
-}
-
-export default function HomePage() {
   return (
     <div className="flex flex-col gap-10 md:gap-14">
       <section aria-labelledby="titulo-buscar" className="flex flex-col gap-4">
@@ -74,21 +47,18 @@ export default function HomePage() {
         </SectionTitle>
         <div className="grid gap-4 md:grid-cols-2">
           {segmentos.map((segmento) => (
-            <div
-              key={segmento.nombre}
-              className="rounded-xl border bg-card p-2"
-            >
+            <div key={segmento.id} className="rounded-xl border bg-card p-2">
               <h3 className="px-3 pt-2 pb-1 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 {segmento.nombre}
               </h3>
               <ul>
                 {segmento.lineas.map((linea) => (
-                  <li key={linea}>
+                  <li key={linea.slug}>
                     <Link
-                      href={`/maquinas/${slugify(linea)}`}
+                      href={`/maquinas/${linea.slug}`}
                       className="flex min-h-12 items-center justify-between rounded-lg px-3 text-lg font-semibold transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-secondary"
                     >
-                      {linea}
+                      {linea.nombre}
                       <ChevronRight
                         aria-hidden
                         className="size-5 text-muted-foreground"
@@ -104,18 +74,21 @@ export default function HomePage() {
 
       <section aria-labelledby="titulo-tipos" className="flex flex-col gap-4">
         <SectionTitle id="titulo-tipos">Por tipo de documento</SectionTitle>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {accesosPorTipo.map(({ label, slug, icon: Icon }) => (
-            <li key={slug}>
-              <Link
-                href={`/buscar?tipo=${slug}`}
-                className="flex h-full min-h-24 flex-col justify-between gap-3 rounded-xl border bg-card p-4 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
-              >
-                <Icon aria-hidden className="size-6 text-brand-strong" />
-                <span className="leading-tight">{label}</span>
-              </Link>
-            </li>
-          ))}
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {tipos.map(({ nombre: label, slug }) => {
+            const Icon = tipoIcon(slug);
+            return (
+              <li key={slug}>
+                <Link
+                  href={`/buscar?tipo=${slug}`}
+                  className="flex h-full min-h-24 flex-col justify-between gap-3 rounded-xl border bg-card p-4 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
+                >
+                  <Icon aria-hidden className="size-6 text-brand-strong" />
+                  <span className="leading-tight">{label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
