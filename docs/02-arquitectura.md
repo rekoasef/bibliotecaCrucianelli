@@ -79,6 +79,16 @@ Cada archivo tiene un campo `modo_acceso`:
 - Los archivos ya incorporados se marcan en el explorador para no duplicarlos (`archivos.drive_file_id` es único).
 - Carpetas raíz permitidas configurables (`DRIVE_ROOT_FOLDER_IDS`), para no recorrer todo el Drive.
 
+### Implementación (fase 3)
+
+- `src/lib/drive`: interfaz `DriveClient` con dos implementaciones. **Google** (REST de Drive v3 con JWT de la cuenta de servicio, scope `drive.readonly`) cuando hay credenciales; **local** (`DRIVE_LOCAL_DIR`: una carpeta del disco cuyas subcarpetas son las raíces) para desarrollar y probar sin credenciales.
+- El explorador y la incorporación verifican que cada carpeta/archivo esté **dentro de una raíz permitida** recorriendo sus padres (`pathFromRoot`).
+- Los Google Docs nativos se sirven exportados a PDF (sin `Range`).
+- `/api/archivos/[id]` muestra inline solo tipos seguros (PDF, imágenes salvo SVG, texto, video); el resto (HTML, SVG…) se fuerza a descarga para que un archivo de Drive no pueda ejecutar scripts en el dominio de la app. Siempre `X-Content-Type-Options: nosniff`.
+- Un visor de PDF hace muchos pedidos con `Range`: en `accesos` se registra solo el primero (sin rango o `bytes=0-`).
+- Videos públicos: el reproductor de Drive se carga recién al tocar "Reproducir" (ahorra datos con mala señal) y ese toque registra el acceso `video`.
+- El admin tiene "Ver como concesionario" en la ficha para revisar qué ve un concesionario.
+
 ### Detección de cambios
 
 - Tarea periódica (por ejemplo, cada noche) que consulta `modifiedTime` de los archivos incorporados.

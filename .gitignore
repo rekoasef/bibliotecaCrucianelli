@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Drive simulado para desarrollo (DRIVE_LOCAL_DIR)
+/.drive-local/

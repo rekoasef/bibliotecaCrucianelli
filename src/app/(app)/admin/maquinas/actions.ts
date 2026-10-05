@@ -172,3 +172,13 @@ export async function setMaquinaActivo(formData: FormData) {
   await db.update(table).set({ activo }).where(eq(table.id, id));
   revalidatePath("/admin/maquinas", "layout");
 }
+
+export async function quitarFotoLinea(formData: FormData) {
+  await requireAdmin();
+  const id = idSchema.parse(formData.get("id"));
+  await db
+    .update(lineas)
+    .set({ imagenDriveFileId: null })
+    .where(eq(lineas.id, id));
+  revalidatePath("/admin/maquinas", "layout");
+}

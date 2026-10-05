@@ -218,7 +218,12 @@ export async function listTiposActivos() {
 export async function listEtiquetas(q?: string) {
   const filtro = q ? normalizeTag(q) : "";
   return db
-    .select()
+    .select({
+      id: etiquetas.id,
+      nombre: etiquetas.nombre,
+      nombreNormalizado: etiquetas.nombreNormalizado,
+      usos: sql<number>`(SELECT count(*)::int FROM documento_etiquetas de WHERE de.etiqueta_id = ${etiquetas.id})`,
+    })
     .from(etiquetas)
     .where(
       filtro ? ilike(etiquetas.nombreNormalizado, `%${filtro}%`) : undefined,

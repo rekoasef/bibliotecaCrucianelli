@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import {
   BookOpen,
   ClipboardList,
@@ -27,4 +28,15 @@ const ICONOS: Record<string, LucideIcon> = {
 
 export function tipoIcon(slug: string): LucideIcon {
   return ICONOS[slug] ?? FileText;
+}
+
+/** Ícono del tipo de documento como componente (evita crear componentes durante el render). */
+export function TipoIcon({
+  slug,
+  className,
+}: {
+  slug: string;
+  className?: string;
+}) {
+  return createElement(tipoIcon(slug), { "aria-hidden": true, className });
 }

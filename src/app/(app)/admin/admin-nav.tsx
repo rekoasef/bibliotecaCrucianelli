@@ -2,6 +2,8 @@
 
 import {
   Building2,
+  FileText,
+  FolderInput,
   LayoutDashboard,
   Tags,
   Tractor,
@@ -14,6 +16,8 @@ import { cn } from "@/lib/utils";
 
 const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
+  { href: "/admin/documentos", label: "Documentos", icon: FileText },
+  { href: "/admin/drive", label: "Drive", icon: FolderInput },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/concesionarios", label: "Concesionarios", icon: Building2 },
   { href: "/admin/maquinas", label: "Máquinas", icon: Tractor },

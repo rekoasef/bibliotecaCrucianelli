@@ -1,0 +1,349 @@
+import { AlertTriangle, Download, Eye, FileWarning } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { z } from "zod";
+import { FileIcon, fileKindLabel } from "@/components/file-icon";
+import { TipoIcon } from "@/components/tipo-icon";
+import { Button } from "@/components/ui/button";
+import { requireUser } from "@/lib/auth/session";
+import {
+  getDocumentoVisible,
+  registrarAcceso,
+  type ArchivoPublico,
+} from "@/lib/documentos/queries";
+import {
+  canDisplayInline,
+  formatBytes,
+  isImage,
+  isVideo,
+} from "@/lib/drive/mime";
+import { ShareButton } from "./share-button";
+import { VideoPlayer } from "./video-player";
+
+export const metadata: Metadata = { title: "Documento" };
+
+const fechaLarga = new Intl.DateTimeFormat("es-AR", {
+  dateStyle: "long",
+  timeZone: "UTC",
+});
+
+export default async function DocumentoPage({
+  params,
+  searchParams,
+}: PageProps<"/documentos/[id]">) {
+  const user = await requireUser();
+  const { id } = await params;
+  const sp = await searchParams;
+  if (!z.uuid().safeParse(id).success) notFound();
+
+  // Vista previa para el admin: "cómo lo ve un concesionario" (docs/05).
+  const preview = user.rol === "admin" && sp.como === "concesionario";
+  const viewer = preview ? { rol: "concesionario" as const } : user;
+
+  const doc = await getDocumentoVisible(id, viewer);
+  if (!doc) {
+    if (preview) {
+      return (
+        <PreviewBanner id={id}>
+          Un concesionario <strong>no puede ver</strong> este documento (es
+          borrador, es “Solo fábrica” o sus máquinas están inactivas).
+        </PreviewBanner>
+      );
+    }
+    notFound();
+  }
+  if (!preview)
+    await registrarAcceso({
+      usuarioId: user.id,
+      documentoId: id,
+      accion: "ver",
+    });
+
+  const vigente =
+    doc.estado === "obsoleto"
+      ? doc.historial.find((v) => v.estado === "vigente")
+      : undefined;
+  const fecha = doc.fechaDocumento
+    ? fechaLarga.format(new Date(doc.fechaDocumento))
+    : null;
+
+  return (
+    <article className="flex max-w-3xl flex-col gap-6">
+      {preview && (
+        <PreviewBanner id={id}>
+          Así ve este documento un concesionario.
+        </PreviewBanner>
+      )}
+
+      <header className="flex flex-col gap-3">
+        <p className="flex items-center gap-2 font-semibold text-brand-strong">
+          <TipoIcon slug={doc.tipoSlug ?? ""} className="size-5" />
+          {doc.tipoNombre}
+          {doc.visibilidad === "fabrica" && (
+            <span className="rounded-full border px-2 py-0.5 text-sm text-muted-foreground">
+              Solo fábrica
+            </span>
+          )}
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          {doc.titulo}
+        </h1>
+        {(doc.version || fecha) && (
+          <p className="text-muted-foreground">
+            {[doc.version, fecha].filter(Boolean).join(" · ")}
+          </p>
+        )}
+      </header>
+
+      {doc.estado === "obsoleto" && (
+        <div
+          role="note"
+          className="flex gap-3 rounded-xl border border-amber-700/30 bg-amber-50 p-4 text-amber-950"
+        >
+          <AlertTriangle aria-hidden className="mt-0.5 size-5 shrink-0" />
+          <p>
+            <strong>Documento obsoleto.</strong>{" "}
+            {vigente ? (
+              <Link
+                href={`/documentos/${vigente.id}`}
+                className="font-semibold underline underline-offset-4"
+              >
+                Ver la versión vigente
+              </Link>
+            ) : (
+              "Puede no estar actualizado."
+            )}
+          </p>
+        </div>
+      )}
+
+      <section aria-label="Archivos" className="flex flex-col gap-4">
+        {doc.archivos.map((a) => (
+          <ArchivoCard key={a.id} archivo={a} />
+        ))}
+      </section>
+
+      {doc.descripcion && (
+        <p className="text-lg leading-relaxed whitespace-pre-line">
+          {doc.descripcion}
+        </p>
+      )}
+
+      <Chips
+        grupos={[
+          {
+            label: "Máquinas",
+            chips: [
+              ...doc.lineas.map((l) => ({
+                label: `${l.nombre} (todas)`,
+                href: `/buscar?linea=${l.slug}`,
+              })),
+              ...doc.modelos.map((m) => ({
+                label: m.nombre,
+                href: `/buscar?modelo=${m.slug}`,
+              })),
+            ],
+          },
+          {
+            label: "Sistemas",
+            chips: doc.sistemas.map((s) => ({
+              label: s.nombre,
+              href: `/buscar?sistema=${s.slug}`,
+            })),
+          },
+          {
+            label: "Temas",
+            chips: doc.temas.map((t) => ({
+              label: t.nombre,
+              href: `/buscar?tema=${t.slug}`,
+            })),
+          },
+          {
+            label: "Etiquetas",
+            chips: doc.etiquetas.map((e) => ({
+              label: e.nombre,
+              href: `/buscar?etiqueta=${encodeURIComponent(e.normalizado)}`,
+            })),
+          },
+        ]}
+      />
+
+      {doc.historial.length > 1 && (
+        <section
+          aria-labelledby="titulo-versiones"
+          className="flex flex-col gap-2"
+        >
+          <h2 id="titulo-versiones" className="text-lg font-bold">
+            Versiones
+          </h2>
+          <ol className="flex flex-col divide-y rounded-xl border bg-card">
+            {doc.historial.map((v) => (
+              <li key={v.id}>
+                <Link
+                  href={`/documentos/${v.id}`}
+                  aria-current={v.id === doc.id ? "page" : undefined}
+                  className="flex min-h-12 flex-wrap items-center gap-x-3 px-4 py-2 hover:bg-accent aria-[current=page]:font-semibold"
+                >
+                  <span>{v.version || v.titulo}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {v.estado === "vigente" ? "Vigente" : "Obsoleta"}
+                    {v.id === doc.id && " · esta"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <ShareButton title={doc.titulo ?? "Documento"} />
+        {user.rol === "admin" && !preview && (
+          <>
+            <Button asChild variant="ghost">
+              <Link href={`/admin/documentos/${doc.id}`}>Editar</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href={`/documentos/${doc.id}?como=concesionario`}>
+                Ver como concesionario
+              </Link>
+            </Button>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function ArchivoCard({ archivo: a }: { archivo: ArchivoPublico }) {
+  const url = `/api/archivos/${a.id}`;
+  const meta = [fileKindLabel(a.mimeType), formatBytes(a.tamanoBytes)]
+    .filter(Boolean)
+    .join(" · ");
+
+  if (!a.disponible) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card p-4 text-muted-foreground">
+        <FileWarning aria-hidden className="size-6 shrink-0" />
+        <p>
+          <span className="font-semibold">{a.nombre}</span> no está disponible
+          por el momento.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <FileIcon
+          mimeType={a.mimeType}
+          className="mt-0.5 text-muted-foreground"
+        />
+        <div className="flex min-w-0 flex-col">
+          <span className="font-semibold break-words">{a.nombre}</span>
+          <span className="text-sm text-muted-foreground">{meta}</span>
+        </div>
+      </div>
+
+      {isVideo(a.mimeType) && a.modoAcceso === "publico" && a.driveFileId ? (
+        <VideoPlayer
+          archivoId={a.id}
+          driveFileId={a.driveFileId}
+          nombre={a.nombre}
+        />
+      ) : isVideo(a.mimeType) ? (
+        <video
+          controls
+          preload="none"
+          src={url}
+          className="aspect-video w-full rounded-lg bg-foreground"
+        />
+      ) : isImage(a.mimeType) && canDisplayInline(a.mimeType) ? (
+        // eslint-disable-next-line @next/next/no-img-element -- servida por /api/archivos, sin optimizar
+        <img
+          src={url}
+          alt={a.nombre}
+          loading="lazy"
+          className="max-h-[70vh] w-full rounded-lg object-contain"
+        />
+      ) : null}
+
+      {!isVideo(a.mimeType) && (
+        <div className="flex flex-wrap gap-2">
+          {canDisplayInline(a.mimeType) && !isImage(a.mimeType) && (
+            <Button asChild size="lg">
+              <a href={url}>
+                <Eye aria-hidden className="size-5" />
+                Ver
+              </a>
+            </Button>
+          )}
+          <Button
+            asChild
+            size="lg"
+            variant={
+              canDisplayInline(a.mimeType) && !isImage(a.mimeType)
+                ? "outline"
+                : "default"
+            }
+          >
+            <a href={`${url}?descargar=1`}>
+              <Download aria-hidden className="size-5" />
+              Descargar
+            </a>
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Chips({
+  grupos,
+}: {
+  grupos: { label: string; chips: { label: string; href: string }[] }[];
+}) {
+  const conChips = grupos.filter((g) => g.chips.length > 0);
+  if (conChips.length === 0) return null;
+  return (
+    <dl className="flex flex-col gap-3">
+      {conChips.map((g) => (
+        <div key={g.label} className="flex flex-col gap-1.5">
+          <dt className="text-sm font-semibold text-muted-foreground">
+            {g.label}
+          </dt>
+          <dd className="flex flex-wrap gap-2">
+            {g.chips.map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                className="flex min-h-10 items-center rounded-full border bg-card px-3 font-medium hover:border-foreground/30 active:bg-accent"
+              >
+                {c.label}
+              </Link>
+            ))}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function PreviewBanner({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed bg-card p-4">
+      <p>{children}</p>
+      <Button asChild variant="outline">
+        <Link href={`/admin/documentos/${id}`}>Volver a editar</Link>
+      </Button>
+    </div>
+  );
+}

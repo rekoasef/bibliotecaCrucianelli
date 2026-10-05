@@ -17,7 +17,7 @@ import { NIVELES, type Nivel } from "@/lib/validation/taxonomia";
 import { ActivoPanel } from "../../../activo-panel";
 import { MoveButtons } from "../../../move-buttons";
 import { InactivoBadge, PageHeader, Panel } from "../../../ui";
-import { moveMaquina, setMaquinaActivo } from "../../actions";
+import { moveMaquina, quitarFotoLinea, setMaquinaActivo } from "../../actions";
 import { MaquinaForm } from "./maquina-form";
 
 export const metadata: Metadata = { title: "Máquinas" };
@@ -98,6 +98,10 @@ export default async function MaquinaPage({
         ? (item.lineaId as string)
         : undefined;
   const modelos = nivel === "lineas" ? await listModelosDeLinea(id) : [];
+  const fotoDriveId =
+    "imagenDriveFileId" in item
+      ? (item.imagenDriveFileId as string | null)
+      : null;
 
   return (
     <div className="flex max-w-2xl flex-col gap-5">
@@ -119,6 +123,40 @@ export default async function MaquinaPage({
             success: `Se creó ${nivel === "lineas" ? "la" : "el"} ${singular}.`,
           }}
         />
+      )}
+
+      {sp.foto && <FormMessage state={{ success: "Foto actualizada." }} />}
+
+      {nivel === "lineas" && (
+        <Panel title="Foto (opcional)">
+          {fotoDriveId ? (
+            // eslint-disable-next-line @next/next/no-img-element -- servida por /api/lineas/[id]/foto
+            <img
+              src={`/api/lineas/${id}/foto`}
+              alt={`Foto de ${item.nombre}`}
+              className="aspect-video w-full max-w-sm rounded-lg border object-cover"
+            />
+          ) : (
+            <p className="text-muted-foreground">
+              Sin foto. Se usa en la navegación por máquina.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href={`/admin/drive?fotoLinea=${id}`}>
+                Elegir foto desde Drive
+              </Link>
+            </Button>
+            {fotoDriveId && (
+              <form action={quitarFotoLinea}>
+                <input type="hidden" name="id" value={id} />
+                <Button type="submit" variant="ghost">
+                  Quitar foto
+                </Button>
+              </form>
+            )}
+          </div>
+        </Panel>
       )}
 
       {nivel === "lineas" && (

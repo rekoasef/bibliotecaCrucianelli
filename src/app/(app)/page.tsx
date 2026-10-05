@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";
 import { SearchForm } from "@/components/search/search-form";
-import { tipoIcon } from "@/components/tipo-icon";
+import { TipoIcon } from "@/components/tipo-icon";
 import {
   getSegmentosActivosConLineas,
   listTiposActivos,
@@ -75,20 +75,17 @@ export default async function HomePage() {
       <section aria-labelledby="titulo-tipos" className="flex flex-col gap-4">
         <SectionTitle id="titulo-tipos">Por tipo de documento</SectionTitle>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {tipos.map(({ nombre: label, slug }) => {
-            const Icon = tipoIcon(slug);
-            return (
-              <li key={slug}>
-                <Link
-                  href={`/buscar?tipo=${slug}`}
-                  className="flex h-full min-h-24 flex-col justify-between gap-3 rounded-xl border bg-card p-4 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
-                >
-                  <Icon aria-hidden className="size-6 text-brand-strong" />
-                  <span className="leading-tight">{label}</span>
-                </Link>
-              </li>
-            );
-          })}
+          {tipos.map(({ nombre: label, slug }) => (
+            <li key={slug}>
+              <Link
+                href={`/buscar?tipo=${slug}`}
+                className="flex h-full min-h-24 flex-col justify-between gap-3 rounded-xl border bg-card p-4 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
+              >
+                <TipoIcon slug={slug} className="size-6 text-brand-strong" />
+                <span className="leading-tight">{label}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
 

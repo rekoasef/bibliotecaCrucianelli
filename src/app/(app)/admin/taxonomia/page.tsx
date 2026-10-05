@@ -206,8 +206,11 @@ async function EtiquetasTab({ q }: { q: string }) {
               <ExpandableRow
                 label={e.nombre}
                 row={
-                  <span className="min-w-0 flex-1 px-3 py-2 font-semibold">
-                    {e.nombre}
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 px-3 py-2">
+                    <span className="font-semibold">{e.nombre}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {e.usos === 1 ? "1 documento" : `${e.usos} documentos`}
+                    </span>
                   </span>
                 }
               >
@@ -217,6 +220,12 @@ async function EtiquetasTab({ q }: { q: string }) {
                 </div>
                 <form action={deleteEtiqueta} className="border-t pt-4">
                   <input type="hidden" name="id" value={e.id} />
+                  {e.usos > 0 && (
+                    <p className="mb-3 text-muted-foreground">
+                      La usan {e.usos} documentos: al eliminarla se quita de
+                      todos.
+                    </p>
+                  )}
                   <Button type="submit" variant="destructive">
                     Eliminar etiqueta
                   </Button>

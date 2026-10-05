@@ -45,18 +45,19 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 
 ## Fase 3 · Documentos y Drive
 
-- [ ] Migraciones: `documentos`, `archivos` y tablas de relación
-- [ ] Cliente de Drive con cuenta de servicio (listar carpetas, metadatos, descarga en streaming)
-- [ ] Admin: explorador de Drive y creación de borradores
-- [ ] Admin: edición y clasificación de documentos
-- [ ] Validación y publicación
-- [ ] **Función central de visibilidad** (`documentVisibilityFilter`) con tests por rol
-- [ ] `/api/archivos/[id]`: permisos, streaming, `Range`, inline/descarga, registro en `accesos`
-- [ ] Videos embebidos con botón "Abrir en Drive"
-- [ ] Advertencia de video público en documento "Solo fábrica"
-- [ ] Nueva versión y obsoletos
-- [ ] Foto opcional de la línea elegida desde Drive (`lineas.imagen_drive_file_id`; quedó pendiente de la fase 2 porque necesita el cliente de Drive)
-- [ ] Fusión y borrado de etiquetas: mover/limpiar `documento_etiquetas` (TODO en `admin/taxonomia/actions.ts`)
+- [x] Migraciones: `documentos`, `archivos` y tablas de relación
+- [x] Cliente de Drive con cuenta de servicio (listar carpetas, metadatos, descarga en streaming)
+- [ ] Probar el cliente con la cuenta de servicio real (hasta ahora se probó con `DRIVE_LOCAL_DIR`)
+- [x] Admin: explorador de Drive y creación de borradores
+- [x] Admin: edición y clasificación de documentos
+- [x] Validación y publicación
+- [x] **Función central de visibilidad** (`documentVisibilityFilter`) con tests por rol
+- [x] `/api/archivos/[id]`: permisos, streaming, `Range`, inline/descarga, registro en `accesos`
+- [x] Videos embebidos con botón "Abrir en Drive"
+- [x] Advertencia de video público en documento "Solo fábrica"
+- [x] Nueva versión y obsoletos
+- [x] Foto opcional de la línea elegida desde Drive (`lineas.imagen_drive_file_id`; quedó pendiente de la fase 2 porque necesita el cliente de Drive)
+- [x] Fusión y borrado de etiquetas: mover/limpiar `documento_etiquetas` (TODO en `admin/taxonomia/actions.ts`)
 
 ## Fase 4 · Búsqueda y navegación
 

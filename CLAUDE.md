@@ -55,6 +55,8 @@ Primera vez: `cp .env.example .env` (completar `BETTER_AUTH_SECRET` y `ADMIN_EMA
 
 Sin SMTP configurado, en desarrollo los mails (invitaciones, recuperación) se imprimen en la consola del servidor.
 
+Sin cuenta de servicio de Google, `DRIVE_LOCAL_DIR` apunta a una carpeta local que simula Drive (cada subcarpeta es una raíz).
+
 | Comando | Qué hace |
 |---|---|
 | `npm run dev` | Servidor de desarrollo en http://localhost:3000 |
@@ -74,6 +76,7 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 ## Auth y permisos
 
 - Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
+- Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`). Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
 - No se monta `/api/auth`: usar `auth.api.*` desde el servidor. Ver `docs/02-arquitectura.md` (Implementación fase 1).
 - `.npmrc` tiene `legacy-peer-deps=true` por los peers opcionales de Better Auth.
 

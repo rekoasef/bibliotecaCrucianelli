@@ -165,6 +165,7 @@ Las etiquetas se crean al vuelo desde el formulario de carga (con autocompletado
 | visibilidad | visibilidad_doc | default `concesionarios` |
 | estado | estado_doc | default `borrador` |
 | reemplazado_por_id | uuid FK → documentos, null | solo cuando `estado = 'obsoleto'` |
+| reemplaza_id | uuid FK → documentos, null | en un borrador creado con "Nueva versión": el documento que pasa a obsoleto al publicarlo |
 | version | text | opcional, texto libre ("Rev. 3", "2025") |
 | fecha_documento | date | opcional, fecha de la edición del documento |
 | publicado_en | timestamptz | null hasta la primera publicación |
@@ -215,7 +216,7 @@ Sistemas, temas y etiquetas son opcionales (un manual general puede no tener).
 | `documento_temas` | documento_id, tema_id | (documento_id, tema_id) |
 | `documento_etiquetas` | documento_id, etiqueta_id | (documento_id, etiqueta_id) |
 
-Todas con `ON DELETE CASCADE` del lado de `documento_id` y un índice en la segunda columna.
+Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna (borrar una etiqueta la quita de los documentos; líneas, modelos, sistemas y temas no se borran, se desactivan).
 
 **Máquinas en dos niveles:** un documento se asocia a líneas completas (aplica a todos sus modelos, presentes y futuros) y/o a modelos puntuales. No hace falta asociar un modelo si ya está asociada su línea.
 
@@ -223,7 +224,7 @@ Todas con `ON DELETE CASCADE` del lado de `documento_id` y un índice en la segu
 
 - Las versiones conviven: el documento viejo no se borra.
 - Flujo "Nueva versión" desde la ficha de admin:
-  1. se crea un documento nuevo en `borrador` copiando título, tipo, visibilidad, máquinas, sistemas, temas y etiquetas;
+  1. se crea un documento nuevo en `borrador` copiando título, tipo, visibilidad, máquinas, sistemas, temas y etiquetas, con `reemplaza_id` apuntando al vigente;
   2. el admin elige el archivo nuevo en Drive y ajusta lo que haga falta;
   3. al publicar el nuevo, en la misma transacción el anterior pasa a `obsoleto` con `reemplazado_por_id` apuntando al nuevo.
 - Para mostrar el historial, se recorre la cadena de `reemplazado_por_id` (consulta recursiva).

@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -189,9 +189,15 @@ export async function mergeEtiqueta(
     return { fieldErrors: { destino: ["Elegí una etiqueta distinta."] } };
 
   await db.transaction(async (tx) => {
-    // TODO(Fase 3): mover las filas de documento_etiquetas de `id` a `destino.id`
-    // (sin duplicar) y recalcular el índice de búsqueda de esos documentos.
-    await tx.delete(etiquetas).where(inArray(etiquetas.id, [id]));
+    // Los documentos de la etiqueta pasan a la de destino (sin duplicar) y después
+    // se borra la original (sus filas en documento_etiquetas caen en cascada).
+    await tx.execute(sql`
+      INSERT INTO documento_etiquetas (documento_id, etiqueta_id)
+      SELECT documento_id, ${destino.id} FROM documento_etiquetas WHERE etiqueta_id = ${id}
+      ON CONFLICT DO NOTHING
+    `);
+    await tx.delete(etiquetas).where(eq(etiquetas.id, id));
+    // TODO(Fase 4): recalcular el índice de búsqueda de los documentos afectados.
   });
 
   revalidate();
@@ -204,7 +210,7 @@ export async function mergeEtiqueta(
 export async function deleteEtiqueta(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
-  // TODO(Fase 3): permitir solo si no la usa ningún documento (o advertir).
+  // Se quita de los documentos que la usan (cascada); el panel muestra cuántos son.
   const [eliminada] = await db
     .delete(etiquetas)
     .where(eq(etiquetas.id, id))
