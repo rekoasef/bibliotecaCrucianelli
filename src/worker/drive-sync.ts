@@ -22,13 +22,17 @@ type ArchivoSync = {
   documentoId: string;
   driveFileId: string;
   driveModificadoEn: Date | null;
+  tamanoBytes: number | null;
   disponible: boolean;
 };
 
 /** Qué hacer con un archivo según lo que devuelve Drive (puro, para testear). */
 export function decideSync(
-  archivo: Pick<ArchivoSync, "driveModificadoEn" | "disponible">,
-  item: Pick<DriveItem, "modifiedTime" | "trashed"> | null,
+  archivo: Pick<
+    ArchivoSync,
+    "driveModificadoEn" | "disponible" | "tamanoBytes"
+  >,
+  item: Pick<DriveItem, "modifiedTime" | "trashed" | "size"> | null,
 ): "no-disponible" | "recuperado" | "cambiado" | "igual" {
   if (!item || item.trashed)
     return archivo.disponible ? "no-disponible" : "igual";
@@ -37,6 +41,15 @@ export function decideSync(
     item.modifiedTime &&
     (!archivo.driveModificadoEn ||
       item.modifiedTime.getTime() > archivo.driveModificadoEn.getTime())
+  ) {
+    return "cambiado";
+  }
+  // Con links públicos no siempre hay fecha de modificación: un tamaño distinto
+  // también indica que el archivo cambió.
+  if (
+    item.size != null &&
+    archivo.tamanoBytes != null &&
+    item.size !== archivo.tamanoBytes
   ) {
     return "cambiado";
   }
@@ -57,6 +70,7 @@ export async function syncDriveChanges(): Promise<SyncResult> {
       documentoId: archivos.documentoId,
       driveFileId: archivos.driveFileId,
       driveModificadoEn: archivos.driveModificadoEn,
+      tamanoBytes: archivos.tamanoBytes,
       disponible: archivos.disponible,
     })
     .from(archivos);

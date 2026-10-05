@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { FOLDER_MIME } from "./mime";
+import { FOLDER_MIME, mimeFromName } from "./mime";
 import { parseRange } from "./range";
 import {
   DriveNotFoundError,
@@ -13,28 +13,13 @@ import {
   type DriveItem,
 } from "./types";
 
-const MIME_BY_EXT: Record<string, string> = {
-  ".pdf": "application/pdf",
-  ".mp4": "video/mp4",
-  ".webm": "video/webm",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-  ".txt": "text/plain",
-  ".html": "text/html",
-  ".svg": "image/svg+xml",
-  ".docx":
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-};
-
 /**
  * Drive simulado sobre una carpeta local (DRIVE_LOCAL_DIR), para desarrollar y
  * probar sin credenciales. Cada subcarpeta de primer nivel es una carpeta raíz.
  * Los IDs codifican la ruta relativa; nunca se sale de la carpeta base.
  */
 export class LocalDriveClient implements DriveClient {
+  readonly browsable = true;
   private base: string;
 
   constructor(baseDir: string) {
@@ -64,10 +49,7 @@ export class LocalDriveClient implements DriveClient {
     return {
       id: this.toId(rel),
       name: path.basename(abs),
-      mimeType: isFolder
-        ? FOLDER_MIME
-        : (MIME_BY_EXT[path.extname(abs).toLowerCase()] ??
-          "application/octet-stream"),
+      mimeType: isFolder ? FOLDER_MIME : mimeFromName(abs),
       isFolder,
       size: isFolder ? null : info.size,
       modifiedTime: info.mtime,

@@ -6,7 +6,7 @@ Todo corre con `docker-compose.prod.yml`: Postgres, migraciones, app (Next.js), 
 
 - VPS con Docker y Docker Compose.
 - Un dominio o subdominio con un registro A apuntando a la VPS, y los puertos 80 y 443 abiertos (Caddy saca el certificado de Let's Encrypt solo).
-- Cuenta de servicio de Google con la Drive API habilitada y las carpetas raíz compartidas con su email (lectura). Ver `docs/02-arquitectura.md`.
+- Archivos de Drive compartidos con "Cualquier persona con el vínculo" (no hace falta Google Cloud; ver `docs/08-google-drive-y-smtp.md`).
 - Datos del SMTP de la empresa.
 - Ancho de banda de subida suficiente: los PDFs y planos pasan por la VPS (los videos con link público, no).
 

@@ -28,7 +28,7 @@ import {
   type VisibilidadDoc,
 } from "@/db/schema";
 import { findClasificacionExistente } from "@/db/queries/taxonomia";
-import { pathFromRoot, type DriveItem } from "@/lib/drive";
+import { getDrive, pathFromRoot, type DriveItem } from "@/lib/drive";
 import {
   defaultModoAcceso,
   initialEstadoExtraccion,
@@ -66,13 +66,19 @@ async function validarArchivosDrive(driveIds: string[]): Promise<DriveItem[]> {
   const unicos = [...new Set(driveIds)];
   if (unicos.length === 0)
     throw new DocumentoError("No seleccionaste archivos.");
+  const drive = getDrive();
   const items: DriveItem[] = [];
   for (const id of unicos) {
-    const camino = await pathFromRoot(id);
-    const item = camino?.at(-1);
+    // Con explorador: tiene que estar dentro de una raíz. Con links públicos:
+    // alcanza con que el archivo se pueda abrir (docs/02).
+    const item = drive.browsable
+      ? (await pathFromRoot(id))?.at(-1)
+      : await drive.getItem(id);
     if (!item || item.isFolder) {
       throw new DocumentoError(
-        "Uno de los archivos no existe o está fuera de las carpetas permitidas.",
+        drive.browsable
+          ? "Uno de los archivos no existe, no es un archivo o está fuera de las carpetas permitidas."
+          : "No se pudo abrir uno de los archivos. Revisá que el link sea de un archivo (no de una carpeta) y que esté compartido con “Cualquier persona con el vínculo”.",
       );
     }
     items.push(item);

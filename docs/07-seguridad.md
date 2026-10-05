@@ -30,6 +30,9 @@ Revisión del código antes del piloto, centrada en las reglas de `CLAUDE.md`. F
 
 ## Riesgos aceptados / pendientes
 
+- **Archivos con link público (decisión del 2026-10-05, sin Google Cloud):** los archivos en Drive quedan con acceso "Cualquier persona con el vínculo". La app no muestra ese link (los sirve ella con permisos), pero quien lo consiga por fuera (desde Drive, o porque alguien lo reenvía) puede abrir el archivo sin usuario. Aceptado porque la mayoría del material ya es público; lo sensible va como "Solo fábrica". Si un plano no debe quedar accesible por link, no cargarlo hasta tener otra forma de acceso (cuenta de servicio o subida a la app).
+- **Límites de Google para descargas públicas:** si un archivo se descarga muchas veces, Google puede responder temporalmente "demasiadas descargas" y la app lo muestra como no disponible. Con el volumen del piloto no se espera; si pasa, se puede agregar un caché de archivos en el servidor.
+
 - **Videos con link público:** cualquiera que tenga el link de Drive puede verlo (así funciona hoy en la empresa). La app solo lo muestra a quien tiene permiso sobre el documento y avisa si está en un documento "Solo fábrica".
 - **El admin ve IDs de Drive** en el explorador (los necesita para incorporar). Es el único rol que los ve.
 - **CSP sin restricción de scripts:** restringir `script-src` en Next requiere nonces por request; se puede evaluar después del piloto.

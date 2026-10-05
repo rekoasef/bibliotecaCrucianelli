@@ -85,3 +85,25 @@ export function titleFromFileName(name: string) {
   const sinExtension = name.replace(/\.[a-z0-9]{1,5}$/i, "");
   return sinExtension.replace(/[_]+/g, " ").replace(/\s+/g, " ").trim() || name;
 }
+
+const MIME_BY_EXT: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".txt": "text/plain",
+  ".html": "text/html",
+  ".svg": "image/svg+xml",
+  ".docx":
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+};
+
+/** Tipo MIME por la extensión del nombre (cuando el servidor no lo informa bien). */
+export function mimeFromName(name: string) {
+  const ext = /\.[a-z0-9]{1,5}$/i.exec(name)?.[0].toLowerCase() ?? "";
+  return MIME_BY_EXT[ext] ?? "application/octet-stream";
+}

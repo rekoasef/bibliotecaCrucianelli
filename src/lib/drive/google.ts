@@ -47,6 +47,7 @@ function toItem(f: RawFile): DriveItem {
 
 /** Cliente de Drive con cuenta de servicio y acceso de solo lectura. */
 export class GoogleDriveClient implements DriveClient {
+  readonly browsable = true;
   private auth: JWT;
 
   constructor(

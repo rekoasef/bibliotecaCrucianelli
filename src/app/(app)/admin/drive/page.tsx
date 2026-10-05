@@ -7,16 +7,12 @@ import { FileIcon } from "@/components/file-icon";
 import { db } from "@/db";
 import { documentos } from "@/db/schema";
 import { driveIdsIncorporados } from "@/lib/documentos/service";
-import {
-  getDrive,
-  isDriveConfigured,
-  pathFromRoot,
-  type DriveItem,
-} from "@/lib/drive";
+import { getDrive, pathFromRoot, type DriveItem } from "@/lib/drive";
 import { formatBytes, isImage } from "@/lib/drive/mime";
-import { PageHeader } from "../ui";
+import { PageHeader, Panel } from "../ui";
 import { formatFecha } from "../ui";
-import { FotoLineaForm, IncorporarForm } from "./incorporar-form";
+import { FotoLineaForm, FotoLinkForm, IncorporarForm } from "./incorporar-form";
+import { LinksForm } from "./links-form";
 import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Incorporar desde Drive" };
@@ -34,20 +30,6 @@ export default async function DrivePage({
     ? undefined
     : z.uuid().safeParse(sp.fotoLinea).data;
 
-  if (!isDriveConfigured()) {
-    return (
-      <>
-        <PageHeader title="Incorporar desde Drive" />
-        <p className="rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
-          Drive todavía no está configurado. Hay que cargar la cuenta de
-          servicio (GOOGLE_SERVICE_ACCOUNT_EMAIL,
-          GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) y las carpetas raíz
-          (DRIVE_ROOT_FOLDER_IDS) en el servidor.
-        </p>
-      </>
-    );
-  }
-
   const destino = agregarA
     ? (
         await db
@@ -64,6 +46,79 @@ export default async function DrivePage({
     })}`;
 
   const drive = getDrive();
+  // Links públicos (docs/02): no hay explorador, solo pegar links.
+  if (!drive.browsable) {
+    return (
+      <>
+        <PageHeader
+          title={
+            fotoLinea
+              ? "Foto de la línea"
+              : agregarA
+                ? "Agregar archivo desde Drive"
+                : "Incorporar desde Drive"
+          }
+          description={
+            agregarA ? (
+              <>
+                Al documento{" "}
+                <strong className="text-foreground">
+                  {destino?.titulo ?? "sin título"}
+                </strong>
+              </>
+            ) : fotoLinea ? (
+              "Pegá el link de una imagen liviana (idealmente menos de 300 KB)."
+            ) : (
+              "Pegá los links de los archivos que entran a la biblioteca. Quedan como borradores para clasificar."
+            )
+          }
+          back={
+            fotoLinea
+              ? {
+                  href: `/admin/maquinas/lineas/${fotoLinea}`,
+                  label: "Volver a la línea",
+                }
+              : agregarA
+                ? {
+                    href: `/admin/documentos/${agregarA}`,
+                    label: "Volver al documento",
+                  }
+                : undefined
+          }
+        />
+        <div className="flex max-w-2xl flex-col gap-5">
+          <Panel>
+            {fotoLinea ? (
+              <FotoLinkForm lineaId={fotoLinea} />
+            ) : (
+              <LinksForm agregarA={agregarA} />
+            )}
+          </Panel>
+          <Panel title="Cómo compartir el archivo en Drive">
+            <ol className="flex list-decimal flex-col gap-1 pl-5">
+              <li>
+                En Drive, clic derecho sobre el archivo →{" "}
+                <strong>Compartir</strong>.
+              </li>
+              <li>
+                En <strong>Acceso general</strong>, elegí{" "}
+                <strong>Cualquier persona con el vínculo</strong> (Lector).
+              </li>
+              <li>
+                <strong>Copiar vínculo</strong> y pegarlo acá.
+              </li>
+            </ol>
+            <p className="text-sm text-muted-foreground">
+              Los PDFs y planos los sirve la app con sus permisos: el link de
+              Drive no se muestra a los usuarios. Los Google Docs hay que
+              exportarlos a PDF primero.
+            </p>
+          </Panel>
+        </div>
+      </>
+    );
+  }
+
   let camino: DriveItem[] = [];
   let items: DriveItem[];
   if (carpeta) {
@@ -124,6 +179,15 @@ export default async function DrivePage({
         }
       />
 
+      {!fotoLinea && (
+        <Panel title="Pegar links de Drive" className="mb-5">
+          <LinksForm agregarA={agregarA} />
+        </Panel>
+      )}
+
+      <h2 className="mb-1 text-lg font-bold">
+        {fotoLinea ? "Elegir imagen" : "O navegar las carpetas"}
+      </h2>
       <nav aria-label="Ubicación" className="mb-4">
         <ol className="flex flex-wrap items-center gap-1 text-muted-foreground">
           <li>

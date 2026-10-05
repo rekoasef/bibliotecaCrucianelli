@@ -69,6 +69,7 @@ En escritorio, menú lateral. En celular, el admin funciona pero no es prioritar
 
 ### Incorporar desde Drive `/admin/drive`
 
+0. **Pegar links de Drive** (alternativa al explorador): uno o varios links de archivos, uno por línea. El link de una carpeta la abre en el explorador. Mismas validaciones (dentro de las raíces, sin duplicados); el archivo sigue privado y se lee con la cuenta de servicio.
 1. Explorador de carpetas a partir de las raíces configuradas: migas de pan, carpetas, archivos con ícono, tamaño y fecha.
 2. Los archivos ya incorporados se ven marcados y no se pueden volver a seleccionar.
 3. Selección múltiple con casillas.

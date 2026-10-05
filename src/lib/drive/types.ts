@@ -20,6 +20,11 @@ export type DriveDownload = {
 };
 
 export interface DriveClient {
+  /**
+   * true si se pueden recorrer carpetas (cuenta de servicio, carpeta local).
+   * Con links públicos no: se incorporan archivos pegando su link.
+   */
+  readonly browsable: boolean;
   /** Metadatos de un archivo o carpeta; null si no existe o no hay acceso. */
   getItem(id: string): Promise<DriveItem | null>;
   /** Contenido de una carpeta (sin papelera): carpetas primero, después por nombre. */

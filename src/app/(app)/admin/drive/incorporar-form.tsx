@@ -49,7 +49,7 @@ export function IncorporarForm({
           </fieldset>
         )}
         <SubmitButton className="self-start" pendingLabel="Incorporando…">
-          {agregarA ? "Agregar al documento" : "Incorporar seleccionados"}
+          {agregarA ? "Agregar seleccionados" : "Incorporar seleccionados"}
         </SubmitButton>
       </div>
     </form>
@@ -75,6 +75,33 @@ export function FotoLineaForm({
           Usar como foto de la línea
         </SubmitButton>
       </div>
+    </form>
+  );
+}
+
+/** Foto de la línea pegando un link (modo links públicos). */
+export function FotoLinkForm({ lineaId }: { lineaId: string }) {
+  const [state, action] = useActionState(elegirFotoLinea, initialFormState);
+
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <FormMessage state={state} />
+      <input type="hidden" name="fotoLinea" value={lineaId} />
+      <label htmlFor="foto" className="font-semibold">
+        Link de la imagen en Drive
+      </label>
+      <input
+        id="foto"
+        name="foto"
+        required
+        autoCapitalize="none"
+        spellCheck={false}
+        placeholder="https://drive.google.com/file/d/…"
+        className="h-11 w-full rounded-lg border border-input bg-card px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      />
+      <SubmitButton className="self-start" pendingLabel="Guardando…">
+        Usar como foto de la línea
+      </SubmitButton>
     </form>
   );
 }

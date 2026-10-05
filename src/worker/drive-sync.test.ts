@@ -7,12 +7,15 @@ const hoy = new Date("2026-10-05T12:00:00Z");
 describe("decideSync", () => {
   it("borrado o sin acceso → no disponible", () => {
     expect(
-      decideSync({ disponible: true, driveModificadoEn: ayer }, null),
+      decideSync(
+        { disponible: true, driveModificadoEn: ayer, tamanoBytes: 100 },
+        null,
+      ),
     ).toBe("no-disponible");
     expect(
       decideSync(
-        { disponible: true, driveModificadoEn: ayer },
-        { trashed: true, modifiedTime: ayer },
+        { disponible: true, driveModificadoEn: ayer, tamanoBytes: 100 },
+        { trashed: true, modifiedTime: ayer, size: 100 },
       ),
     ).toBe("no-disponible");
   });
@@ -20,8 +23,8 @@ describe("decideSync", () => {
   it("volvió a estar accesible → recuperado", () => {
     expect(
       decideSync(
-        { disponible: false, driveModificadoEn: ayer },
-        { trashed: false, modifiedTime: ayer },
+        { disponible: false, driveModificadoEn: ayer, tamanoBytes: 100 },
+        { trashed: false, modifiedTime: ayer, size: 100 },
       ),
     ).toBe("recuperado");
   });
@@ -29,15 +32,31 @@ describe("decideSync", () => {
   it("modifiedTime más nuevo → cambiado; igual → nada", () => {
     expect(
       decideSync(
-        { disponible: true, driveModificadoEn: ayer },
-        { trashed: false, modifiedTime: hoy },
+        { disponible: true, driveModificadoEn: ayer, tamanoBytes: 100 },
+        { trashed: false, modifiedTime: hoy, size: 100 },
       ),
     ).toBe("cambiado");
     expect(
       decideSync(
-        { disponible: true, driveModificadoEn: hoy },
-        { trashed: false, modifiedTime: hoy },
+        { disponible: true, driveModificadoEn: hoy, tamanoBytes: 100 },
+        { trashed: false, modifiedTime: hoy, size: 100 },
       ),
+    ).toBe("igual");
+  });
+});
+
+describe("decideSync sin fecha (links públicos)", () => {
+  it("tamaño distinto → cambiado; igual → nada", () => {
+    const archivo = {
+      disponible: true,
+      driveModificadoEn: null,
+      tamanoBytes: 100,
+    };
+    expect(
+      decideSync(archivo, { trashed: false, modifiedTime: null, size: 120 }),
+    ).toBe("cambiado");
+    expect(
+      decideSync(archivo, { trashed: false, modifiedTime: null, size: 100 }),
     ).toBe("igual");
   });
 });

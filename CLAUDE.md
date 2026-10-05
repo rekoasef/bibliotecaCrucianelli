@@ -17,7 +17,7 @@ Leer antes de empezar cualquier tarea:
 - `docs/05-pantallas.md` — pantallas y flujos de usuario y admin
 - `docs/06-plan.md` — fases de implementación con checklist
 - `docs/07-seguridad.md` — revisión de seguridad y riesgos aceptados
-- `docs/08-google-drive-y-smtp.md` — cómo conectar el Drive real (cuenta de servicio) y el mail
+- `docs/08-google-drive-y-smtp.md` — cómo cargar archivos de Drive (links) y configurar el mail
 - `deploy/README.md` — despliegue en la VPS, backups y restauración
 
 ## Stack
@@ -27,7 +27,7 @@ Leer antes de empezar cualquier tarea:
 - Drizzle ORM (driver `postgres`)
 - Better Auth
 - Tailwind CSS v4 + shadcn/ui (base Radix, íconos Lucide)
-- Google Drive API v3 con cuenta de servicio
+- Google Drive con links públicos (sin Google Cloud; ver docs/02, "Google Drive")
 - Deploy en VPS propia de la empresa con Docker Compose
 
 ## Reglas que no se rompen
@@ -60,7 +60,7 @@ Primera vez: `cp .env.example .env` (completar `BETTER_AUTH_SECRET` y `ADMIN_EMA
 
 Sin SMTP configurado, en desarrollo los mails (invitaciones, recuperación) se imprimen en la consola del servidor.
 
-Sin cuenta de servicio de Google, `DRIVE_LOCAL_DIR` apunta a una carpeta local que simula Drive (cada subcarpeta es una raíz).
+Drive: por defecto la app usa **links públicos** (no hace falta configurar nada). `DRIVE_LOCAL_DIR` cambia a una carpeta local que simula Drive con explorador (desarrollo y pruebas).
 
 | Comando | Qué hace |
 |---|---|

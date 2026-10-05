@@ -15,7 +15,7 @@
  │      ▼            ▼                                                        │
  │  PostgreSQL    Worker de extracción de texto (PDF → texto / OCR)           │
  └──────┼───────────────┼─────────────────────────────────────────────────────┘
-        │               │   Drive API v3 (cuenta de servicio)
+        │               │   Descarga de archivos públicos (link)
         ▼               ▼
               Google Drive (depósito de archivos)
 ```
@@ -32,11 +32,20 @@ Todo corre en la VPS de la empresa con Docker Compose, porque se manejan datos s
 | Auth | Better Auth | Email + contraseña, sesiones en DB, roles |
 | UI | Tailwind CSS v4 + shadcn/ui (Radix, Lucide) | Componentes accesibles y livianos |
 | Mail | SMTP de la empresa (Nodemailer) | Invitaciones y recuperación de contraseña |
-| Archivos | Google Drive API v3 | Cuenta de servicio con acceso de lectura a las carpetas de documentación |
+| Archivos | Google Drive (links públicos) | Sin Google Cloud: la app descarga del lado del servidor los archivos compartidos "con el vínculo" (ver abajo) |
 
 Elecciones confirmadas en la fase 0.
 
 ## Google Drive
+
+> **Decisión (2026-10-05):** no se usa Google Cloud ni cuenta de servicio. Los archivos se incorporan **pegando su link de Drive**, con acceso general "Cualquier persona con el vínculo" (Lector). La mayoría del material ya es público en la empresa; lo sensible (planos) se carga como "Solo fábrica" y la app solo lo muestra a fábrica.
+>
+> - La app descarga el archivo del lado del servidor (`drive.usercontent.google.com/download?id=…`) y lo sirve por `/api/archivos/[id]` con los mismos permisos de siempre: el link de Drive de PDFs y planos **no llega al celular** (regla 3 de `CLAUDE.md`). Riesgo aceptado: quien consiga el link por fuera de la app (por ejemplo, desde Drive) puede abrir el archivo sin usuario.
+> - Sin API no se pueden listar carpetas: no hay explorador, se pegan links de archivos. Google Docs nativos no se aceptan (exportarlos a PDF).
+> - Detección de cambios: sin `modifiedTime` de la API, se compara tamaño y `Last-Modified`; si el archivo deja de ser público o se borra, queda "no disponible".
+> - El código de la cuenta de servicio (`GoogleDriveClient`) y la carpeta local (`DRIVE_LOCAL_DIR`, desarrollo) siguen disponibles; se elige por variables de entorno.
+>
+> Lo que sigue en esta sección describe el diseño original con cuenta de servicio.
 
 ### Cuenta de servicio
 
