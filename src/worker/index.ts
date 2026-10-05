@@ -17,11 +17,14 @@ import { db } from "@/db";
 import { getDrive } from "@/lib/drive";
 import { isGoogleNative, isPdf } from "@/lib/drive/mime";
 import { rebuildDocumentSearch } from "@/lib/search/reindex";
+import { lastSyncRun, shouldRunNightly, syncDriveChanges } from "./drive-sync";
 import { cleanText, needsOcr } from "./text";
 
 const POLL_MS = 5_000;
 const OCR_MAX_PAGES = Number(process.env.OCR_MAX_PAGES ?? 80);
 const COMMAND_TIMEOUT_MS = 5 * 60_000;
+/** Hora (Argentina) a partir de la cual corre la detección de cambios en Drive. */
+const SYNC_HOUR = Number(process.env.SYNC_HOUR ?? 3);
 
 type Job = {
   id: string;
@@ -174,8 +177,23 @@ async function main() {
     WHERE estado_extraccion = 'procesando' AND actualizado_en < now() - interval '15 minutes'
   `);
   log("esperando archivos para extraer texto");
+  let lastSync = (await lastSyncRun())?.ultimaEjecucion ?? null;
 
   while (!stopping) {
+    // Tarea nocturna: detección de cambios en Drive (docs/02).
+    if (shouldRunNightly(new Date(), lastSync, SYNC_HOUR)) {
+      log("detección de cambios en Drive: empezando");
+      try {
+        const r = await syncDriveChanges();
+        log(`detección de cambios: ${JSON.stringify(r)}`);
+      } catch (error) {
+        log(
+          `detección de cambios falló: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+      lastSync = new Date();
+    }
+
     const job = await claimJob();
     if (job) await processJob(job);
     else await new Promise((r) => setTimeout(r, POLL_MS));

@@ -19,6 +19,7 @@ import { MoveButtons } from "../../../move-buttons";
 import { InactivoBadge, PageHeader, Panel } from "../../../ui";
 import { moveMaquina, quitarFotoLinea, setMaquinaActivo } from "../../actions";
 import { MaquinaForm } from "./maquina-form";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Máquinas" };
 
@@ -43,6 +44,8 @@ export default async function MaquinaPage({
   params,
   searchParams,
 }: PageProps<"/admin/maquinas/[nivel]/[id]">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const { nivel: rawNivel, id } = await params;
   const sp = await searchParams;
   const nivel = z.enum(NIVELES).safeParse(rawNivel).data;
@@ -199,7 +202,17 @@ export default async function MaquinaPage({
       <Panel title="Datos">
         <MaquinaForm
           nivel={nivel}
-          item={{ ...item, parentId }}
+          // Solo lo que usa el formulario (nada de IDs de Drive al cliente).
+          item={{
+            id: item.id,
+            nombre: item.nombre,
+            slug: item.slug,
+            descripcion:
+              "descripcion" in item
+                ? (item.descripcion as string | null)
+                : null,
+            parentId,
+          }}
           parentOptions={parentOptions}
         />
       </Panel>

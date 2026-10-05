@@ -13,6 +13,7 @@ import {
 import { setConcesionarioActivo } from "../../actions";
 import { ActivoBadge, EstadoBadge, PageHeader, Panel } from "../../ui";
 import { ConcesionarioForm } from "../concesionario-form";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Concesionario" };
 
@@ -20,6 +21,8 @@ export default async function ConcesionarioPage({
   params,
   searchParams,
 }: PageProps<"/admin/concesionarios/[id]">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const { id } = await params;
   const { creado } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();

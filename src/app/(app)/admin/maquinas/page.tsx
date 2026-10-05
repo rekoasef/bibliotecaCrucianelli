@@ -6,10 +6,13 @@ import { getArbolMaquinas } from "@/db/queries/taxonomia";
 import { MoveButtons } from "../move-buttons";
 import { InactivoBadge, PageHeader } from "../ui";
 import { moveMaquina } from "./actions";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Máquinas" };
 
 export default async function MaquinasPage() {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const arbol = await getArbolMaquinas();
 
   return (

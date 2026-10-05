@@ -18,12 +18,23 @@ const schema = z.object({
   MAIL_TO_CONSOLE: z.stringbool().default(false),
 });
 
-// Se valida al primer uso para que `next build` no exija secretos.
+// Se valida al primer uso. Durante `next build` (imagen Docker) no hay secretos:
+// se usan valores de relleno que nunca llegan a producción, porque en runtime
+// NEXT_PHASE no es "phase-production-build" y se exigen los reales.
 let cached: z.infer<typeof schema> | undefined;
+
+const BUILD_PLACEHOLDERS = {
+  DATABASE_URL: "postgres://build:build@localhost:5432/build",
+  BETTER_AUTH_SECRET: "build-placeholder-secret-not-used-at-runtime",
+  APP_URL: "http://localhost:3000",
+};
 
 export function env() {
   if (!cached) {
-    const parsed = schema.safeParse(process.env);
+    const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+    const parsed = schema.safeParse(
+      isBuild ? { ...BUILD_PLACEHOLDERS, ...process.env } : process.env,
+    );
     if (!parsed.success) {
       throw new Error(
         `Variables de entorno inválidas: ${z.prettifyError(parsed.error)}`,

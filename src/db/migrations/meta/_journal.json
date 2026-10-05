@@ -43,6 +43,13 @@
       "when": 1791205912137,
       "tag": "0005_indice_busqueda",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791207232008,
+      "tag": "0006_tareas",
+      "breakpoints": true
     }
   ]
 }

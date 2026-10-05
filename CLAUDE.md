@@ -16,6 +16,9 @@ Leer antes de empezar cualquier tarea:
 - `docs/04-taxonomia.md` — máquinas, tipos, sistemas, temas, estados
 - `docs/05-pantallas.md` — pantallas y flujos de usuario y admin
 - `docs/06-plan.md` — fases de implementación con checklist
+- `docs/07-seguridad.md` — revisión de seguridad y riesgos aceptados
+- `docs/08-google-drive-y-smtp.md` — cómo conectar el Drive real (cuenta de servicio) y el mail
+- `deploy/README.md` — despliegue en la VPS, backups y restauración
 
 ## Stack
 
@@ -51,6 +54,8 @@ Leer antes de empezar cualquier tarea:
 
 ## Comandos
 
+Producción: `docker-compose.prod.yml` (ver `deploy/README.md`).
+
 Primera vez: `cp .env.example .env` (completar `BETTER_AUTH_SECRET` y `ADMIN_EMAIL`), `npm install`, `npm run db:up`, `npm run db:migrate`, `npm run db:seed`.
 
 Sin SMTP configurado, en desarrollo los mails (invitaciones, recuperación) se imprimen en la consola del servidor.
@@ -70,6 +75,7 @@ Sin cuenta de servicio de Google, `DRIVE_LOCAL_DIR` apunta a una carpeta local q
 | `npm run db:migrate` | Aplica las migraciones de `src/db/migrations` |
 | `npm run db:studio` | Drizzle Studio |
 | `npm run worker:up` | Levanta el worker de extracción de texto en Docker (pdftotext + OCR) contra la base de desarrollo |
+| `npm run sync:drive` | Corre una vez la detección de cambios en Drive (el worker la hace cada noche) |
 | `npm run worker` | Corre el worker en el host (necesita `pdftotext`, `pdftoppm`, `pdfinfo` y `tesseract` con español) |
 | `npm run db:seed` | Admin de `ADMIN_EMAIL` (con invitación), máquinas y taxonomía de `docs/04`. Idempotente |
 
@@ -80,7 +86,9 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 - Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
 - Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
 - Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`). Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
-- No se monta `/api/auth`: usar `auth.api.*` desde el servidor. Ver `docs/02-arquitectura.md` (Implementación fase 1).
+- No se monta `/api/auth`: usar `auth.api.*` desde el servidor.
+- Páginas del admin: `requireAdmin()` en cada página, no solo en el layout (se renderizan en paralelo).
+- A componentes cliente pasarles solo los campos que usan (nunca el objeto entero de la base: puede traer `drive_file_id` o texto extraído). Ver `docs/02-arquitectura.md` (Implementación fase 1).
 - `.npmrc` tiene `legacy-peer-deps=true` por los peers opcionales de Better Auth.
 
 ## Diseño

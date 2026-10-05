@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/olvide-contrasena",
   "/restablecer/",
   "/invitacion/",
+  "/api/health",
 ];
 
 /**

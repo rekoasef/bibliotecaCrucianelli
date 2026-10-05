@@ -28,6 +28,7 @@ import { PageHeader, Panel } from "../../ui";
 import {
   eliminarBorradorAction,
   marcarObsoletoAction,
+  marcarRevisadoAction,
   moverArchivoAction,
   nuevaVersionAction,
   quitarArchivoAction,
@@ -111,6 +112,22 @@ export default async function EditarDocumentoPage({
       />
       {mensaje && <FormMessage state={{ success: mensaje }} />}
       {error && <FormMessage state={{ error }} />}
+
+      {doc.requiereRevision && (
+        <div className="flex flex-col gap-3 rounded-xl border border-sky-700/30 bg-sky-50 p-4 text-sky-950">
+          <p>
+            <strong>Un archivo cambió en Drive.</strong> Revisá que el título,
+            la versión y la clasificación sigan siendo correctos (el texto se
+            vuelve a extraer solo).
+          </p>
+          <form action={marcarRevisadoAction}>
+            <input type="hidden" name="id" value={id} />
+            <Button type="submit" variant="outline">
+              Marcar como revisado
+            </Button>
+          </form>
+        </div>
+      )}
 
       {reemplaza && doc.estado === "borrador" && (
         <p className="rounded-lg border bg-card p-4">
@@ -248,7 +265,22 @@ export default async function EditarDocumentoPage({
       </Panel>
 
       <DocumentoForm
-        doc={doc}
+        // Solo los campos del formulario: sin archivos (drive_file_id, texto extraído).
+        doc={{
+          id: doc.id,
+          titulo: doc.titulo,
+          descripcion: doc.descripcion,
+          tipoId: doc.tipoId,
+          version: doc.version,
+          fechaDocumento: doc.fechaDocumento,
+          visibilidad: doc.visibilidad,
+          estado: doc.estado,
+          lineaIds: doc.lineaIds,
+          modeloIds: doc.modeloIds,
+          sistemaIds: doc.sistemaIds,
+          temaIds: doc.temaIds,
+          etiquetas: doc.etiquetas,
+        }}
         tipos={tipos}
         sistemas={sistemas}
         temas={temas}

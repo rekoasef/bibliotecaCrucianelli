@@ -10,6 +10,7 @@ import {
   eliminarBorrador,
   guardarClasificacion,
   marcarObsoleto,
+  marcarRevisado,
   moverArchivo,
   nuevaVersion,
   publicar,
@@ -161,5 +162,12 @@ export async function reintentarExtraccionAction(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
   await reintentarExtraccion(idSchema.parse(formData.get("archivoId")));
+  revalidate(id);
+}
+
+export async function marcarRevisadoAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const id = idSchema.parse(formData.get("id"));
+  await marcarRevisado(id, admin.id);
   revalidate(id);
 }

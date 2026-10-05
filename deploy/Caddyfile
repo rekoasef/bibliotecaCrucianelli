@@ -1,0 +1,16 @@
+# HTTPS automático (Let's Encrypt) para el dominio de la app.
+{$DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy app:3000 {
+		# Reemplaza (no agrega) la IP del cliente: la app la usa para el rate limiting
+		# del login, y un X-Forwarded-For mandado por el cliente no debe contar.
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -23,6 +23,7 @@ import {
 } from "@/lib/documentos/service";
 import { formatFecha, PageHeader } from "../ui";
 import { EstadoDocBadge } from "./estado-badge";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Documentos" };
 
@@ -39,6 +40,8 @@ const ESTADO = {
 export default async function DocumentosPage({
   searchParams,
 }: PageProps<"/admin/documentos">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const sp = await searchParams;
   const [tipos, lineas] = await Promise.all([
     listCatalogo("tipos"),
@@ -61,6 +64,7 @@ export default async function DocumentosPage({
     tipoId: tipos.find((t) => t.id === sp.tipo)?.id,
     lineaId: lineas.find((l) => l.id === sp.linea)?.id,
     revision: sp.revision === "1",
+    problemas: sp.problemas === "1",
   };
   const docs = await listDocumentosAdmin(filters);
   const hasFilters = Object.values(filters).some(Boolean);
@@ -156,6 +160,16 @@ export default async function DocumentosPage({
             className="size-5 accent-brand"
           />
           Requieren revisión
+        </label>
+        <label className="flex min-h-11 items-center gap-3 self-end">
+          <input
+            type="checkbox"
+            name="problemas"
+            value="1"
+            defaultChecked={filters.problemas}
+            className="size-5 accent-brand"
+          />
+          Archivos con problemas
         </label>
         <div className="flex gap-2 self-end">
           <Button type="submit" variant="secondary" className="flex-1">

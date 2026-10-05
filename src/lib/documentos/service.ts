@@ -169,6 +169,8 @@ export type DocumentoFilters = {
   visibilidad?: VisibilidadDoc;
   lineaId?: string;
   revision?: boolean;
+  /** Archivos no disponibles en Drive o con error de extracción. */
+  problemas?: boolean;
 };
 
 export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
@@ -178,6 +180,10 @@ export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
   if (f.tipoId) where.push(eq(documentos.tipoId, f.tipoId));
   if (f.visibilidad) where.push(eq(documentos.visibilidad, f.visibilidad));
   if (f.revision) where.push(eq(documentos.requiereRevision, true));
+  if (f.problemas) {
+    where.push(sql`EXISTS (SELECT 1 FROM archivos a WHERE a.documento_id = ${documentos.id}
+                           AND (NOT a.disponible OR a.estado_extraccion = 'error'))`);
+  }
   if (f.lineaId) {
     where.push(sql`(
       EXISTS (SELECT 1 FROM documento_lineas dl WHERE dl.documento_id = ${documentos.id} AND dl.linea_id = ${f.lineaId})
@@ -701,4 +707,12 @@ export async function reintentarExtraccion(archivoId: string) {
         inArray(archivos.estadoExtraccion, ["error", "sin_texto"]),
       ),
     );
+}
+
+/** El admin revisó un documento cuyo archivo cambió en Drive. */
+export async function marcarRevisado(documentoId: string, usuarioId: string) {
+  await db
+    .update(documentos)
+    .set({ requiereRevision: false, actualizadoPor: usuarioId })
+    .where(eq(documentos.id, documentoId));
 }

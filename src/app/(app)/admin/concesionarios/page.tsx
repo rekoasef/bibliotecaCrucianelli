@@ -12,10 +12,13 @@ import {
 } from "@/components/ui/table";
 import { listConcesionarios } from "@/db/queries/usuarios";
 import { ActivoBadge, PageHeader } from "../ui";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Concesionarios" };
 
 export default async function ConcesionariosPage() {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const concesionarios = await listConcesionarios();
 
   return (

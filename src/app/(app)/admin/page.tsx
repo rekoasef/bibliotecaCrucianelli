@@ -5,25 +5,35 @@ import {
   FileClock,
   FileWarning,
   MailWarning,
+  FileX,
   RefreshCw,
+  SearchX,
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { busquedasSinResultados } from "@/db/queries/registros";
+import { getTarea } from "@/db/queries/tareas";
 import { listConcesionarios, listUsuarios } from "@/db/queries/usuarios";
+import { SYNC_TASK } from "@/lib/tareas";
 import { resumenPanel } from "@/lib/documentos/service";
-import { PageHeader, Panel } from "./ui";
+import { formatFecha, PageHeader, Panel } from "./ui";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Administración" };
 
-// TODO(Fase 5): búsquedas sin resultados y errores de extracción (docs/05).
 export default async function AdminPage() {
-  const [usuarios, pendientes, concesionarios, resumen] = await Promise.all([
-    listUsuarios(),
-    listUsuarios({ estado: "pendiente" }),
-    listConcesionarios(),
-    resumenPanel(),
-  ]);
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
+  const [usuarios, pendientes, concesionarios, resumen, sinResultados, sync] =
+    await Promise.all([
+      listUsuarios(),
+      listUsuarios({ estado: "pendiente" }),
+      listConcesionarios(),
+      resumenPanel(),
+      busquedasSinResultados(30, 10),
+      getTarea(SYNC_TASK),
+    ]);
 
   const cards = [
     {
@@ -39,10 +49,16 @@ export default async function AdminPage() {
       icon: RefreshCw,
     },
     {
-      href: "/admin/documentos",
-      label: "Archivos no disponibles",
+      href: "/admin/documentos?problemas=1",
+      label: "Archivos no disponibles en Drive",
       value: resumen.no_disponibles,
       icon: FileWarning,
+    },
+    {
+      href: "/admin/documentos?problemas=1",
+      label: "Errores de extracción de texto",
+      value: resumen.errores_extraccion,
+      icon: FileX,
     },
     {
       href: "/admin/usuarios",
@@ -87,6 +103,67 @@ export default async function AdminPage() {
           </li>
         ))}
       </ul>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <Panel title="Búsquedas sin resultados (30 días)">
+          {sinResultados.length === 0 ? (
+            <p className="text-muted-foreground">
+              Ninguna en los últimos 30 días.
+            </p>
+          ) : (
+            <ol className="flex flex-col divide-y">
+              {sinResultados.map((b) => (
+                <li
+                  key={b.texto}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    <SearchX
+                      aria-hidden
+                      className="size-4 shrink-0 text-muted-foreground"
+                    />
+                    {b.texto}
+                  </span>
+                  <span className="text-sm text-muted-foreground tabular-nums">
+                    {b.veces === 1 ? "1 vez" : `${b.veces} veces`}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          <Link
+            href="/admin/registros?tab=busquedas"
+            className="self-start font-medium text-brand-strong underline-offset-4 hover:underline"
+          >
+            Ver todas
+          </Link>
+        </Panel>
+
+        <Panel title="Detección de cambios en Drive">
+          {sync ? (
+            <>
+              <p>
+                Última revisión:{" "}
+                <strong>{formatFecha(sync.ultimaEjecucion)}</strong>
+              </p>
+              {sync.resultado && (
+                <p className="text-muted-foreground">
+                  {sync.resultado.revisados} archivos revisados ·{" "}
+                  {sync.resultado.cambiados} cambiaron ·{" "}
+                  {sync.resultado.noDisponibles} no disponibles
+                  {Number(sync.resultado.errores) > 0 &&
+                    ` · ${sync.resultado.errores} con error de conexión`}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              Todavía no corrió. La hace el worker cada noche (o a mano con{" "}
+              <code>npm run sync:drive</code>).
+            </p>
+          )}
+        </Panel>
+      </div>
 
       {resumen.videosPublicos.length > 0 && (
         <Panel

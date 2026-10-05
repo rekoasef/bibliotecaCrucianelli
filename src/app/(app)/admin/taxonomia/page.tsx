@@ -16,6 +16,7 @@ import { MoveButtons } from "../move-buttons";
 import { InactivoBadge, PageHeader, Panel } from "../ui";
 import { deleteEtiqueta, moveCatalogo, setCatalogoActivo } from "./actions";
 import { CatalogoForm, EtiquetaForm, MergeEtiquetaForm } from "./forms";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Taxonomía" };
 
@@ -43,6 +44,8 @@ type Tab = (typeof TABS)[number]["id"];
 export default async function TaxonomiaPage({
   searchParams,
 }: PageProps<"/admin/taxonomia">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const sp = await searchParams;
   const tab: Tab = TABS.some((t) => t.id === sp.tab)
     ? (sp.tab as Tab)

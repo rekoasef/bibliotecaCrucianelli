@@ -6,3 +6,4 @@ export * from "./maquinas";
 export * from "./taxonomia";
 export * from "./documentos";
 export * from "./busquedas";
+export * from "./tareas";

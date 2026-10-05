@@ -72,12 +72,14 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 
 ## Fase 5 · Operación y piloto
 
-- [ ] Detección de cambios en Drive (tarea nocturna)
-- [ ] Panel de admin con pendientes y búsquedas sin resultados
-- [ ] Pantalla de registros
-- [ ] Docker Compose de producción, proxy con HTTPS
-- [ ] Backups automáticos de Postgres y prueba de restauración
-- [ ] Revisión de seguridad: ninguna ruta devuelve datos o `drive_file_id` sin pasar por la función de visibilidad
+- [x] Detección de cambios en Drive (tarea nocturna)
+- [x] Panel de admin con pendientes y búsquedas sin resultados
+- [x] Pantalla de registros
+- [x] Docker Compose de producción, proxy con HTTPS
+- [x] Backups automáticos de Postgres y prueba de restauración (probada en desarrollo)
+- [ ] Configurar la copia de backups fuera de la VPS (`BACKUP_COPY_CMD`) y repetir la prueba de restauración en la VPS real
+- [x] Revisión de seguridad: ninguna ruta devuelve datos o `drive_file_id` sin pasar por la función de visibilidad (ver `07-seguridad.md`)
+- [ ] Primer despliegue en la VPS (`deploy/README.md`)
 - [ ] Pruebas en celulares reales con señal mala
 - [ ] Carga completa de la línea piloto
 - [ ] Prueba con 3 o 4 técnicos reales y ajustes

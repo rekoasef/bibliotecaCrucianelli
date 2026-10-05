@@ -4,6 +4,7 @@ import {
   Building2,
   FileText,
   FolderInput,
+  History,
   LayoutDashboard,
   Tags,
   Tractor,
@@ -22,6 +23,7 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/concesionarios", label: "Concesionarios", icon: Building2 },
   { href: "/admin/maquinas", label: "Máquinas", icon: Tractor },
   { href: "/admin/taxonomia", label: "Taxonomía", icon: Tags },
+  { href: "/admin/registros", label: "Registros", icon: History },
 ];
 
 // Menú lateral en escritorio; pestañas con scroll horizontal en celular.

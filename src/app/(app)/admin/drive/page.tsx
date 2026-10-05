@@ -17,12 +17,15 @@ import { formatBytes, isImage } from "@/lib/drive/mime";
 import { PageHeader } from "../ui";
 import { formatFecha } from "../ui";
 import { FotoLineaForm, IncorporarForm } from "./incorporar-form";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Incorporar desde Drive" };
 
 export default async function DrivePage({
   searchParams,
 }: PageProps<"/admin/drive">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const sp = await searchParams;
   const carpeta = typeof sp.carpeta === "string" ? sp.carpeta : undefined;
   const agregarA = z.uuid().safeParse(sp.agregarA).data;

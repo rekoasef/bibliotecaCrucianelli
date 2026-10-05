@@ -17,7 +17,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --conditions=react-server src/db/seed.ts",
     "worker": "tsx --conditions=react-server src/worker/index.ts",
-    "worker:up": "docker compose --profile worker up -d --build worker"
+    "worker:up": "docker compose --profile worker up -d --build worker",
+    "sync:drive": "tsx --conditions=react-server src/worker/sync-cli.ts"
   },
   "dependencies": {
     "better-auth": "^1.7.7",

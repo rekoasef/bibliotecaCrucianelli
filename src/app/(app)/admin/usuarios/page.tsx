@@ -21,6 +21,7 @@ import {
 import { rolUsuario } from "@/db/schema";
 import { ROL_LABEL } from "@/lib/labels";
 import { EstadoBadge, formatFecha, PageHeader } from "../ui";
+import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -43,6 +44,8 @@ function pick<T extends string>(
 export default async function UsuariosPage({
   searchParams,
 }: PageProps<"/admin/usuarios">) {
+  // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
+  await requireAdmin();
   const sp = await searchParams;
   const concesionarios = await listConcesionarios();
   const filters: UsuarioFilters = {
