@@ -29,6 +29,8 @@ export interface DriveClient {
     id: string,
     options?: { range?: string | null },
   ): Promise<DriveDownload>;
+  /** Texto plano de un Google Doc nativo (para la extracción); null si no aplica. */
+  exportText(id: string): Promise<string | null>;
   /** IDs de las carpetas raíz permitidas (DRIVE_ROOT_FOLDER_IDS). */
   rootIds(): Promise<string[]>;
 }

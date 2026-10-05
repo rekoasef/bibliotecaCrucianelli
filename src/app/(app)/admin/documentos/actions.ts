@@ -14,6 +14,7 @@ import {
   nuevaVersion,
   publicar,
   quitarArchivo,
+  reintentarExtraccion,
   restaurarVigente,
   setModoAcceso,
   siguienteBorrador,
@@ -152,5 +153,13 @@ export async function quitarArchivoAction(formData: FormData) {
       redirect(`/admin/documentos/${id}?error=ultimo-archivo`);
     throw error;
   }
+  revalidate(id);
+}
+
+/** Vuelve a encolar la extracción de texto de un archivo (tras un error o sin texto). */
+export async function reintentarExtraccionAction(formData: FormData) {
+  await requireAdmin();
+  const id = idSchema.parse(formData.get("id"));
+  await reintentarExtraccion(idSchema.parse(formData.get("archivoId")));
   revalidate(id);
 }

@@ -19,5 +19,23 @@ services:
       timeout: 5s
       retries: 10
 
+  # Worker de extracción de texto (pdftotext + OCR). No arranca con `npm run db:up`:
+  #   docker compose --profile worker up -d --build worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    profiles: ["worker"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://biblioteca:biblioteca@db:5432/biblioteca
+      DRIVE_LOCAL_DIR: /app/.drive-local
+    volumes:
+      - ./.drive-local:/app/.drive-local:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db-data:

@@ -61,14 +61,14 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 
 ## Fase 4 · Búsqueda y navegación
 
-- [ ] `rebuildDocumentSearch` y sus disparadores
-- [ ] Worker de extracción de texto (PDF con texto)
-- [ ] OCR para PDFs escaneados
-- [ ] Consulta de búsqueda con filtros, ranking, resaltado y tolerancia a errores de tipeo
-- [ ] Filtro por máquina en dos niveles (línea ↔ modelo)
-- [ ] Registro de búsquedas
-- [ ] Pantallas: inicio, resultados, navegación por máquina, ficha
-- [ ] Tests de búsqueda con casos reales ("regulacion dosificador", "sensr", "gringa v despiece")
+- [x] `rebuildDocumentSearch` y sus disparadores
+- [x] Worker de extracción de texto (PDF con texto)
+- [x] OCR para PDFs escaneados
+- [x] Consulta de búsqueda con filtros, ranking, resaltado y tolerancia a errores de tipeo
+- [x] Filtro por máquina en dos niveles (línea ↔ modelo)
+- [x] Registro de búsquedas
+- [x] Pantallas: inicio, resultados, navegación por máquina, ficha
+- [x] Tests de búsqueda con casos reales ("regulacion dosificador", "sensr", "gringa v despiece")
 
 ## Fase 5 · Operación y piloto
 

@@ -34,6 +34,7 @@ import {
   initialEstadoExtraccion,
   titleFromFileName,
 } from "@/lib/drive/mime";
+import { rebuildDocumentSearch } from "@/lib/search/reindex";
 import { normalizeTag } from "@/lib/text";
 import {
   faltantesParaPublicar,
@@ -126,6 +127,7 @@ export async function incorporarDesdeDrive(
       await tx
         .insert(archivos)
         .values(grupo.map((item, i) => archivoDesdeDrive(item, doc.id, i)));
+      await rebuildDocumentSearch(doc.id, tx);
       creados.push(doc.id);
     }
     return creados;
@@ -393,8 +395,8 @@ export async function guardarClasificacion(
       documentoId,
       await resolverEtiquetas(tx, input.etiquetas),
     );
+    await rebuildDocumentSearch(documentoId, tx);
   });
-  // TODO(Fase 4): rebuildDocumentSearch(documentoId)
 }
 
 // ── Publicación y versiones ─────────────────────────────────────────────────
@@ -458,7 +460,6 @@ export async function publicar(documentoId: string, usuarioId: string) {
         );
     }
   });
-  // TODO(Fase 4): rebuildDocumentSearch del nuevo y del anterior
 }
 
 export async function marcarObsoleto(documentoId: string, usuarioId: string) {
@@ -552,6 +553,7 @@ export async function nuevaVersion(documentoId: string, usuarioId: string) {
           );
       }
     }
+    await rebuildDocumentSearch(nuevo.id, tx);
     return nuevo.id;
   });
 }
@@ -596,6 +598,7 @@ export async function quitarArchivo(archivoId: string) {
       );
     }
     await tx.delete(archivos).where(eq(archivos.id, archivoId));
+    await rebuildDocumentSearch(arch.documentoId, tx);
   });
 }
 
@@ -685,4 +688,17 @@ export async function resumenPanel() {
       .limit(50),
   ]);
   return { ...conteos, videosPublicos };
+}
+
+/** Vuelve a la cola del worker un archivo que falló o no tuvo texto. */
+export async function reintentarExtraccion(archivoId: string) {
+  await db
+    .update(archivos)
+    .set({ estadoExtraccion: "pendiente", extraccionError: null })
+    .where(
+      and(
+        eq(archivos.id, archivoId),
+        inArray(archivos.estadoExtraccion, ["error", "sin_texto"]),
+      ),
+    );
 }

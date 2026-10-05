@@ -31,6 +31,7 @@ import {
   moverArchivoAction,
   nuevaVersionAction,
   quitarArchivoAction,
+  reintentarExtraccionAction,
   restaurarVigenteAction,
   setModoAccesoAction,
 } from "../actions";
@@ -211,6 +212,16 @@ export default async function EditarDocumentoPage({
                     Ver
                   </a>
                 </Button>
+                {(a.estadoExtraccion === "error" ||
+                  a.estadoExtraccion === "sin_texto") && (
+                  <form action={reintentarExtraccionAction}>
+                    <input type="hidden" name="id" value={id} />
+                    <input type="hidden" name="archivoId" value={a.id} />
+                    <Button type="submit" variant="ghost" size="sm">
+                      Reintentar extracción
+                    </Button>
+                  </form>
+                )}
                 <form action={quitarArchivoAction}>
                   <input type="hidden" name="id" value={id} />
                   <input type="hidden" name="archivoId" value={a.id} />

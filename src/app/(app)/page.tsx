@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";
+import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { TipoIcon } from "@/components/tipo-icon";
+import { requireUser } from "@/lib/auth/session";
+import { latestDocuments } from "@/lib/search/search";
 import {
   getSegmentosActivosConLineas,
   listTiposActivos,
 } from "@/db/queries/taxonomia";
 
 export default async function HomePage() {
-  const [segmentos, tipos] = await Promise.all([
+  const user = await requireUser();
+  const [segmentos, tipos, recientes] = await Promise.all([
     getSegmentosActivosConLineas(),
     listTiposActivos(),
+    latestDocuments(user, 6),
   ]);
 
   return (
@@ -94,11 +99,20 @@ export default async function HomePage() {
         className="flex flex-col gap-4"
       >
         <SectionTitle id="titulo-recientes">Últimos publicados</SectionTitle>
-        {/* TODO(Fase 4): últimos documentos visibles para el usuario. */}
-        <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
-          <FileText aria-hidden className="size-6 shrink-0" />
-          <p>Todavía no hay documentos publicados.</p>
-        </div>
+        {recientes.length > 0 ? (
+          <ul className="grid gap-3 md:grid-cols-2">
+            {recientes.map((r) => (
+              <li key={r.id}>
+                <ResultCard result={r} compact />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
+            <FileText aria-hidden className="size-6 shrink-0" />
+            <p>Todavía no hay documentos publicados.</p>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -100,6 +100,10 @@ export class LocalDriveClient implements DriveClient {
     );
   }
 
+  async exportText() {
+    return null; // en local no hay Google Docs nativos
+  }
+
   async download(
     id: string,
     options: { range?: string | null } = {},

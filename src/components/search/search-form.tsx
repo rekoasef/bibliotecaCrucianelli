@@ -8,6 +8,10 @@ type SearchFormProps = {
   size?: "default" | "lg";
   autoFocusOnDesktop?: boolean;
   className?: string;
+  /** Filtros que se conservan al buscar otro texto (ej.: la máquina en su página). */
+  hidden?: Record<string, string | undefined>;
+  placeholder?: string;
+  label?: string;
 };
 
 // Formulario GET común: funciona sin JavaScript y deja la búsqueda en la URL (docs/05).
@@ -16,6 +20,9 @@ export function SearchForm({
   size = "default",
   autoFocusOnDesktop = false,
   className,
+  hidden = {},
+  placeholder = "Ej.: dosificador Gringa",
+  label = "Buscar documentación",
 }: SearchFormProps) {
   const inputId = "buscar-q";
   const large = size === "lg";
@@ -27,8 +34,12 @@ export function SearchForm({
       role="search"
       className={cn("flex gap-2", className)}
     >
+      {Object.entries(hidden).map(
+        ([name, value]) =>
+          value && <input key={name} type="hidden" name={name} value={value} />,
+      )}
       <label htmlFor={inputId} className="sr-only">
-        Buscar documentación
+        {label}
       </label>
       <div className="relative flex-1">
         <Search
@@ -43,7 +54,7 @@ export function SearchForm({
           name="q"
           type="search"
           defaultValue={defaultValue}
-          placeholder="Ej.: dosificador Gringa"
+          placeholder={placeholder}
           autoComplete="off"
           enterKeyHint="search"
           className={cn(

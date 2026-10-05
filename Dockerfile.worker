@@ -1,0 +1,17 @@
+# Worker de extracción de texto: Node + poppler (pdftotext, pdftoppm, pdfinfo)
+# + Tesseract con español para PDFs escaneados.
+FROM node:20-bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-spa ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --omit=dev --ignore-scripts && npm install --no-save tsx dotenv
+
+COPY tsconfig.json ./
+COPY src ./src
+
+USER node
+CMD ["npx", "tsx", "--conditions=react-server", "src/worker/index.ts"]

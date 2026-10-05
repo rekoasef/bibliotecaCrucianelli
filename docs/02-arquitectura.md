@@ -166,6 +166,14 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 
 Filtrar por un **modelo** devuelve los documentos asociados a ese modelo **y** los asociados a su línea completa. Filtrar por una **línea** devuelve los de la línea y los de cualquiera de sus modelos.
 
+### Implementación (fase 4)
+
+- `rebuild_document_search(uuid)` es una función SQL (migración 0005); desde TypeScript se llama con `rebuildDocumentSearch` / `rebuildSearchForTaxonomia` (`src/lib/search/reindex.ts`). Un documento asociado a una línea completa indexa también los nombres de sus modelos, y uno asociado a un modelo, el de su línea; por eso renombrar una línea o un modelo recalcula ambos lados.
+- El texto extraído entra al índice con un tope de 300.000 caracteres por documento (límite de tamaño de `tsvector`).
+- La consulta está en `src/lib/search/search.ts`. El complemento por errores de tipeo usa `word_similarity` ≥ 0,5 sobre el título y las etiquetas cuando hay menos de 5 resultados; esos resultados se muestran aparte ("Resultados parecidos").
+- El fragmento resaltado sale de la descripción o, si no hay, del texto de los archivos (primeros 20.000 caracteres). Se marca con caracteres de control, no con HTML, y el cliente los convierte en `<mark>`.
+- Se registran las búsquedas con texto o filtros (solo la primera página).
+
 ## Extracción de texto
 
 - Proceso separado (worker) para no bloquear las requests: cola simple en Postgres (`archivos.estado_extraccion = 'pendiente'`) consumida por un proceso Node.
@@ -175,6 +183,8 @@ Filtrar por un **modelo** devuelve los documentos asociados a ese modelo **y** l
 - Videos e imágenes: sin extracción (se buscan por título, descripción y etiquetas).
 - Guardar el texto en `archivos.texto_extraido` y al terminar llamar a `rebuildDocumentSearch`.
 - Límite razonable de texto por archivo (por ejemplo, 1 MB) para no inflar el índice.
+
+Implementación: `src/worker/index.ts` (contenedor `Dockerfile.worker` con `poppler-utils` y `tesseract-ocr-spa`). Toma trabajos con `FOR UPDATE SKIP LOCKED`; si un PDF tiene menos de ~80 caracteres útiles por página pasa a OCR (hasta `OCR_MAX_PAGES`, 80 por defecto). Al arrancar devuelve a la cola lo que quedó "procesando" hace más de 15 minutos. El admin puede reintentar archivos con error o sin texto.
 
 ## Infraestructura
 

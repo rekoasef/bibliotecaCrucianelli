@@ -12,17 +12,19 @@ import {
   moveItem,
   nextOrden,
 } from "@/db/queries/taxonomia";
-import { etiquetas } from "@/db/schema";
+import { documentoEtiquetas, etiquetas } from "@/db/schema";
 import type { FormState } from "@/components/forms/form-state";
 import { requireAdmin } from "@/lib/auth/session";
+import {
+  rebuildDocumentSearch,
+  rebuildSearchForTaxonomia,
+} from "@/lib/search/reindex";
 import { normalizeTag } from "@/lib/text";
 import {
   CATALOGOS,
   catalogoSchema,
   etiquetaSchema,
 } from "@/lib/validation/taxonomia";
-
-// TODO(Fase 4): al renombrar, recalcular el índice de búsqueda de los documentos afectados.
 
 const catalogoKind = z.enum(CATALOGOS);
 const idSchema = z.uuid();
@@ -56,6 +58,7 @@ export async function saveCatalogo(
   try {
     if (id) {
       await db.update(table).set(parsed.data).where(eq(table.id, id));
+      await rebuildSearchForTaxonomia(kind, id);
     } else {
       await db
         .insert(table)
@@ -141,6 +144,7 @@ export async function saveEtiqueta(
         .update(etiquetas)
         .set({ nombre, nombreNormalizado })
         .where(eq(etiquetas.id, id));
+      await rebuildSearchForTaxonomia("etiquetas", id);
     } else {
       await db.insert(etiquetas).values({ nombre, nombreNormalizado });
     }
@@ -197,9 +201,9 @@ export async function mergeEtiqueta(
       ON CONFLICT DO NOTHING
     `);
     await tx.delete(etiquetas).where(eq(etiquetas.id, id));
-    // TODO(Fase 4): recalcular el índice de búsqueda de los documentos afectados.
   });
 
+  await rebuildSearchForTaxonomia("etiquetas", destino.id);
   revalidate();
   // La fila de la etiqueta fusionada desaparece: el aviso va arriba de la página.
   redirect(
@@ -211,10 +215,15 @@ export async function deleteEtiqueta(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
   // Se quita de los documentos que la usan (cascada); el panel muestra cuántos son.
+  const afectados = await db
+    .select({ id: documentoEtiquetas.documentoId })
+    .from(documentoEtiquetas)
+    .where(eq(documentoEtiquetas.itemId, id));
   const [eliminada] = await db
     .delete(etiquetas)
     .where(eq(etiquetas.id, id))
     .returning({ nombre: etiquetas.nombre });
+  for (const doc of afectados) await rebuildDocumentSearch(doc.id);
   revalidate();
   redirect(
     `/admin/taxonomia?tab=etiquetas&eliminada=${encodeURIComponent(eliminada?.nombre ?? "")}`,

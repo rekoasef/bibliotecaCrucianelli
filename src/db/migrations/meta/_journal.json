@@ -29,6 +29,20 @@
       "when": 1791202578081,
       "tag": "0003_documentos",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791205911240,
+      "tag": "0004_busquedas",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791205912137,
+      "tag": "0005_indice_busqueda",
+      "breakpoints": true
     }
   ]
 }

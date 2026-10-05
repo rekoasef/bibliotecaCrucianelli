@@ -15,14 +15,13 @@ import {
 import { lineas, modelos, segmentos } from "@/db/schema";
 import type { FormState } from "@/components/forms/form-state";
 import { requireAdmin } from "@/lib/auth/session";
+import { rebuildSearchForTaxonomia } from "@/lib/search/reindex";
 import {
   lineaSchema,
   modeloSchema,
   NIVELES,
   segmentoSchema,
 } from "@/lib/validation/taxonomia";
-
-// TODO(Fase 4): al renombrar, recalcular el índice de búsqueda de los documentos asociados.
 
 const nivelSchema = z.enum(NIVELES);
 const idSchema = z.uuid();
@@ -58,6 +57,7 @@ export async function saveMaquina(
   const id = values.id ? idSchema.parse(values.id) : null;
 
   let savedId = id;
+  let lineaAnteriorId: string | null = null;
   try {
     if (nivel === "segmentos") {
       const parsed = segmentoSchema.safeParse(values);
@@ -112,6 +112,9 @@ export async function saveMaquina(
           values,
         };
       const anterior = id ? await getModelo(id) : null;
+      if (anterior && anterior.lineaId !== parsed.data.lineaId) {
+        lineaAnteriorId = anterior.lineaId;
+      }
       if (id && anterior) {
         const orden =
           anterior.lineaId !== parsed.data.lineaId
@@ -128,6 +131,12 @@ export async function saveMaquina(
           .values({ ...parsed.data, orden })
           .returning({ id: modelos.id });
       }
+    }
+    // Nombres de líneas y modelos están en el índice de búsqueda (cruzados).
+    if (savedId && (nivel === "lineas" || nivel === "modelos")) {
+      await rebuildSearchForTaxonomia(nivel, savedId);
+      if (lineaAnteriorId)
+        await rebuildSearchForTaxonomia("lineas", lineaAnteriorId);
     }
   } catch (error) {
     const constraint = uniqueViolationConstraint(error);

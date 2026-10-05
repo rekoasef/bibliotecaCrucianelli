@@ -110,6 +110,17 @@ export class GoogleDriveClient implements DriveClient {
     return items;
   }
 
+  async exportText(id: string) {
+    const res = await this.request(
+      `/files/${encodeURIComponent(id)}/export?mimeType=text/plain`,
+    );
+    if (res.status === 404 || res.status === 403)
+      throw new DriveNotFoundError(id);
+    if (res.status === 400) return null; // tipo que no se exporta como texto
+    if (!res.ok) throw new Error(`Drive export ${res.status}`);
+    return res.text();
+  }
+
   async download(
     id: string,
     options: { range?: string | null } = {},

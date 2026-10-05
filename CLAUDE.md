@@ -69,6 +69,8 @@ Sin cuenta de servicio de Google, `DRIVE_LOCAL_DIR` apunta a una carpeta local q
 | `npm run db:generate` | Genera una migración a partir de `src/db/schema` |
 | `npm run db:migrate` | Aplica las migraciones de `src/db/migrations` |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run worker:up` | Levanta el worker de extracción de texto en Docker (pdftotext + OCR) contra la base de desarrollo |
+| `npm run worker` | Corre el worker en el host (necesita `pdftotext`, `pdftoppm`, `pdfinfo` y `tesseract` con español) |
 | `npm run db:seed` | Admin de `ADMIN_EMAIL` (con invitación), máquinas y taxonomía de `docs/04`. Idempotente |
 
 Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx drizzle-kit generate --custom --name=<nombre>`.
@@ -76,6 +78,7 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 ## Auth y permisos
 
 - Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
+- Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
 - Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`). Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
 - No se monta `/api/auth`: usar `auth.api.*` desde el servidor. Ver `docs/02-arquitectura.md` (Implementación fase 1).
 - `.npmrc` tiene `legacy-peer-deps=true` por los peers opcionales de Better Auth.
