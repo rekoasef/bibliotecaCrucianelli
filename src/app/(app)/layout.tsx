@@ -1,7 +1,11 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
+import { requireUser } from "@/lib/auth/session";
 
-export default function AppLayout({ children }: LayoutProps<"/">) {
+export default async function AppLayout({ children }: LayoutProps<"/">) {
+  const user = await requireUser();
+  const isAdmin = user.rol === "admin";
+
   return (
     <>
       <a
@@ -10,7 +14,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         Saltar al contenido
       </a>
-      <SiteHeader />
+      <SiteHeader isAdmin={isAdmin} />
       {/* En celular se reserva el alto de la navegación inferior para que no tape contenido. */}
       <main
         id="contenido"
@@ -18,7 +22,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         {children}
       </main>
-      <BottomNav />
+      <BottomNav isAdmin={isAdmin} />
     </>
   );
 }

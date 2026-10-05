@@ -105,7 +105,29 @@ Gringa V, Gringa Nueva…
 CHECK ((rol = 'concesionario') = (concesionario_id IS NOT NULL))
 ```
 
-Las tablas de sesiones, cuentas/credenciales, invitaciones y tokens de verificación las crea y maneja la librería de auth. Se configuran para usar `usuarios` como tabla de usuario (o se vincula 1 a 1 si la librería lo exige).
+Además, `email_verificado` (boolean) e `imagen` (text, null), que Better Auth exige en su tabla de usuario, y `CHECK (email = lower(email))`.
+
+### Tablas de Better Auth
+
+Better Auth usa `usuarios` como su tabla de usuario (mapeando sus campos a los nombres en español). Sus tablas propias usan nombres de columna en inglés, porque son internas de la librería:
+
+| Tabla | Para qué |
+|---|---|
+| `sesiones` | Sesiones activas (`user_id`, `token`, `expires_at`, `ip_address`, `user_agent`) |
+| `cuentas` | Credenciales: la contraseña hasheada (`provider_id = 'credential'`). Un usuario sin fila acá tiene la **invitación pendiente** |
+| `verificaciones` | Tokens de invitación y de recuperación de contraseña, **guardados hasheados** |
+
+No hay tabla de invitaciones: una invitación es un token de restablecimiento con vencimiento de 7 días (la recuperación de contraseña vence en 1 hora). Usarlo crea la credencial.
+
+### `limites_tasa`
+
+Contadores de ventana fija para el rate limiting de login, recuperación de contraseña y reenvío de invitaciones.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| clave | text PK | por ejemplo `login:email:juan@taller.com`, `login:ip:1.2.3.4` |
+| cantidad | int | intentos en la ventana actual |
+| ventana_inicio | timestamptz | |
 
 ## Taxonomía
 

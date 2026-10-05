@@ -3,18 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { isActive, navItems } from "./nav-items";
+import { getNavItems, isActive } from "./nav-items";
 
 // Navegación principal en celular: al alcance del pulgar, con ícono y texto.
-export function BottomNav() {
+export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const navItems = getNavItems(isAdmin);
 
   return (
     <nav
       aria-label="Principal"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid h-(--bottom-nav-height) grid-cols-4">
+      <ul
+        className={cn(
+          "grid h-(--bottom-nav-height)",
+          isAdmin ? "grid-cols-5" : "grid-cols-4",
+        )}
+      >
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
@@ -29,7 +35,7 @@ export function BottomNav() {
               >
                 <span
                   className={cn(
-                    "flex h-7 w-14 items-center justify-center rounded-full transition-colors",
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
                     active && "bg-brand/10",
                   )}
                 >

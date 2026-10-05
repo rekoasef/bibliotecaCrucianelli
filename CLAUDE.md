@@ -51,7 +51,9 @@ Leer antes de empezar cualquier tarea:
 
 ## Comandos
 
-Primera vez: `cp .env.example .env`, `npm install`, `npm run db:up`, `npm run db:migrate`.
+Primera vez: `cp .env.example .env` (completar `BETTER_AUTH_SECRET` y `ADMIN_EMAIL`), `npm install`, `npm run db:up`, `npm run db:migrate`, `npm run db:seed`.
+
+Sin SMTP configurado, en desarrollo los mails (invitaciones, recuperación) se imprimen en la consola del servidor.
 
 | Comando | Qué hace |
 |---|---|
@@ -65,10 +67,15 @@ Primera vez: `cp .env.example .env`, `npm install`, `npm run db:up`, `npm run db
 | `npm run db:generate` | Genera una migración a partir de `src/db/schema` |
 | `npm run db:migrate` | Aplica las migraciones de `src/db/migrations` |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run db:seed` | Crea el admin de `ADMIN_EMAIL` y le envía la invitación (idempotente) |
 
 Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx drizzle-kit generate --custom --name=<nombre>`.
 
-Seed: se agrega en la Fase 1.
+## Auth y permisos
+
+- Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
+- No se monta `/api/auth`: usar `auth.api.*` desde el servidor. Ver `docs/02-arquitectura.md` (Implementación fase 1).
+- `.npmrc` tiene `legacy-peer-deps=true` por los peers opcionales de Better Auth.
 
 ## Diseño
 

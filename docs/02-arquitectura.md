@@ -98,6 +98,15 @@ Cada archivo tiene un campo `modo_acceso`:
 
 No hay registro público.
 
+### Implementación (fase 1)
+
+- **No se expone el handler HTTP de Better Auth** (`/api/auth/*`). Login, logout, invitaciones y recuperación pasan por Server Actions que llaman a `auth.api.*` del lado del servidor. Menos superficie (no hay endpoint de registro alcanzable) y los formularios funcionan sin JavaScript.
+- **Rate limiting propio en Postgres** (`limites_tasa`), porque el de Better Auth solo aplica a su handler HTTP: login 5 intentos por email y 30 por IP cada 15 minutos; recuperación 3 por email y 10 por IP por hora; reenvío de invitación 5 por usuario por hora. La IP se toma de `X-Forwarded-For`, que debe setear el proxy.
+- **Invitación** = token de restablecimiento de Better Auth con vencimiento de 7 días, de un solo uso; reenviarla invalida el anterior. Al definir la contraseña, el usuario entra directo.
+- **Bloqueo:** el hook `session.create.before` impide iniciar sesión a usuarios o concesionarios inactivos; además `getCurrentUser` lo verifica en cada request, y al desactivar se borran las sesiones.
+- **Permisos:** `proxy.ts` solo hace un chequeo optimista (hay cookie de sesión). La verificación real es `requireUser()` / `requireAdmin()` en cada página **y en cada Server Action**. A los no admin, `/admin` les responde 404.
+- Sesiones de 30 días, renovadas con el uso (los mecánicos no deberían tener que volver a loguearse en el campo).
+
 ### Reglas de visibilidad
 
 Implementadas en **una única función** del servidor (por ejemplo `documentVisibilityFilter(user)`), usada por la búsqueda, la navegación, la ficha y `/api/archivos/[id]`:
@@ -191,4 +200,5 @@ SMTP_PORT=
 SMTP_USER=
 SMTP_PASSWORD=
 SMTP_FROM=
+MAIL_TO_CONSOLE=                # solo pruebas locales: mails a la consola sin SMTP
 ```

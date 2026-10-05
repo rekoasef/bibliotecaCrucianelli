@@ -25,16 +25,16 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 
 ## Fase 1 · Usuarios y acceso
 
-- [ ] Migraciones: `concesionarios`, `usuarios` y tablas de la librería de auth
-- [ ] Login, logout, sesión
-- [ ] Envío de mails por SMTP
-- [ ] Invitación por mail y definición de contraseña
-- [ ] Recuperación de contraseña
-- [ ] Middleware de rutas: `/admin` solo admin; el resto requiere sesión
-- [ ] Bloqueo de usuarios y concesionarios inactivos
-- [ ] Admin: CRUD de concesionarios y usuarios
-- [ ] Seed: admin inicial desde `ADMIN_EMAIL`
-- [ ] Rate limiting en login
+- [x] Migraciones: `concesionarios`, `usuarios` y tablas de la librería de auth
+- [x] Login, logout, sesión
+- [x] Envío de mails por SMTP
+- [x] Invitación por mail y definición de contraseña
+- [x] Recuperación de contraseña
+- [x] Middleware de rutas: `/admin` solo admin; el resto requiere sesión
+- [x] Bloqueo de usuarios y concesionarios inactivos
+- [x] Admin: CRUD de concesionarios y usuarios
+- [x] Seed: admin inicial desde `ADMIN_EMAIL`
+- [x] Rate limiting en login
 
 ## Fase 2 · Máquinas y taxonomía
 
