@@ -22,7 +22,19 @@ export function filenameFromDisposition(header: string | null): string | null {
     }
   }
   const plain = /filename\s*=\s*"([^"]*)"|filename\s*=\s*([^;]+)/i.exec(header);
-  return (plain?.[1] ?? plain?.[2])?.trim() || null;
+  const name = (plain?.[1] ?? plain?.[2])?.trim();
+  return name ? fixLatin1Mojibake(name) : null;
+}
+
+/**
+ * Google manda el nombre en UTF-8 dentro de `filename="…"` y fetch lo lee como
+ * Latin-1 ("INSTALACIÃ\u0093N"). Si al reinterpretarlo da UTF-8 válido, se corrige.
+ */
+function fixLatin1Mojibake(text: string) {
+  if (!/[\u0080-\u00ff]/.test(text) || /[^\u0000-\u00ff]/.test(text))
+    return text;
+  const decoded = Buffer.from(text, "latin1").toString("utf8");
+  return decoded.includes("\ufffd") ? text : decoded;
 }
 
 /** Tamaño total desde Content-Range ("bytes 0-0/12345"). */

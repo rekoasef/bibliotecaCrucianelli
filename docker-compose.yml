@@ -30,7 +30,8 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://biblioteca:biblioteca@db:5432/biblioteca
-      DRIVE_LOCAL_DIR: /app/.drive-local
+    # El modo de Drive sale del .env (links públicos por defecto). Si ahí se activa
+    # DRIVE_LOCAL_DIR=./.drive-local, esta carpeta queda disponible en /app/.drive-local.
     volumes:
       - ./.drive-local:/app/.drive-local:ro
     depends_on:

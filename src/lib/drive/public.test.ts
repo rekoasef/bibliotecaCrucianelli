@@ -82,6 +82,20 @@ describe("filenameFromDisposition", () => {
     ).toBe("Regulación.pdf");
   });
 
+  it("corrige el UTF-8 leído como Latin-1 (como lo manda Google)", () => {
+    const comoLlega = Buffer.from(
+      'attachment; filename="INSTRUCTIVO INSTALACIÓN BXM.pdf"',
+      "utf8",
+    ).toString("latin1");
+    expect(filenameFromDisposition(comoLlega)).toBe(
+      "INSTRUCTIVO INSTALACIÓN BXM.pdf",
+    );
+    // Un nombre Latin-1 legítimo no se toca
+    expect(
+      filenameFromDisposition('attachment; filename="Calibración.pdf"'),
+    ).toBe("Calibración.pdf");
+  });
+
   it("usa filename si no hay filename*", () => {
     expect(
       filenameFromDisposition('attachment; filename="Manual Gringa.pdf"'),
