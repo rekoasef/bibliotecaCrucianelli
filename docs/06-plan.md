@@ -69,6 +69,9 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 - [x] Registro de búsquedas
 - [x] Pantallas: inicio, resultados, navegación por máquina, ficha
 - [x] Tests de búsqueda con casos reales ("regulacion dosificador", "sensr", "gringa v despiece")
+- [x] Corrección de errores de tipeo con el vocabulario de la biblioteca ("dosificacin" → "dosificacion")
+- [x] Páginas del PDF donde aparece lo buscado
+- [x] Búsquedas recientes del usuario en el inicio y en `/buscar`
 
 ## Fase 5 · Operación y piloto
 

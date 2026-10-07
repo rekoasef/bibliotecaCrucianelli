@@ -1,0 +1,1 @@
+CREATE INDEX "busquedas_usuario_idx" ON "busquedas" USING btree ("usuario_id","creado_en");

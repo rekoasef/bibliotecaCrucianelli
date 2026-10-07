@@ -34,7 +34,7 @@ El proyecto está pensado principalmente para los concesionarios (unas 70 conces
 
 - Login, invitaciones por mail, recuperación de contraseña
 - Roles admin / fabrica / concesionario y gestión de concesionarios
-- Buscador por texto (incluye el contenido de los PDFs)
+- Buscador por texto (incluye el contenido de los PDFs), con corrección de errores de tipeo, páginas del PDF donde aparece lo buscado y búsquedas recientes del usuario
 - Filtros por máquina, tipo, sistema, tema y etiquetas
 - Navegación por máquina: segmento → línea → modelo
 - Ficha de documento, visor y descarga

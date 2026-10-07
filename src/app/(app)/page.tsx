@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";
 import { ResultCard } from "@/components/search/result-card";
+import { RecentSearches } from "@/components/search/recent-searches";
 import { SearchForm } from "@/components/search/search-form";
 import { TipoIcon } from "@/components/tipo-icon";
 import { requireUser } from "@/lib/auth/session";
-import { latestDocuments } from "@/lib/search/search";
+import { latestDocuments, recentSearches } from "@/lib/search/search";
 import {
   getSegmentosActivosConLineas,
   listTiposActivos,
@@ -12,10 +13,11 @@ import {
 
 export default async function HomePage() {
   const user = await requireUser();
-  const [segmentos, tipos, recientes] = await Promise.all([
+  const [segmentos, tipos, recientes, busquedas] = await Promise.all([
     getSegmentosActivosConLineas(),
     listTiposActivos(),
     latestDocuments(user, 6),
+    recentSearches(user.id),
   ]);
 
   return (
@@ -28,15 +30,19 @@ export default async function HomePage() {
           ¿Qué documentación necesitás?
         </h1>
         <SearchForm size="lg" autoFocusOnDesktop className="max-w-3xl" />
-        <p className="text-sm text-muted-foreground">
-          Buscá por máquina, tema o lo que diga el documento. Por ejemplo:{" "}
-          <Link
-            href="/buscar?q=gringa+v+despiece"
-            className="font-medium text-brand-strong underline underline-offset-4"
-          >
-            gringa v despiece
-          </Link>
-        </p>
+        {busquedas.length > 0 ? (
+          <RecentSearches searches={busquedas} className="max-w-3xl" />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Buscá por máquina, tema o lo que diga el documento. Por ejemplo:{" "}
+            <Link
+              href="/buscar?q=gringa+v+despiece"
+              className="font-medium text-brand-strong underline underline-offset-4"
+            >
+              gringa v despiece
+            </Link>
+          </p>
+        )}
       </section>
 
       <section

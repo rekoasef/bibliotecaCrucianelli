@@ -137,6 +137,21 @@ export const archivos = pgTable(
   ],
 );
 
+// Índice por página de los PDFs, para mostrar en qué páginas aparece lo buscado
+// (docs/02, "Páginas"). Sale de `archivos.texto_extraido`, que separa las
+// páginas con \f; lo reescribe el worker al extraer el texto.
+export const archivoPaginas = pgTable(
+  "archivo_paginas",
+  {
+    archivoId: uuid("archivo_id")
+      .notNull()
+      .references(() => archivos.id, { onDelete: "cascade" }),
+    pagina: integer("pagina").notNull(),
+    busqueda: tsvector("busqueda").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.archivoId, t.pagina] })],
+);
+
 function relacion<T extends AnyPgColumn>(
   nombreTabla: string,
   columna: string,

@@ -18,7 +18,7 @@ import { getDrive } from "@/lib/drive";
 import { isGoogleNative, isPdf } from "@/lib/drive/mime";
 import { rebuildDocumentSearch } from "@/lib/search/reindex";
 import { lastSyncRun, shouldRunNightly, syncDriveChanges } from "./drive-sync";
-import { cleanText, needsOcr } from "./text";
+import { cleanText, mergePages, needsOcr } from "./text";
 
 const POLL_MS = 5_000;
 const OCR_MAX_PAGES = Number(process.env.OCR_MAX_PAGES ?? 80);
@@ -85,6 +85,7 @@ async function ocr(file: string, dir: string, pages: number) {
   const images = (await readdir(dir))
     .filter((f) => f.startsWith("pagina") && f.endsWith(".png"))
     .sort();
+  // Una entrada por página, en orden (pdftoppm numera con ceros a la izquierda).
   const textos: string[] = [];
   for (const image of images) {
     textos.push(
@@ -98,7 +99,7 @@ async function ocr(file: string, dir: string, pages: number) {
       ]),
     );
   }
-  return textos.join("\n\n");
+  return textos;
 }
 
 async function extractPdf(job: Job) {
@@ -115,7 +116,7 @@ async function extractPdf(job: Job) {
     let text = await run("pdftotext", ["-enc", "UTF-8", "-q", file, "-"]);
     if (needsOcr(text, pages)) {
       log(`${job.nombre}: poco texto (${pages} pág.), aplicando OCR`);
-      text = `${text}\n${await ocr(file, dir, pages)}`;
+      text = mergePages(text, await ocr(file, dir, pages));
     }
     return text;
   } finally {
@@ -155,6 +156,7 @@ async function processJob(job: Job) {
           extraccion_error = NULL, actualizado_en = now()
       WHERE id = ${job.id}
     `);
+    await db.execute(sql`SELECT rebuild_archivo_paginas(${job.id})`);
     await rebuildDocumentSearch(job.documentoId);
     log(
       `${job.nombre}: ${estado}, ${text.length} caracteres en ${Date.now() - started} ms`,

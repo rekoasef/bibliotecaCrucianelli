@@ -2,6 +2,7 @@ import { SearchX, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { RecentSearches } from "@/components/search/recent-searches";
 import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getSearchOptions, type SearchOptions } from "@/lib/search/options";
 import {
   PAGE_SIZE,
+  recentSearches,
   registrarBusqueda,
   searchDocuments,
   type SearchFilters,
@@ -72,13 +74,16 @@ export default async function BuscarPage({
   };
   const pagina = Math.min(Math.max(Number(sp.pagina) || 1, 1), 25);
 
-  const [options, { total, results, correccion }] = await Promise.all([
-    getSearchOptions(user),
-    searchDocuments(filters, user, pagina * PAGE_SIZE),
-  ]);
-
   const activeFilters = FILTER_KEYS.filter((k) => filters[k]);
   const hayBusqueda = Boolean(filters.q) || activeFilters.length > 0;
+
+  const [options, { total, results, correccion }, busquedas] =
+    await Promise.all([
+      getSearchOptions(user),
+      searchDocuments(filters, user, pagina * PAGE_SIZE),
+      // Sin búsqueda en curso: accesos directos a las últimas.
+      hayBusqueda ? [] : recentSearches(user.id),
+    ]);
   if (hayBusqueda && pagina === 1) {
     await registrarBusqueda({ usuarioId: user.id, filters, cantidad: total });
   }
@@ -100,6 +105,7 @@ export default async function BuscarPage({
         autoFocusOnDesktop={!filters.q}
         className="max-w-3xl"
       />
+      <RecentSearches searches={busquedas} className="max-w-3xl" />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <aside

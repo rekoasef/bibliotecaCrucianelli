@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { TipoIcon } from "@/components/tipo-icon";
 import { fileKind } from "@/lib/drive/mime";
-import type { SearchResult } from "@/lib/search/search";
+import type { PaginasArchivo, SearchResult } from "@/lib/search/search";
 import { Highlight } from "./highlight";
 
 const FORMATO: Record<string, string> = {
@@ -43,10 +44,34 @@ export function ResultCard({
           <Highlight text={r.snippet} />
         </span>
       )}
+      {!compact && r.paginas && r.paginas.length > 0 && (
+        <span className="flex items-start gap-1.5 text-sm font-medium text-foreground">
+          <BookOpen aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span className="flex flex-col">
+            {r.paginas.map((a, i) => (
+              <span key={i}>
+                {r.paginas!.length > 1 && (
+                  <span className="text-muted-foreground">{a.nombre}: </span>
+                )}
+                {paginasLabel(a)}
+              </span>
+            ))}
+          </span>
+        </span>
+      )}
       <span className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
         {r.maquinas && <span>{r.maquinas}</span>}
         {formatos.length > 0 && <span>{formatos.join(" · ")}</span>}
       </span>
     </Link>
   );
+}
+
+/** "Pág. 12", "Págs. 12, 40 y 47", "Págs. 3, 5, 8, 9, 12 y 4 más". */
+function paginasLabel({ paginas, mas }: PaginasArchivo) {
+  if (paginas.length === 1 && !mas) return `Pág. ${paginas[0]}`;
+  const lista = mas
+    ? `${paginas.join(", ")} y ${mas} más`
+    : `${paginas.slice(0, -1).join(", ")} y ${paginas.at(-1)}`;
+  return `Págs. ${lista}`;
 }

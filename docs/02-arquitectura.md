@@ -186,6 +186,17 @@ Filtrar por un **modelo** devuelve los documentos asociados a ese modelo **y** l
 - El fragmento resaltado sale de la descripción o, si no hay, del texto de los archivos (primeros 20.000 caracteres). Se marca con caracteres de control, no con HTML, y el cliente los convierte en `<mark>`.
 - Se registran las búsquedas con texto o filtros (solo la primera página).
 
+### Páginas
+
+- El worker conserva los saltos de página (`\f`) en `archivos.texto_extraido`: `pdftotext` los pone al final de cada página y el OCR se junta página por página con el texto de `pdftotext` (`mergePages`).
+- Después de extraer, `rebuild_archivo_paginas(archivo_id)` (migración 0010) guarda un `tsvector` por página en `archivo_paginas`. Solo para PDFs, y las páginas vacías no se guardan.
+- En los resultados de texto completo, cada documento trae sus PDFs con las páginas donde coincide la consulta (las primeras 5 y cuántas más). Una búsqueda de varias palabras marca solo las páginas que las tienen todas.
+- Se muestra el número de página y no un link a la página: `#page=N` no funciona en los visores de PDF de muchos celulares.
+
+### Búsquedas recientes
+
+- `recentSearches` (`src/lib/search/search.ts`): las últimas 5 búsquedas con texto del usuario que dieron resultados, sin repetir (sin distinguir acentos ni mayúsculas), tomadas de las últimas 100 de `busquedas`. Se muestran en el inicio y en `/buscar` sin búsqueda.
+
 ## Extracción de texto
 
 - Proceso separado (worker) para no bloquear las requests: cola simple en Postgres (`archivos.estado_extraccion = 'pendiente'`) consumida por un proceso Node.

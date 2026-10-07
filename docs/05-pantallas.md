@@ -15,17 +15,18 @@
 ### Inicio `/`
 
 - Buscador grande arriba, con foco directo en escritorio.
+- Debajo, las últimas 5 búsquedas del usuario (con resultados, sin repetir) para repetirlas con un toque.
 - Acceso por máquina: tarjetas de segmentos → líneas (con foto si hay).
 - Accesos rápidos por tipo (Manuales, Despieces, Videos…).
 - Últimos documentos publicados o actualizados.
 
 ### Resultados de búsqueda `/buscar`
 
-- Buscador arriba, con el texto actual.
+- Buscador arriba, con el texto actual. Sin búsqueda ni filtros, debajo van las búsquedas recientes del usuario (igual que en el inicio).
 - Chips de filtros activos, cada uno con su ✕, y "Limpiar filtros".
 - Botón "Filtros" (bottom sheet en celular) con: máquina (segmento → línea → modelo), tipo, sistema, tema, etiquetas, e "Incluir obsoletos" (desactivado por defecto).
-- Cantidad de resultados.
-- Tarjeta de resultado: título, tipo (ícono + texto), máquinas, fragmento con el texto resaltado, formato (PDF/video) y badge "Obsoleto" si corresponde.
+- Cantidad de resultados. Si la búsqueda se corrigió por un error de tipeo: "Buscamos «X» porque «Y» no aparece en la biblioteca".
+- Tarjeta de resultado: título, tipo (ícono + texto), máquinas, fragmento con el texto resaltado, páginas del PDF donde aparece lo buscado ("Págs. 12, 40 y 47"; con el nombre del archivo si hay más de un PDF), formato (PDF/video) y badge "Obsoleto" si corresponde.
 - Paginación con "Cargar más".
 
 ### Navegación por máquina `/maquinas/[linea]` y `/maquinas/[linea]/[modelo]`

@@ -40,7 +40,20 @@ export type SearchResult = {
   snippet: string | null;
   /** true si vino del complemento por similitud (no del texto completo). */
   aproximado: boolean;
+  /** PDFs del documento y páginas donde aparece lo buscado (solo texto completo). */
+  paginas?: PaginasArchivo[] | null;
 };
+
+export type PaginasArchivo = {
+  nombre: string;
+  /** Primeras MAX_PAGINAS páginas, en orden. */
+  paginas: number[];
+  /** Cuántas páginas más coinciden. */
+  mas: number;
+};
+
+/** Páginas que se listan por archivo en el resultado. */
+const MAX_PAGINAS = 5;
 
 export type SearchResponse = {
   total: number;
@@ -137,7 +150,7 @@ async function fullTextSearch(
         -- Descripción; si no hay, el texto de los archivos (recortado: ts_headline es costoso).
         coalesce(
           nullif(documentos.descripcion, ''),
-          (SELECT left(string_agg(a.texto_extraido, ' ' ORDER BY a.orden), 20000)
+          (SELECT translate(left(string_agg(a.texto_extraido, ' ' ORDER BY a.orden), 20000), E'\f', ' ')
            FROM archivos a WHERE a.documento_id = documentos.id),
           ''
         ),
@@ -145,6 +158,17 @@ async function fullTextSearch(
         ${`StartSel=${MARK_START}, StopSel=${MARK_END}, MaxFragments=1, MaxWords=30, MinWords=12, ShortWord=2, HighlightAll=false`}
       ) AS snippet,
       false AS aproximado,
+      (SELECT json_agg(json_build_object(
+                'nombre', x.nombre, 'paginas', x.paginas, 'mas', x.mas) ORDER BY x.orden)
+       FROM (
+         SELECT a.nombre, a.orden,
+           (array_agg(ap.pagina ORDER BY ap.pagina))[1:${MAX_PAGINAS}] AS paginas,
+           greatest(count(*) - ${MAX_PAGINAS}, 0) AS mas
+         FROM archivos a JOIN archivo_paginas ap ON ap.archivo_id = a.id
+         WHERE a.documento_id = documentos.id AND a.disponible
+           AND ap.busqueda @@ consulta.query
+         GROUP BY a.id
+       ) x) AS paginas,
       count(*) OVER()::int AS total
     FROM documentos LEFT JOIN tipos t ON t.id = documentos.tipo_id, consulta
     WHERE ${where} AND documentos.busqueda @@ consulta.query
@@ -306,6 +330,34 @@ export async function registrarBusqueda(input: {
     filtros,
     cantidadResultados: input.cantidad,
   });
+}
+
+/**
+ * Últimas búsquedas con texto del usuario, sin repetir (sin distinguir acentos ni
+ * mayúsculas), para volver a lanzarlas con un toque. Se omiten las que no dieron
+ * resultados. Mira solo las 100 más recientes.
+ */
+export async function recentSearches(
+  usuarioId: string,
+  limit = 5,
+  tx: Executor = db,
+): Promise<string[]> {
+  const rows = await tx.execute<{ texto: string }>(sql`
+    SELECT texto FROM (
+      SELECT DISTINCT ON (f_unaccent_lower(texto)) texto, creado_en
+      FROM (
+        SELECT texto, creado_en FROM busquedas
+        WHERE usuario_id = ${usuarioId} AND texto IS NOT NULL
+          AND cantidad_resultados > 0
+        ORDER BY creado_en DESC
+        LIMIT 100
+      ) ultimas
+      ORDER BY f_unaccent_lower(texto), creado_en DESC
+    ) distintas
+    ORDER BY creado_en DESC
+    LIMIT ${limit}
+  `);
+  return rows.map((r) => r.texto);
 }
 
 /** Últimos documentos publicados que el usuario puede ver (inicio). */

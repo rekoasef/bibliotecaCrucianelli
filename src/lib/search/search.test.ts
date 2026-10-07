@@ -1,7 +1,9 @@
+import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";
 import {
   archivos,
+  busquedas,
   documentoEtiquetas,
   documentoLineas,
   documentoModelos,
@@ -13,12 +15,18 @@ import {
   segmentos,
   sistemas,
   tipos,
+  usuarios,
   type EstadoDoc,
   type VisibilidadDoc,
 } from "@/db/schema";
 import { normalizeTag } from "@/lib/text";
 import { rebuildDocumentSearch } from "./reindex";
-import { queryWords, searchDocuments, type SearchFilters } from "./search";
+import {
+  queryWords,
+  recentSearches,
+  searchDocuments,
+  type SearchFilters,
+} from "./search";
 
 // Contra Postgres real (configuración es_unaccent, pg_trgm), dentro de una
 // transacción que se deshace al final.
@@ -125,14 +133,18 @@ async function createFixture(tx: Tx) {
         .insert(documentoEtiquetas)
         .values({ documentoId: d.id, itemId: id });
     if (data.texto) {
-      await tx.insert(archivos).values({
-        documentoId: d.id,
-        driveFileId: `test-${crypto.randomUUID()}`,
-        nombre: "archivo.pdf",
-        mimeType: "application/pdf",
-        textoExtraido: data.texto,
-        estadoExtraccion: "ok",
-      });
+      const [archivo] = await tx
+        .insert(archivos)
+        .values({
+          documentoId: d.id,
+          driveFileId: `test-${crypto.randomUUID()}`,
+          nombre: "archivo.pdf",
+          mimeType: "application/pdf",
+          textoExtraido: data.texto,
+          estadoExtraccion: "ok",
+        })
+        .returning({ id: archivos.id });
+      await tx.execute(sql`SELECT rebuild_archivo_paginas(${archivo.id})`);
     }
     await rebuildDocumentSearch(d.id, tx);
   }
@@ -158,7 +170,8 @@ async function createFixture(tx: Tx) {
     titulo: "Manual general",
     tipoId: instructivo.id,
     lineas: [plantor.id],
-    texto: `Para la regulación del dosificador ver la tabla 4. Ajustar el ${palabraPdf}.`,
+    // Tres páginas (separadas con \f, como las deja el worker).
+    texto: `Índice.\fPara la regulación del dosificador ver la tabla 4.\fAjustar el ${palabraPdf} del dosificador.`,
   });
   await doc("obsoleto", {
     titulo: "Regulación del dosificador (edición 2019)",
@@ -305,6 +318,23 @@ describe("searchDocuments", () => {
     });
   });
 
+  it("indica en qué páginas del PDF aparece lo buscado", async () => {
+    await withFixture(async (tx, f) => {
+      const paginasDe = async (q: string) =>
+        (
+          await searchDocuments({ q }, { rol: "concesionario" }, 50, tx)
+        ).results.find((r) => r.id === f.ids.enElTexto)?.paginas;
+      expect(await paginasDe("regulacion dosificador")).toEqual([
+        { nombre: "archivo.pdf", paginas: [2], mas: 0 },
+      ]);
+      expect(await paginasDe("dosificador")).toEqual([
+        { nombre: "archivo.pdf", paginas: [2, 3], mas: 0 },
+      ]);
+      // Lo encontrado solo por el título no tiene páginas.
+      expect(await paginasDe("manual general")).toBeNull();
+    });
+  });
+
   it("corrige errores de tipeo con palabras del texto del PDF", async () => {
     await withFixture(async (tx, f) => {
       // "tornillo…" → "tornllo…" (una letra menos), con otra palabra con acento.
@@ -357,5 +387,41 @@ describe("queryWords", () => {
       "dosificacion",
       "tolva",
     ]);
+  });
+});
+
+describe("recentSearches", () => {
+  it("últimas búsquedas con resultados, sin repetir, la más reciente primero", async () => {
+    await withFixture(async (tx) => {
+      const [u] = await tx
+        .insert(usuarios)
+        .values({
+          nombre: "Prueba",
+          email: `prueba-${crypto.randomUUID()}@example.com`,
+          rol: "fabrica",
+        })
+        .returning({ id: usuarios.id });
+      const base = Date.now() - 60_000;
+      const buscadas: [string, number][] = [
+        ["tolva", 3],
+        ["Dosificación", 2],
+        ["sin nada", 0],
+        ["dosificacion", 4],
+        ["sensor", 1],
+      ];
+      await tx.insert(busquedas).values(
+        buscadas.map(([texto, cantidad], i) => ({
+          usuarioId: u.id,
+          texto,
+          cantidadResultados: cantidad,
+          creadoEn: new Date(base + i * 1000),
+        })),
+      );
+      expect(await recentSearches(u.id, 5, tx)).toEqual([
+        "sensor",
+        "dosificacion",
+        "tolva",
+      ]);
+    });
   });
 });

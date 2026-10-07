@@ -64,6 +64,27 @@
       "when": 1791371824226,
       "tag": "0008_correccion_busqueda",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791372522293,
+      "tag": "0009_archivo_paginas",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791372523358,
+      "tag": "0010_paginas_pdf",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791372620882,
+      "tag": "0011_busquedas_usuario",
+      "breakpoints": true
     }
   ]
 }

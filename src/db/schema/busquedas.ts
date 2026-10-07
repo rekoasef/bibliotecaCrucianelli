@@ -33,6 +33,8 @@ export const busquedas = pgTable(
     index("busquedas_sin_result_idx")
       .on(t.creadoEn)
       .where(sql`${t.cantidadResultados} = 0`),
+    // Búsquedas recientes de cada usuario (recentSearches).
+    index("busquedas_usuario_idx").on(t.usuarioId, t.creadoEn),
   ],
 );
 

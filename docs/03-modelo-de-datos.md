@@ -256,6 +256,16 @@ Se registra al ver la ficha (`ver`), al abrir o descargar un archivo servido (`v
 | cantidad_resultados | int | |
 | creado_en | timestamptz | |
 
+### `archivo_paginas`
+
+Índice de búsqueda por página de los PDFs, para mostrar en qué páginas aparece lo buscado. Lo reescribe `rebuild_archivo_paginas` (llamada por el worker) a partir de `archivos.texto_extraido`, que separa las páginas con `\f`.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| archivo_id | uuid FK → archivos | `ON DELETE CASCADE` |
+| pagina | int | desde 1; PK (archivo_id, pagina) |
+| busqueda | tsvector | `to_tsvector('es_unaccent', texto de la página)` |
+
 ### `vocabulario`
 
 Palabras que aparecen en los documentos, para corregir errores de tipeo en la búsqueda (ver `02-arquitectura.md`, "Consulta"). La llena `rebuild_document_search`; solo crece.
@@ -286,6 +296,7 @@ CREATE INDEX archivos_extraccion_idx  ON archivos (estado_extraccion) WHERE esta
 CREATE INDEX accesos_documento_idx    ON accesos (documento_id, creado_en);
 CREATE INDEX accesos_usuario_idx      ON accesos (usuario_id, creado_en);
 CREATE INDEX busquedas_sin_result_idx ON busquedas (creado_en) WHERE cantidad_resultados = 0;
+CREATE INDEX busquedas_usuario_idx    ON busquedas (usuario_id, creado_en);
 ```
 
 Para el índice trigram sin acentos sobre `titulo`, usar una función `immutable` que envuelva `unaccent(lower(...))` (`unaccent` por sí sola no es `immutable`).
