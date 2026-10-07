@@ -18,7 +18,7 @@ import {
 } from "@/db/schema";
 import { normalizeTag } from "@/lib/text";
 import { rebuildDocumentSearch } from "./reindex";
-import { searchDocuments, type SearchFilters } from "./search";
+import { queryWords, searchDocuments, type SearchFilters } from "./search";
 
 // Contra Postgres real (configuración es_unaccent, pg_trgm), dentro de una
 // transacción que se deshace al final.
@@ -40,6 +40,11 @@ type Fixture = Awaited<ReturnType<typeof createFixture>>;
 
 async function createFixture(tx: Tx) {
   const x = crypto.randomUUID().slice(0, 6);
+  // Palabras inventadas (solo letras, para que entren al vocabulario) que no
+  // existen fuera del fixture.
+  const letras = x.replace(/[0-9]/g, (d) => "ghijklmnop"[Number(d)]);
+  const palabraPdf = `tornillo${letras}`;
+  const palabraFabrica = `rodamiento${letras}`;
   const [seg] = await tx
     .insert(segmentos)
     .values({ nombre: `Gruesos ${x}`, slug: `gruesos-${x}` })
@@ -153,7 +158,7 @@ async function createFixture(tx: Tx) {
     titulo: "Manual general",
     tipoId: instructivo.id,
     lineas: [plantor.id],
-    texto: "Para la regulación del dosificador ver la tabla 4.",
+    texto: `Para la regulación del dosificador ver la tabla 4. Ajustar el ${palabraPdf}.`,
   });
   await doc("obsoleto", {
     titulo: "Regulación del dosificador (edición 2019)",
@@ -166,6 +171,7 @@ async function createFixture(tx: Tx) {
     tipoId: despiece.id,
     visibilidad: "fabrica",
     lineas: [gringa.id],
+    descripcion: `Cambio del ${palabraFabrica}.`,
   });
   await doc("borrador", {
     titulo: "Regulación dosificador borrador",
@@ -177,6 +183,8 @@ async function createFixture(tx: Tx) {
   return {
     ids,
     x,
+    palabraPdf,
+    palabraFabrica,
     slugs: {
       gringa: gringa.slug,
       gringaV: gringaV.slug,
@@ -295,5 +303,59 @@ describe("searchDocuments", () => {
       expect(r.snippet).toContain("ver la tabla");
       expect(r.snippet).not.toContain("<b>");
     });
+  });
+
+  it("corrige errores de tipeo con palabras del texto del PDF", async () => {
+    await withFixture(async (tx, f) => {
+      // "tornillo…" → "tornllo…" (una letra menos), con otra palabra con acento.
+      const q = `Regulación ${f.palabraPdf.replace("tornillo", "tornllo")}`;
+      const { results, correccion } = await searchDocuments(
+        { q },
+        { rol: "concesionario" },
+        50,
+        tx,
+      );
+      expect(correccion).toBe(`Regulación ${f.palabraPdf}`);
+      expect(results.map((r) => r.id)).toContain(f.ids.enElTexto);
+    });
+  });
+
+  it("no corrige con palabras de documentos que el usuario no puede ver", async () => {
+    await withFixture(async (tx, f) => {
+      const q = f.palabraFabrica.replace("rodamiento", "rodamento");
+      const conc = await searchDocuments(
+        { q },
+        { rol: "concesionario" },
+        50,
+        tx,
+      );
+      expect(conc.correccion).toBeUndefined();
+      expect(conc.results.map((r) => r.id)).not.toContain(f.ids.soloFabrica);
+
+      const fab = await searchDocuments({ q }, { rol: "fabrica" }, 50, tx);
+      expect(fab.correccion).toBe(f.palabraFabrica);
+      expect(fab.results.map((r) => r.id)).toContain(f.ids.soloFabrica);
+    });
+  });
+
+  it("no corrige si la búsqueda ya encuentra resultados", async () => {
+    await withFixture(async (tx, f) => {
+      const { correccion } = await searchDocuments(
+        { q: f.palabraPdf },
+        { rol: "concesionario" },
+        50,
+        tx,
+      );
+      expect(correccion).toBeUndefined();
+    });
+  });
+});
+
+describe("queryWords", () => {
+  it("normaliza como el vocabulario y descarta palabras cortas y números", () => {
+    expect(queryWords("Dosificación de la tolva 2024 tolva")).toEqual([
+      "dosificacion",
+      "tolva",
+    ]);
   });
 });

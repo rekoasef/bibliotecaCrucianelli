@@ -72,7 +72,7 @@ export default async function BuscarPage({
   };
   const pagina = Math.min(Math.max(Number(sp.pagina) || 1, 1), 25);
 
-  const [options, { total, results }] = await Promise.all([
+  const [options, { total, results, correccion }] = await Promise.all([
     getSearchOptions(user),
     searchDocuments(filters, user, pagina * PAGE_SIZE),
   ]);
@@ -164,10 +164,19 @@ export default async function BuscarPage({
             {filters.q && (
               <>
                 {" "}
-                para <span className="text-foreground">«{filters.q}»</span>
+                para{" "}
+                <span className="text-foreground">
+                  «{correccion ?? filters.q}»
+                </span>
               </>
             )}
           </h2>
+          {correccion && (
+            <p className="-mt-2 text-muted-foreground">
+              Buscamos «{correccion}» porque «{filters.q}» no aparece en la
+              biblioteca.
+            </p>
+          )}
 
           {total === 0 ? (
             <EmptyState hayFiltros={activeFilters.length > 0} q={filters.q} />

@@ -42,6 +42,13 @@ export type SearchResult = {
   aproximado: boolean;
 };
 
+export type SearchResponse = {
+  total: number;
+  results: SearchResult[];
+  /** Consulta corregida que se usó en lugar de la escrita ("dosificacin" → "dosificacion"). */
+  correccion?: string;
+};
+
 /** Condiciones de filtro (máquina en dos niveles: docs/02, "Filtro por máquina"). */
 function filterConditions(f: SearchFilters): SQL[] {
   const c: SQL[] = [];
@@ -116,6 +123,91 @@ const especificidad = sql`(
   + (CASE WHEN (SELECT count(*) FROM documento_temas dt WHERE dt.documento_id = documentos.id) = 1 THEN 1 ELSE 0 END)
 )`;
 
+/** Texto completo sobre `documentos.busqueda`, ordenado por relevancia. */
+async function fullTextSearch(
+  q: string,
+  where: SQL,
+  limit: number,
+  tx: Executor,
+): Promise<{ total: number; results: SearchResult[] }> {
+  const rows = await tx.execute<SearchResult & { total: number }>(sql`
+    WITH consulta AS (SELECT websearch_to_tsquery('es_unaccent', ${q}) AS query)
+    SELECT ${cardColumns},
+      ts_headline('es_unaccent',
+        -- Descripción; si no hay, el texto de los archivos (recortado: ts_headline es costoso).
+        coalesce(
+          nullif(documentos.descripcion, ''),
+          (SELECT left(string_agg(a.texto_extraido, ' ' ORDER BY a.orden), 20000)
+           FROM archivos a WHERE a.documento_id = documentos.id),
+          ''
+        ),
+        consulta.query,
+        ${`StartSel=${MARK_START}, StopSel=${MARK_END}, MaxFragments=1, MaxWords=30, MinWords=12, ShortWord=2, HighlightAll=false`}
+      ) AS snippet,
+      false AS aproximado,
+      count(*) OVER()::int AS total
+    FROM documentos LEFT JOIN tipos t ON t.id = documentos.tipo_id, consulta
+    WHERE ${where} AND documentos.busqueda @@ consulta.query
+    ORDER BY (documentos.estado = 'obsoleto'),
+             ts_rank_cd(documentos.busqueda, consulta.query) DESC,
+             ${especificidad} DESC,
+             coalesce(documentos.publicado_en, documentos.creado_en) DESC
+    LIMIT ${limit}
+  `);
+  return { total: rows[0]?.total ?? 0, results: [...rows] };
+}
+
+/** Palabras de la consulta, normalizadas como en `vocabulario` (migración 0008). */
+export function queryWords(q: string): string[] {
+  const words = normalizeTag(q).match(/[a-z]+/g) ?? [];
+  return [...new Set(words)].filter((w) => w.length >= 4 && w.length <= 30);
+}
+
+/**
+ * Corrige las palabras de la consulta que no existen en la biblioteca por la más
+ * parecida del vocabulario ("dosificacin" → "dosificacion"): hasta 1 letra de
+ * diferencia en palabras de 4 o 5 letras, hasta 2 en las más largas. Solo propone
+ * palabras que aparecen en algún documento que el usuario puede ver, así la
+ * corrección no revela el contenido de documentos ocultos. Devuelve la consulta
+ * corregida, o null si no hay nada que corregir.
+ */
+async function correctQuery(
+  q: string,
+  viewer: Viewer,
+  tx: Executor,
+): Promise<string | null> {
+  const words = queryWords(q);
+  if (!words.length) return null;
+
+  const rows = await tx.execute<{ original: string; sugerida: string }>(sql`
+    SELECT w.palabra AS original, c.palabra AS sugerida
+    FROM unnest(ARRAY[${sql.join(
+      words.map((w) => sql`${w}`),
+      sql`, `,
+    )}]::text[]) AS w(palabra)
+    CROSS JOIN LATERAL (
+      SELECT v.palabra FROM vocabulario v
+      WHERE v.palabra % w.palabra
+        AND levenshtein(v.palabra, w.palabra)
+            <= CASE WHEN length(w.palabra) <= 5 THEN 1 ELSE 2 END
+        AND EXISTS (
+          SELECT 1 FROM documentos
+          WHERE ${joinAnd([documentVisibilityFilter(viewer)])}
+            AND documentos.busqueda @@ plainto_tsquery('es_unaccent', v.palabra)
+        )
+      ORDER BY levenshtein(v.palabra, w.palabra),
+               similarity(v.palabra, w.palabra) DESC, v.palabra
+      LIMIT 1
+    ) c
+    WHERE NOT EXISTS (SELECT 1 FROM vocabulario WHERE palabra = w.palabra)
+  `);
+  if (!rows.length) return null;
+
+  const fixes = new Map(rows.map((r) => [r.original, r.sugerida]));
+  // Reemplaza en la consulta original para respetar el resto de lo escrito.
+  return q.replace(/\p{L}+/gu, (word) => fixes.get(normalizeTag(word)) ?? word);
+}
+
 /**
  * Búsqueda de documentos (docs/02, "Consulta"). Siempre aplica la visibilidad del
  * usuario. `limit` crece con "Cargar más" (página × PAGE_SIZE).
@@ -125,7 +217,7 @@ export async function searchDocuments(
   viewer: Viewer,
   limit = PAGE_SIZE,
   tx: Executor = db,
-): Promise<{ total: number; results: SearchResult[] }> {
+): Promise<SearchResponse> {
   const q = filters.q?.trim().slice(0, 200) ?? "";
   const base = [documentVisibilityFilter(viewer), ...filterConditions(filters)];
 
@@ -145,32 +237,20 @@ export async function searchDocuments(
     return { total: rows[0]?.total ?? 0, results: [...rows] };
   }
 
-  const fts = await tx.execute<SearchResult & { total: number }>(sql`
-    WITH consulta AS (SELECT websearch_to_tsquery('es_unaccent', ${q}) AS query)
-    SELECT ${cardColumns},
-      ts_headline('es_unaccent',
-        -- Descripción; si no hay, el texto de los archivos (recortado: ts_headline es costoso).
-        coalesce(
-          nullif(documentos.descripcion, ''),
-          (SELECT left(string_agg(a.texto_extraido, ' ' ORDER BY a.orden), 20000)
-           FROM archivos a WHERE a.documento_id = documentos.id),
-          ''
-        ),
-        consulta.query,
-        ${`StartSel=${MARK_START}, StopSel=${MARK_END}, MaxFragments=1, MaxWords=30, MinWords=12, ShortWord=2, HighlightAll=false`}
-      ) AS snippet,
-      false AS aproximado,
-      count(*) OVER()::int AS total
-    FROM documentos LEFT JOIN tipos t ON t.id = documentos.tipo_id, consulta
-    WHERE ${joinAnd(base)} AND documentos.busqueda @@ consulta.query
-    ORDER BY (documentos.estado = 'obsoleto'),
-             ts_rank_cd(documentos.busqueda, consulta.query) DESC,
-             ${especificidad} DESC,
-             coalesce(documentos.publicado_en, documentos.creado_en) DESC
-    LIMIT ${limit}
-  `);
-  const results: SearchResult[] = [...fts];
-  let total = fts[0]?.total ?? 0;
+  let { total, results } = await fullTextSearch(q, joinAnd(base), limit, tx);
+  let correccion: string | undefined;
+
+  // Sin resultados: probar corrigiendo las palabras que no están en la biblioteca.
+  if (total === 0) {
+    const corregida = await correctQuery(q, viewer, tx);
+    const r = corregida
+      ? await fullTextSearch(corregida, joinAnd(base), limit, tx)
+      : undefined;
+    if (r && r.total > 0) {
+      ({ total, results } = r);
+      correccion = corregida!;
+    }
+  }
 
   // Pocos resultados: complementar por similitud trigram sobre título y etiquetas.
   if (total < FEW_RESULTS) {
@@ -204,7 +284,7 @@ export async function searchDocuments(
     total += similares.length;
   }
 
-  return { total, results };
+  return { total, results, correccion };
 }
 
 /** Registra la búsqueda (docs/03). Las sin resultados alimentan el panel del admin. */

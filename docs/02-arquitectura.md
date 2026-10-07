@@ -152,6 +152,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
   - **D:** texto extraído de los archivos
 - Índice GIN sobre `busqueda`.
 - Índice trigram (`pg_trgm`) sobre título y etiquetas para tolerar errores de tipeo ("dosificadr").
+- Tabla `vocabulario` con todas las palabras de los documentos (título, descripción, taxonomía y texto de los archivos), sin acentos y sin raíz, con índice trigram: sirve para corregir errores de tipeo en cualquier parte del documento ("dosificacin" → "dosificacion").
 
 ### Actualización del índice
 
@@ -165,11 +166,12 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 ### Consulta
 
 1. Se arma la consulta con `websearch_to_tsquery('es_unaccent', q)` (soporta comillas y `-excluir`).
-2. Si hay pocos resultados, se complementa con coincidencias por similitud trigram sobre título y etiquetas.
-3. Se aplican los filtros (máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
-4. Orden: `ts_rank_cd` → documentos `vigente` antes que `obsoleto` → documentos específicos (un solo sistema/tema, asociados a modelo) antes que generales → más recientes.
-5. Se devuelve un fragmento resaltado con `ts_headline` sobre título/descripción.
-6. Si no hay resultados, se registra en `busquedas` con `cantidad_resultados = 0`.
+2. Si no hay resultados, cada palabra que no está en `vocabulario` se reemplaza por la más parecida que sí está y se repite la búsqueda; la pantalla muestra "Buscamos «X» porque «Y» no aparece en la biblioteca".
+3. Si hay pocos resultados, se complementa con coincidencias por similitud trigram sobre título y etiquetas.
+4. Se aplican los filtros (máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
+5. Orden: `ts_rank_cd` → documentos `vigente` antes que `obsoleto` → documentos específicos (un solo sistema/tema, asociados a modelo) antes que generales → más recientes.
+6. Se devuelve un fragmento resaltado con `ts_headline` sobre título/descripción.
+7. Si no hay resultados, se registra en `busquedas` con `cantidad_resultados = 0`.
 
 ### Filtro por máquina
 
@@ -180,6 +182,7 @@ Filtrar por un **modelo** devuelve los documentos asociados a ese modelo **y** l
 - `rebuild_document_search(uuid)` es una función SQL (migración 0005); desde TypeScript se llama con `rebuildDocumentSearch` / `rebuildSearchForTaxonomia` (`src/lib/search/reindex.ts`). Un documento asociado a una línea completa indexa también los nombres de sus modelos, y uno asociado a un modelo, el de su línea; por eso renombrar una línea o un modelo recalcula ambos lados.
 - El texto extraído entra al índice con un tope de 300.000 caracteres por documento (límite de tamaño de `tsvector`).
 - La consulta está en `src/lib/search/search.ts`. El complemento por errores de tipeo usa `word_similarity` ≥ 0,5 sobre el título y las etiquetas cuando hay menos de 5 resultados; esos resultados se muestran aparte ("Resultados parecidos").
+- Corrección de errores de tipeo (migración 0008): `rebuild_document_search` también agrega las palabras del documento a `vocabulario` (config `simple` sobre `f_unaccent_lower`; solo letras, de 4 a 30 caracteres). La tabla solo crece. Un candidato tiene que estar a lo sumo a 1 letra de distancia (`levenshtein`, `fuzzystrmatch`) en palabras de 4 o 5 letras, y a 2 en las más largas. Además tiene que aparecer en algún documento visible para el usuario (`documentVisibilityFilter`), así la corrección no revela palabras de documentos ocultos y las palabras de documentos borrados nunca se proponen.
 - El fragmento resaltado sale de la descripción o, si no hay, del texto de los archivos (primeros 20.000 caracteres). Se marca con caracteres de control, no con HTML, y el cliente los convierte en `<mark>`.
 - Se registran las búsquedas con texto o filtros (solo la primera página).
 

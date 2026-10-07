@@ -50,6 +50,20 @@
       "when": 1791207232008,
       "tag": "0006_tareas",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791371822450,
+      "tag": "0007_vocabulario",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791371824226,
+      "tag": "0008_correccion_busqueda",
+      "breakpoints": true
     }
   ]
 }

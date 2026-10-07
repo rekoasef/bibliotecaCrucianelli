@@ -256,11 +256,20 @@ Se registra al ver la ficha (`ver`), al abrir o descargar un archivo servido (`v
 | cantidad_resultados | int | |
 | creado_en | timestamptz | |
 
+### `vocabulario`
+
+Palabras que aparecen en los documentos, para corregir errores de tipeo en la búsqueda (ver `02-arquitectura.md`, "Consulta"). La llena `rebuild_document_search`; solo crece.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| palabra | text PK | sin acentos, en minúscula, sin raíz; solo letras, 4 a 30 caracteres |
+
 ## Índices
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;  -- levenshtein() para corregir errores de tipeo
 
 -- Configuración de búsqueda en español sin acentos
 CREATE TEXT SEARCH CONFIGURATION es_unaccent (COPY = spanish);
@@ -270,6 +279,7 @@ ALTER TEXT SEARCH CONFIGURATION es_unaccent
 CREATE INDEX documentos_busqueda_idx  ON documentos USING gin (busqueda);
 CREATE INDEX documentos_titulo_trgm   ON documentos USING gin (titulo gin_trgm_ops);
 CREATE INDEX etiquetas_nombre_trgm    ON etiquetas  USING gin (nombre_normalizado gin_trgm_ops);
+CREATE INDEX vocabulario_palabra_trgm ON vocabulario USING gin (palabra gin_trgm_ops);
 CREATE INDEX documentos_estado_vis    ON documentos (estado, visibilidad);
 CREATE INDEX archivos_documento_idx   ON archivos (documento_id);
 CREATE INDEX archivos_extraccion_idx  ON archivos (estado_extraccion) WHERE estado_extraccion = 'pendiente';

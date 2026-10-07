@@ -35,3 +35,18 @@ export const busquedas = pgTable(
       .where(sql`${t.cantidadResultados} = 0`),
   ],
 );
+
+// Palabras (sin acentos, en minúscula) que aparecen en los documentos, para
+// corregir errores de tipeo ("dosificacin" → "dosificacion"). La llena
+// rebuild_document_search (migración 0008). Solo crece: una palabra que ya no
+// está en ningún documento visible nunca se propone (search.ts lo verifica).
+export const vocabulario = pgTable(
+  "vocabulario",
+  { palabra: text("palabra").primaryKey() },
+  (t) => [
+    index("vocabulario_palabra_trgm").using(
+      "gin",
+      t.palabra.op("gin_trgm_ops"),
+    ),
+  ],
+);
