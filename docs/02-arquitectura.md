@@ -163,7 +163,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 - Configuración de texto propia, por ejemplo `es_unaccent`, basada en `spanish` con `unaccent` para que "regulacion" encuentre "regulación".
 - Columna `documentos.busqueda` (`tsvector`) con pesos:
   - **A:** título
-  - **B:** etiquetas, nombres de máquinas (línea y modelo), tipo, sistemas, temas, productos
+  - **B:** etiquetas, nombres de máquinas (línea y modelo), tipo, sistemas, temas, productos, tecnologías
   - **C:** descripción
   - **D:** texto extraído de los archivos
 - Índice GIN sobre `busqueda`.
@@ -175,7 +175,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 `busqueda` depende de varias tablas, así que no puede ser una columna generada. Se recalcula con una función `rebuildDocumentSearch(documentoId)` llamada al:
 
 - guardar o publicar un documento,
-- cambiar sus etiquetas, máquinas, sistemas, temas o productos,
+- cambiar sus etiquetas, máquinas, sistemas, temas, productos o tecnologías,
 - terminar la extracción de texto de uno de sus archivos,
 - renombrar una entrada de taxonomía (recalcular los documentos afectados).
 
@@ -184,7 +184,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 1. Se arma la consulta con `websearch_to_tsquery('es_unaccent', q)` (soporta comillas y `-excluir`).
 2. Si no hay resultados, cada palabra que no está en `vocabulario` se reemplaza por la más parecida que sí está y se repite la búsqueda; la pantalla muestra "Buscamos «X» porque «Y» no aparece en la biblioteca".
 3. Si hay pocos resultados, se complementa con coincidencias por similitud trigram sobre título y etiquetas.
-4. Se aplican los filtros (producto, máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
+4. Se aplican los filtros (producto, tecnología, máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
 5. Orden: `ts_rank_cd` → documentos `vigente` antes que `obsoleto` → documentos específicos (un solo sistema/tema, asociados a modelo) antes que generales → más recientes.
 6. Se devuelve un fragmento resaltado con `ts_headline` sobre título/descripción.
 7. Si no hay resultados, se registra en `busquedas` con `cantidad_resultados = 0`.

@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ChevronRight, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
+import { Franja } from "@/components/layout/franja";
+import { LineaList, LineaRow } from "@/components/maquinas/linea-row";
 import { ResultCard } from "@/components/search/result-card";
 import { RecentSearches } from "@/components/search/recent-searches";
 import { SearchForm } from "@/components/search/search-form";
@@ -23,28 +25,42 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-10 md:gap-14">
-      <section aria-labelledby="titulo-buscar" className="flex flex-col gap-4">
-        <h1
-          id="titulo-buscar"
-          className="text-2xl font-bold tracking-tight md:text-4xl"
+      <Franja>
+        <section
+          aria-labelledby="titulo-buscar"
+          className="flex flex-col gap-4"
         >
-          ¿Qué documentación necesitás?
-        </h1>
-        <SearchForm size="lg" autoFocusOnDesktop className="max-w-3xl" />
-        {busquedas.length > 0 ? (
-          <RecentSearches searches={busquedas} className="max-w-3xl" />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Buscá por máquina, tema o lo que diga el documento. Por ejemplo:{" "}
-            <Link
-              href="/buscar?q=gringa+v+despiece"
-              className="font-medium text-brand-strong underline underline-offset-4"
-            >
-              gringa v despiece
-            </Link>
-          </p>
-        )}
-      </section>
+          <h1
+            id="titulo-buscar"
+            className="max-w-[16ch] font-display text-[1.75rem] leading-[1.1] font-extrabold md:max-w-[22ch] md:text-5xl"
+          >
+            ¿Qué documentación necesitás?
+          </h1>
+          <SearchForm
+            size="lg"
+            tone="franja"
+            autoFocusOnDesktop
+            className="max-w-3xl"
+          />
+          {busquedas.length > 0 ? (
+            <RecentSearches
+              searches={busquedas}
+              tone="franja"
+              className="max-w-3xl"
+            />
+          ) : (
+            <p className="text-white">
+              Buscá por máquina, tema o lo que diga el documento. Por ejemplo:{" "}
+              <Link
+                href="/buscar?q=gringa+v+despiece"
+                className="font-bold underline decoration-2 underline-offset-4"
+              >
+                gringa v despiece
+              </Link>
+            </p>
+          )}
+        </section>
+      </Franja>
 
       <section
         aria-labelledby="titulo-maquinas"
@@ -57,44 +73,35 @@ export default async function HomePage() {
         >
           Por máquina
         </SectionTitle>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {segmentos.map((segmento) => (
-            <div key={segmento.id} className="rounded-xl border bg-card p-2">
-              <h3 className="px-3 pt-2 pb-1 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                {segmento.nombre}
-              </h3>
-              <ul>
-                {segmento.lineas.map((linea) => (
-                  <li key={linea.slug}>
-                    <Link
-                      href={`/maquinas/${linea.slug}`}
-                      className="flex min-h-12 items-center justify-between rounded-lg px-3 text-lg font-semibold transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-secondary"
-                    >
-                      {linea.nombre}
-                      <ChevronRight
-                        aria-hidden
-                        className="size-5 text-muted-foreground"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <LineaList key={segmento.id} segmento={segmento.nombre}>
+              {segmento.lineas.map((linea) => (
+                <LineaRow
+                  key={linea.slug}
+                  href={`/maquinas/${linea.slug}`}
+                  nombre={linea.nombre}
+                />
+              ))}
+            </LineaList>
           ))}
         </div>
       </section>
 
       <section aria-labelledby="titulo-tipos" className="flex flex-col gap-4">
         <SectionTitle id="titulo-tipos">Por tipo de documento</SectionTitle>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ul className="flex flex-wrap gap-2">
           {tipos.map(({ nombre: label, slug }) => (
             <li key={slug}>
               <Link
                 href={`/buscar?tipo=${slug}`}
-                className="flex h-full min-h-24 flex-col justify-between gap-3 rounded-xl border bg-card p-4 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
+                className="flex min-h-12 items-center gap-2 rounded-full border bg-card pr-4 pl-3 font-semibold transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
               >
-                <TipoIcon slug={slug} className="size-6 text-brand-strong" />
-                <span className="leading-tight">{label}</span>
+                <TipoIcon
+                  slug={slug}
+                  className="size-5 shrink-0 text-brand-strong"
+                />
+                <span>{label}</span>
               </Link>
             </li>
           ))}
@@ -138,7 +145,10 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-end justify-between gap-4">
-      <h2 id={id} className="text-xl font-bold tracking-tight md:text-2xl">
+      <h2
+        id={id}
+        className="font-display text-xl font-extrabold tracking-tight md:text-2xl"
+      >
         {children}
       </h2>
       {href && (

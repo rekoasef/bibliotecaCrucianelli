@@ -20,9 +20,9 @@ export function DesktopNav({ mode }: { mode: NavMode }) {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex h-11 items-center gap-2 rounded-lg px-3 font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                  "relative flex h-11 items-center gap-2 rounded-lg px-3 font-medium text-on-slate-muted transition-colors hover:bg-slate-raised hover:text-white focus-visible:ring-3 focus-visible:ring-white/60 focus-visible:outline-none",
                   active &&
-                    "text-foreground after:absolute after:inset-x-3 after:-bottom-[7px] after:h-0.5 after:rounded-full after:bg-brand",
+                    "text-white after:absolute after:inset-x-3 after:-bottom-[10px] after:h-[3px] after:bg-brand",
                 )}
               >
                 <Icon aria-hidden className="size-5" />

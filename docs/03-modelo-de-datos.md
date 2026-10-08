@@ -21,6 +21,7 @@ segmentos 1─N lineas 1─N modelos
    documentos 1─N archivos
    documentos N─M etiquetas (documento_etiquetas)
    documentos N─M productos (documento_productos)
+   documentos N─M tecnologias (documento_tecnologias)
 
 concesionarios 1─N usuarios
 usuarios 0..1─N accesos N─1 documentos   (usuario null = cliente final sin cuenta)
@@ -133,8 +134,8 @@ Contadores de ventana fija para el rate limiting de login, recuperación de cont
 
 ## Taxonomía
 
-### `tipos`, `sistemas`, `temas`, `productos`
-Las cuatro con la misma estructura (`productos`: Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra):
+### `tipos`, `sistemas`, `temas`, `productos`, `tecnologias`
+Las cinco con la misma estructura (`productos`: Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra; `tecnologias`: Precision Planting, Leaf):
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -189,7 +190,7 @@ Reglas para publicar (validadas en el servidor, además de los `CHECK`):
 - al menos un archivo,
 - al menos una máquina (línea o modelo) **o** un producto asociado (Tecnología y Accesorios pueden no corresponder a una máquina).
 
-Sistemas, temas, productos y etiquetas son opcionales (un manual general puede no tener).
+Sistemas, temas, productos, tecnologías y etiquetas son opcionales (un manual general puede no tener).
 
 ### `archivos`
 
@@ -218,6 +219,7 @@ Sistemas, temas, productos y etiquetas son opcionales (un manual general puede n
 | `documento_sistemas` | documento_id, sistema_id | (documento_id, sistema_id) |
 | `documento_temas` | documento_id, tema_id | (documento_id, tema_id) |
 | `documento_productos` | documento_id, producto_id | (documento_id, producto_id) |
+| `documento_tecnologias` | documento_id, tecnologia_id | (documento_id, tecnologia_id) |
 | `documento_etiquetas` | documento_id, etiqueta_id | (documento_id, etiqueta_id) |
 
 Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna (borrar una etiqueta la quita de los documentos; líneas, modelos, sistemas y temas no se borran, se desactivan).
@@ -228,7 +230,7 @@ Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna 
 
 - Las versiones conviven: el documento viejo no se borra.
 - Flujo "Nueva versión" desde la ficha de admin:
-  1. se crea un documento nuevo en `borrador` copiando título, tipo, públicos, máquinas, sistemas, temas, productos y etiquetas, con `reemplaza_id` apuntando al vigente;
+  1. se crea un documento nuevo en `borrador` copiando título, tipo, públicos, máquinas, sistemas, temas, productos, tecnologías y etiquetas, con `reemplaza_id` apuntando al vigente;
   2. el admin elige el archivo nuevo en Drive y ajusta lo que haga falta;
   3. al publicar el nuevo, en la misma transacción el anterior pasa a `obsoleto` con `reemplazado_por_id` apuntando al nuevo.
 - Para mostrar el historial, se recorre la cadena de `reemplazado_por_id` (consulta recursiva).
@@ -309,5 +311,5 @@ Para el índice trigram sin acentos sobre `titulo`, usar una función `immutable
 
 - Segmentos: Granos gruesos, Granos finos (activos) y Fertilización (inactivo).
 - Líneas y modelos: ver `04-taxonomia.md`.
-- Tipos, sistemas, temas y productos iniciales: ver `04-taxonomia.md`.
+- Tipos, sistemas, temas, productos y tecnologías iniciales: ver `04-taxonomia.md`.
 - Un usuario admin inicial, con email tomado de una variable de entorno (`ADMIN_EMAIL`) y que recibe la invitación al ejecutar el seed.

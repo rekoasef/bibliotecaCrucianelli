@@ -94,6 +94,7 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 - [x] Productos (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra): taxonomía, filtro de búsqueda, índice; se puede publicar con producto y sin máquina
 - [x] Pausa de cuentas por inactividad (`INACTIVIDAD_DIAS`) y rehabilitación desde el admin
 - [x] Registros: búsquedas frecuentes y documentos más consultados, ordenables A → Z / Z → A
+- [x] Tecnologías (Precision Planting, Leaf, administrables): taxonomía, filtro e índice de búsqueda
 - [ ] Revisar con fábrica qué documentos se marcan para clientes y qué plazo de inactividad usar
 - [ ] Clasificar los documentos existentes por producto
 

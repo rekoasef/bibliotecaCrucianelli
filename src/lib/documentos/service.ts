@@ -18,6 +18,7 @@ import {
   documentoModelos,
   documentoProductos,
   documentoSistemas,
+  documentoTecnologias,
   documentoTemas,
   documentos,
   etiquetas,
@@ -233,7 +234,7 @@ export async function getDocumentoAdmin(id: string) {
   const [doc] = await db.select().from(documentos).where(eq(documentos.id, id));
   if (!doc) return null;
 
-  const [arch, lin, mod, sis, tem, prod, etq] = await Promise.all([
+  const [arch, lin, mod, sis, tem, prod, tec, etq] = await Promise.all([
     db
       .select()
       .from(archivos)
@@ -260,6 +261,10 @@ export async function getDocumentoAdmin(id: string) {
       .from(documentoProductos)
       .where(eq(documentoProductos.documentoId, id)),
     db
+      .select({ id: documentoTecnologias.itemId })
+      .from(documentoTecnologias)
+      .where(eq(documentoTecnologias.documentoId, id)),
+    db
       .select({ nombre: etiquetas.nombre })
       .from(documentoEtiquetas)
       .innerJoin(etiquetas, eq(documentoEtiquetas.itemId, etiquetas.id))
@@ -275,6 +280,7 @@ export async function getDocumentoAdmin(id: string) {
     sistemaIds: sis.map((r) => r.id),
     temaIds: tem.map((r) => r.id),
     productoIds: prod.map((r) => r.id),
+    tecnologiaIds: tec.map((r) => r.id),
     etiquetas: etq.map((r) => r.nombre),
   };
 }
@@ -309,6 +315,7 @@ export type ClasificacionInput = {
   sistemaIds: string[];
   temaIds: string[];
   productoIds: string[];
+  tecnologiaIds: string[];
   etiquetas: string;
 };
 
@@ -320,6 +327,7 @@ async function replaceRelation(
     | typeof documentoSistemas
     | typeof documentoTemas
     | typeof documentoProductos
+    | typeof documentoTecnologias
     | typeof documentoEtiquetas,
   documentoId: string,
   ids: string[],
@@ -429,6 +437,12 @@ export async function guardarClasificacion(
       documentoProductos,
       documentoId,
       input.productoIds,
+    );
+    await replaceRelation(
+      tx,
+      documentoTecnologias,
+      documentoId,
+      input.tecnologiaIds,
     );
     await replaceRelation(
       tx,
@@ -588,6 +602,7 @@ export async function nuevaVersion(documentoId: string, usuarioId: string) {
       documentoSistemas,
       documentoTemas,
       documentoProductos,
+      documentoTecnologias,
       documentoEtiquetas,
     ]) {
       const rows = await tx

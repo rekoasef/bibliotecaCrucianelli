@@ -8,6 +8,7 @@ import { db } from "./index";
 import {
   SEED_MAQUINAS,
   SEED_SISTEMAS,
+  SEED_TECNOLOGIAS,
   SEED_PRODUCTOS,
   SEED_TEMAS,
   SEED_TIPOS,
@@ -18,6 +19,7 @@ import {
   productos,
   segmentos,
   sistemas,
+  tecnologias,
   temas,
   tipos,
   usuarios,
@@ -96,6 +98,7 @@ async function seedCatalogos() {
     [sistemas, SEED_SISTEMAS],
     [temas, SEED_TEMAS],
     [productos, SEED_PRODUCTOS],
+    [tecnologias, SEED_TECNOLOGIAS],
   ] as const;
   for (const [tabla, nombres] of catalogos) {
     await db
@@ -109,7 +112,7 @@ async function seedCatalogos() {
       )
       .onConflictDoNothing();
   }
-  console.info("Tipos, sistemas, temas y productos: listo.");
+  console.info("Tipos, sistemas, temas, productos y tecnologías: listo.");
 }
 
 async function main() {

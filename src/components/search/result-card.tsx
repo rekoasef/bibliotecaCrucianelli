@@ -27,17 +27,13 @@ export function ResultCard({
       href={`/documentos/${r.id}`}
       className="flex flex-col gap-2 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
     >
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-brand-strong">
-        {r.tipoSlug && <TipoIcon slug={r.tipoSlug} className="size-4" />}
-        {r.tipoNombre ?? "Sin tipo"}
+      <span className="text-lg leading-snug font-bold text-foreground">
+        {r.titulo || "Sin título"}
         {r.estado !== "vigente" && (
-          <span className="rounded-full border px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+          <span className="ml-2 inline-flex translate-y-[-2px] rounded-full border border-foreground/30 px-2 py-0.5 align-middle text-xs font-semibold text-muted-foreground">
             {r.estado === "obsoleto" ? "Obsoleto" : "Borrador"}
           </span>
         )}
-      </span>
-      <span className="text-lg leading-snug font-semibold text-foreground">
-        {r.titulo || "Sin título"}
       </span>
       {!compact && r.snippet && (
         <span className="line-clamp-3 text-muted-foreground">
@@ -59,9 +55,19 @@ export function ResultCard({
           </span>
         </span>
       )}
-      <span className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
-        {r.maquinas && <span>{r.maquinas}</span>}
-        {formatos.length > 0 && <span>{formatos.join(" · ")}</span>}
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="flex items-center gap-1.5 font-semibold text-brand-strong">
+          {r.tipoSlug && <TipoIcon slug={r.tipoSlug} className="size-4" />}
+          {r.tipoNombre ?? "Sin tipo"}
+        </span>
+        {r.maquinas && (
+          <span className="font-semibold tracking-wide text-foreground uppercase">
+            {r.maquinas}
+          </span>
+        )}
+        {formatos.length > 0 && (
+          <span className="text-muted-foreground">{formatos.join(" · ")}</span>
+        )}
       </span>
     </Link>
   );

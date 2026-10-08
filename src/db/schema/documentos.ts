@@ -18,7 +18,14 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 import { lineas, modelos } from "./maquinas";
-import { etiquetas, productos, sistemas, temas, tipos } from "./taxonomia";
+import {
+  etiquetas,
+  productos,
+  sistemas,
+  tecnologias,
+  temas,
+  tipos,
+} from "./taxonomia";
 import { usuarios } from "./usuarios";
 
 export const estadoDoc = pgEnum("estado_doc", [
@@ -196,6 +203,11 @@ export const documentoProductos = relacion(
   "documento_productos",
   "producto_id",
   () => productos.id,
+);
+export const documentoTecnologias = relacion(
+  "documento_tecnologias",
+  "tecnologia_id",
+  () => tecnologias.id,
 );
 export const documentoEtiquetas = relacion(
   "documento_etiquetas",

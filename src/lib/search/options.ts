@@ -10,6 +10,7 @@ import {
   productos,
   segmentos,
   sistemas,
+  tecnologias,
   temas,
   tipos,
 } from "@/db/schema";
@@ -28,7 +29,12 @@ export type MaquinaOpcion = {
 export const getSearchOptions = cache(async (viewer: Viewer) => {
   const soloActivos = viewer.rol !== "admin";
   const catalogo = (
-    t: typeof tipos | typeof sistemas | typeof temas | typeof productos,
+    t:
+      | typeof tipos
+      | typeof sistemas
+      | typeof temas
+      | typeof productos
+      | typeof tecnologias,
   ) =>
     db
       .select({ nombre: t.nombre, slug: t.slug })
@@ -44,6 +50,7 @@ export const getSearchOptions = cache(async (viewer: Viewer) => {
     sistemasOps,
     temasOps,
     productosOps,
+    tecnologiasOps,
     etiquetasOps,
   ] = await Promise.all([
     db
@@ -65,6 +72,7 @@ export const getSearchOptions = cache(async (viewer: Viewer) => {
     catalogo(sistemas),
     catalogo(temas),
     catalogo(productos),
+    catalogo(tecnologias),
     // Solo etiquetas de documentos que el usuario puede ver.
     db
       .selectDistinct({
@@ -103,6 +111,7 @@ export const getSearchOptions = cache(async (viewer: Viewer) => {
     sistemas: sistemasOps,
     temas: temasOps,
     productos: productosOps,
+    tecnologias: tecnologiasOps,
     etiquetas: etiquetasOps,
   };
 });

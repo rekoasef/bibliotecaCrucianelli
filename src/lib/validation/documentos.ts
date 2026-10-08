@@ -32,6 +32,7 @@ export const clasificacionSchema = z.object({
   sistemaIds: ids,
   temaIds: ids,
   productoIds: ids,
+  tecnologiaIds: ids,
   etiquetas: z.string().max(1000).default(""),
 });
 
@@ -56,6 +57,7 @@ export function clasificacionFromForm(formData: FormData) {
     sistemaIds: all("sistemas"),
     temaIds: all("temas"),
     productoIds: all("productos"),
+    tecnologiaIds: all("tecnologias"),
     etiquetas: one("etiquetas") ?? "",
   };
 }

@@ -47,3 +47,7 @@ next-env.d.ts
 
 # Backups locales del compose de producción
 /backups/
+
+# Capturas y estado de trabajo de la skill de diseño
+.impeccable/review/
+.impeccable/build/

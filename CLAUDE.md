@@ -86,7 +86,7 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 - Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
 - Excepción: las páginas de consulta (inicio, `/buscar`, `/maquinas`, `/documentos/[id]`, `/api/archivos/[id]`) son de **acceso libre** para clientes finales y usan `getViewer()`: sin sesión, `viewer` es el cliente (`CLIENTE`) y la visibilidad se aplica igual. `/admin` y `/cuenta` exigen sesión.
 - Cuentas pausadas por inactividad (`INACTIVIDAD_DIAS`, `usuarios.pausado_en`): las verifican el login y `getCurrentUser`; solo el admin las rehabilita.
-- Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, productos, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
+- Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, productos, tecnologías, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
 - Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`), con el `viewer` de `getViewer()` o el usuario. Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
 - No se monta `/api/auth`: usar `auth.api.*` desde el servidor.
 - Páginas del admin: `requireAdmin()` en cada página, no solo en el layout (se renderizan en paralelo).
@@ -95,9 +95,12 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 
 ## Diseño
 
-- Tokens de color en `src/app/globals.css` (`:root`). Usar los tokens (`bg-primary`, `text-brand-strong`, `text-muted-foreground`…), nunca hex sueltos en componentes.
-- `brand` (#E30613) solo como relleno de botones y acentos; para **texto** rojo sobre fondo claro usar `brand-strong` (contraste 6.4:1).
-- Texto secundario: `muted-foreground` (#52525B, 7:1). No usar grises más claros para texto.
-- Tipografía Atkinson Hyperlegible Next, base 16 px. Solo tema claro en el MVP.
+- Sistema visual "Pintura de máquina": ver `DESIGN.md` (tokens, componentes y reglas) y `PRODUCT.md`.
+- Tokens de color en `src/app/globals.css` (`:root`). Usar los tokens (`bg-primary`, `bg-slate`, `text-brand-strong`, `text-muted-foreground`…), nunca hex sueltos en componentes.
+- Rojo `brand` (#E30613): una sola franja por pantalla (`Franja`, de borde a borde) y las acciones. Para **texto** rojo sobre fondo claro, `brand-strong` (#C00511, 5.8:1).
+- Pizarra `slate` (#222D35) para el cromo: barra superior y navegación. Texto secundario sobre pizarra: `on-slate-muted`.
+- Texto secundario: `muted-foreground` (#4A5660, 7.5:1). No usar grises más claros para texto.
+- Tipografía: Atkinson Hyperlegible Next para el texto (base 16 px); Montserrat ExtraBold (`font-display`) para títulos y, en mayúsculas, para los nombres de máquina ("calcos", con `DobleTrazo`). Solo tema claro en el MVP.
+- Logo: `public/brand/` (PNG blanco provisorio hasta tener el SVG).
 - Objetivos táctiles de 44 px como mínimo: el `Button` de shadcn ya está ajustado (`default` = h-11).
 - Navegación: barra inferior en celular (`BottomNav`), links en el header desde `md`.

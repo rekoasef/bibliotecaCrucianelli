@@ -9,6 +9,7 @@ import {
   documentoModelos,
   documentoProductos,
   documentoSistemas,
+  documentoTecnologias,
   documentoTemas,
   documentos,
   etiquetas,
@@ -16,6 +17,7 @@ import {
   modelos,
   productos,
   sistemas,
+  tecnologias,
   temas,
   tipos,
 } from "@/db/schema";
@@ -59,7 +61,7 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
   if (!doc) return null;
 
   const soloActivos = viewer.rol !== "admin";
-  const [arch, lins, mods, sis, tems, prods, etqs] = await Promise.all([
+  const [arch, lins, mods, sis, tems, prods, tecs, etqs] = await Promise.all([
     db
       .select()
       .from(archivos)
@@ -113,6 +115,12 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
       .where(eq(documentoProductos.documentoId, id))
       .orderBy(asc(productos.orden)),
     db
+      .select({ nombre: tecnologias.nombre, slug: tecnologias.slug })
+      .from(documentoTecnologias)
+      .innerJoin(tecnologias, eq(documentoTecnologias.itemId, tecnologias.id))
+      .where(eq(documentoTecnologias.documentoId, id))
+      .orderBy(asc(tecnologias.orden)),
+    db
       .select({
         nombre: etiquetas.nombre,
         normalizado: etiquetas.nombreNormalizado,
@@ -141,6 +149,7 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
     sistemas: sis,
     temas: tems,
     productos: prods,
+    tecnologias: tecs,
     etiquetas: etqs,
     historial: await getHistorial(id, viewer),
   };

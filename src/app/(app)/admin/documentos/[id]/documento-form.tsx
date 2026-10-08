@@ -31,12 +31,14 @@ export type DocumentoFormProps = {
     sistemaIds: string[];
     temaIds: string[];
     productoIds: string[];
+    tecnologiaIds: string[];
     etiquetas: string[];
   };
   tipos: Opcion[];
   sistemas: Opcion[];
   temas: Opcion[];
   productos: Opcion[];
+  tecnologias: Opcion[];
   segmentos: React.ComponentProps<typeof MaquinasPicker>["segmentos"];
   etiquetasExistentes: string[];
   haySiguienteBorrador: boolean;
@@ -51,6 +53,7 @@ export function DocumentoForm({
   sistemas,
   temas,
   productos,
+  tecnologias,
   segmentos,
   etiquetasExistentes,
   haySiguienteBorrador,
@@ -177,6 +180,12 @@ export function DocumentoForm({
           name="productos"
           opciones={productos}
           elegidos={doc.productoIds}
+        />
+        <CheckboxGroup
+          legend="Tecnología (para documentos de Tecnología)"
+          name="tecnologias"
+          opciones={tecnologias}
+          elegidos={doc.tecnologiaIds}
         />
       </Section>
 

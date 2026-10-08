@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { FileIcon, fileKindLabel } from "@/components/file-icon";
+import { DobleTrazo } from "@/components/brand/doble-trazo";
+import { Franja } from "@/components/layout/franja";
 import { TipoIcon } from "@/components/tipo-icon";
 import { Button } from "@/components/ui/button";
 import { getViewer } from "@/lib/auth/session";
@@ -79,165 +81,194 @@ export default async function DocumentoPage({
     doc.estado === "obsoleto"
       ? doc.historial.find((v) => v.estado === "vigente")
       : undefined;
+  // Máquinas como calcos en la cabecera: modelos puntuales o líneas completas.
+  const maquinas = [
+    ...doc.lineas.map((l) => l.nombre),
+    ...doc.modelos.map((m) => m.nombre),
+  ];
   const fecha = doc.fechaDocumento
     ? fechaLarga.format(new Date(doc.fechaDocumento))
     : null;
 
   return (
-    <article className="flex max-w-3xl flex-col gap-6">
-      {preview && (
-        <PreviewBanner id={id}>
-          Así ve este documento {preview.quien.toLowerCase()}.
-        </PreviewBanner>
-      )}
-
-      <header className="flex flex-col gap-3">
-        <p className="flex items-center gap-2 font-semibold text-brand-strong">
-          <TipoIcon slug={doc.tipoSlug ?? ""} className="size-5" />
-          {doc.tipoNombre}
+    <article className="flex flex-col gap-6">
+      <Franja className="flex flex-col gap-3">
+        <h1 className="font-display text-2xl leading-tight font-extrabold md:text-4xl">
+          {doc.titulo}
+        </h1>
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-2 font-semibold text-white">
+          {maquinas.map((m) => (
+            <span
+              key={m}
+              className="flex items-center gap-1.5 font-display text-lg leading-none font-extrabold tracking-wide uppercase"
+            >
+              <DobleTrazo className="h-3.5 w-3 fill-white" />
+              {m}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <TipoIcon slug={doc.tipoSlug ?? ""} className="size-5" />
+            {doc.tipoNombre}
+          </span>
+          {(doc.version || fecha) && (
+            <span>{[doc.version, fecha].filter(Boolean).join(" · ")}</span>
+          )}
           {!doc.visibleConcesionarios && !doc.visibleClientes && (
-            <span className="rounded-full border px-2 py-0.5 text-sm text-muted-foreground">
+            <span className="rounded-full border border-white/70 px-2.5 py-0.5 text-sm">
               Solo fábrica
             </span>
           )}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          {doc.titulo}
-        </h1>
-        {(doc.version || fecha) && (
-          <p className="text-muted-foreground">
-            {[doc.version, fecha].filter(Boolean).join(" · ")}
-          </p>
-        )}
-      </header>
+      </Franja>
 
-      {doc.estado === "obsoleto" && (
-        <div
-          role="note"
-          className="flex gap-3 rounded-xl border border-amber-700/30 bg-amber-50 p-4 text-amber-950"
-        >
-          <AlertTriangle aria-hidden className="mt-0.5 size-5 shrink-0" />
-          <p>
-            <strong>Documento obsoleto.</strong>{" "}
-            {vigente ? (
-              <Link
-                href={`/documentos/${vigente.id}`}
-                className="font-semibold underline underline-offset-4"
-              >
-                Ver la versión vigente
-              </Link>
-            ) : (
-              "Puede no estar actualizado."
-            )}
-          </p>
-        </div>
-      )}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+        <div className="flex min-w-0 flex-col gap-6">
+          {preview && (
+            <PreviewBanner id={id}>
+              Así ve este documento {preview.quien.toLowerCase()}.
+            </PreviewBanner>
+          )}
 
-      <section aria-label="Archivos" className="flex flex-col gap-4">
-        {doc.archivos.map((a) => (
-          <ArchivoCard key={a.id} archivo={a} />
-        ))}
-      </section>
+          {doc.estado === "obsoleto" && (
+            <div
+              role="note"
+              className="flex gap-3 rounded-xl border border-amber-700/30 bg-amber-50 p-4 text-amber-950"
+            >
+              <AlertTriangle aria-hidden className="mt-0.5 size-5 shrink-0" />
+              <p>
+                <strong>Documento obsoleto.</strong>{" "}
+                {vigente ? (
+                  <Link
+                    href={`/documentos/${vigente.id}`}
+                    className="font-semibold underline underline-offset-4"
+                  >
+                    Ver la versión vigente
+                  </Link>
+                ) : (
+                  "Puede no estar actualizado."
+                )}
+              </p>
+            </div>
+          )}
 
-      {doc.descripcion && (
-        <p className="text-lg leading-relaxed whitespace-pre-line">
-          {doc.descripcion}
-        </p>
-      )}
-
-      <Chips
-        grupos={[
-          {
-            label: "Máquinas",
-            chips: [
-              ...doc.lineas.map((l) => ({
-                label: `${l.nombre} (todas)`,
-                href: `/buscar?linea=${l.slug}`,
-              })),
-              ...doc.modelos.map((m) => ({
-                label: m.nombre,
-                href: `/buscar?modelo=${m.slug}`,
-              })),
-            ],
-          },
-          {
-            label: "Producto",
-            chips: doc.productos.map((p) => ({
-              label: p.nombre,
-              href: `/buscar?producto=${p.slug}`,
-            })),
-          },
-          {
-            label: "Sistemas",
-            chips: doc.sistemas.map((s) => ({
-              label: s.nombre,
-              href: `/buscar?sistema=${s.slug}`,
-            })),
-          },
-          {
-            label: "Temas",
-            chips: doc.temas.map((t) => ({
-              label: t.nombre,
-              href: `/buscar?tema=${t.slug}`,
-            })),
-          },
-          {
-            label: "Etiquetas",
-            chips: doc.etiquetas.map((e) => ({
-              label: e.nombre,
-              href: `/buscar?etiqueta=${encodeURIComponent(e.normalizado)}`,
-            })),
-          },
-        ]}
-      />
-
-      {doc.historial.length > 1 && (
-        <section
-          aria-labelledby="titulo-versiones"
-          className="flex flex-col gap-2"
-        >
-          <h2 id="titulo-versiones" className="text-lg font-bold">
-            Versiones
-          </h2>
-          <ol className="flex flex-col divide-y rounded-xl border bg-card">
-            {doc.historial.map((v) => (
-              <li key={v.id}>
-                <Link
-                  href={`/documentos/${v.id}`}
-                  aria-current={v.id === doc.id ? "page" : undefined}
-                  className="flex min-h-12 flex-wrap items-center gap-x-3 px-4 py-2 hover:bg-accent aria-[current=page]:font-semibold"
-                >
-                  <span>{v.version || v.titulo}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {v.estado === "vigente" ? "Vigente" : "Obsoleta"}
-                    {v.id === doc.id && " · esta"}
-                  </span>
-                </Link>
-              </li>
+          <section aria-label="Archivos" className="flex flex-col gap-4">
+            {doc.archivos.map((a) => (
+              <ArchivoCard key={a.id} archivo={a} />
             ))}
-          </ol>
-        </section>
-      )}
+          </section>
 
-      <div className="flex flex-wrap gap-2">
-        <ShareButton title={doc.titulo ?? "Documento"} />
-        {user?.rol === "admin" && !preview && (
-          <>
-            <Button asChild variant="ghost">
-              <Link href={`/admin/documentos/${doc.id}`}>Editar</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href={`/documentos/${doc.id}?como=concesionario`}>
-                Ver como concesionario
-              </Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href={`/documentos/${doc.id}?como=cliente`}>
-                Ver como cliente
-              </Link>
-            </Button>
-          </>
-        )}
+          {doc.descripcion && (
+            <p className="text-lg leading-relaxed whitespace-pre-line">
+              {doc.descripcion}
+            </p>
+          )}
+
+          {doc.historial.length > 1 && (
+            <section
+              aria-labelledby="titulo-versiones"
+              className="flex flex-col gap-2"
+            >
+              <h2
+                id="titulo-versiones"
+                className="font-display text-lg font-extrabold"
+              >
+                Versiones
+              </h2>
+              <ol className="flex flex-col divide-y rounded-xl border bg-card">
+                {doc.historial.map((v) => (
+                  <li key={v.id}>
+                    <Link
+                      href={`/documentos/${v.id}`}
+                      aria-current={v.id === doc.id ? "page" : undefined}
+                      className="flex min-h-12 flex-wrap items-center gap-x-3 px-4 py-2 hover:bg-accent aria-[current=page]:font-semibold"
+                    >
+                      <span>{v.version || v.titulo}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {v.estado === "vigente" ? "Vigente" : "Obsoleta"}
+                        {v.id === doc.id && " · esta"}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <ShareButton title={doc.titulo ?? "Documento"} />
+            {user?.rol === "admin" && !preview && (
+              <>
+                <Button asChild variant="ghost">
+                  <Link href={`/admin/documentos/${doc.id}`}>Editar</Link>
+                </Button>
+                <Button asChild variant="ghost">
+                  <Link href={`/documentos/${doc.id}?como=concesionario`}>
+                    Ver como concesionario
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost">
+                  <Link href={`/documentos/${doc.id}?como=cliente`}>
+                    Ver como cliente
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+        <aside aria-label="Clasificación" className="lg:pt-1">
+          <Chips
+            grupos={[
+              {
+                label: "Máquinas",
+                chips: [
+                  ...doc.lineas.map((l) => ({
+                    label: `${l.nombre} (todas)`,
+                    href: `/buscar?linea=${l.slug}`,
+                  })),
+                  ...doc.modelos.map((m) => ({
+                    label: m.nombre,
+                    href: `/buscar?modelo=${m.slug}`,
+                  })),
+                ],
+              },
+              {
+                label: "Producto",
+                chips: doc.productos.map((p) => ({
+                  label: p.nombre,
+                  href: `/buscar?producto=${p.slug}`,
+                })),
+              },
+              {
+                label: "Tecnología",
+                chips: doc.tecnologias.map((t) => ({
+                  label: t.nombre,
+                  href: `/buscar?tecnologia=${t.slug}`,
+                })),
+              },
+              {
+                label: "Sistemas",
+                chips: doc.sistemas.map((s) => ({
+                  label: s.nombre,
+                  href: `/buscar?sistema=${s.slug}`,
+                })),
+              },
+              {
+                label: "Temas",
+                chips: doc.temas.map((t) => ({
+                  label: t.nombre,
+                  href: `/buscar?tema=${t.slug}`,
+                })),
+              },
+              {
+                label: "Etiquetas",
+                chips: doc.etiquetas.map((e) => ({
+                  label: e.nombre,
+                  href: `/buscar?etiqueta=${encodeURIComponent(e.normalizado)}`,
+                })),
+              },
+            ]}
+          />
+        </aside>
       </div>
     </article>
   );
@@ -346,7 +377,7 @@ function Chips({
               <Link
                 key={c.href}
                 href={c.href}
-                className="flex min-h-10 items-center rounded-full border bg-card px-3 font-medium hover:border-foreground/30 active:bg-accent"
+                className="flex min-h-11 items-center rounded-full border bg-card px-3 font-medium hover:border-foreground/30 active:bg-accent"
               >
                 {c.label}
               </Link>

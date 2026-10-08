@@ -35,6 +35,15 @@ export function FiltersForm({
         value={filters.producto}
         opciones={options.productos}
       />
+      {options.tecnologias.length > 0 && (
+        <Select
+          id={id("tecnologia")}
+          name="tecnologia"
+          label="Tecnología"
+          value={filters.tecnologia}
+          opciones={options.tecnologias}
+        />
+      )}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("maquina")}>Máquina</Label>

@@ -9,13 +9,20 @@ import {
   productos,
   segmentos,
   sistemas,
+  tecnologias,
   temas,
   tipos,
 } from "@/db/schema";
 import type { Catalogo, Nivel } from "@/lib/validation/taxonomia";
 import { normalizeTag } from "@/lib/text";
 
-export const catalogoTables = { tipos, sistemas, temas, productos } as const;
+export const catalogoTables = {
+  tipos,
+  sistemas,
+  temas,
+  productos,
+  tecnologias,
+} as const;
 
 // ── Máquinas ────────────────────────────────────────────────────────────────
 
@@ -144,6 +151,7 @@ const ORDENABLES: Record<
   sistemas: { table: sistemas },
   temas: { table: temas },
   productos: { table: productos },
+  tecnologias: { table: tecnologias },
 };
 
 /** Próximo valor de `orden` al final de la lista (dentro del padre si corresponde). */
@@ -242,7 +250,7 @@ export async function countEtiquetas() {
 }
 
 /**
- * Si el nombre ya existe como tipo, sistema, tema, producto, línea o modelo, lo devuelve
+ * Si el nombre ya existe como tipo, sistema, tema, producto, tecnología, línea o modelo, lo devuelve
  * (docs/04: no repetir como etiqueta algo que ya es otra clasificación).
  */
 export async function findClasificacionExistente(nombreNormalizado: string) {
@@ -251,6 +259,7 @@ export async function findClasificacionExistente(nombreNormalizado: string) {
     UNION ALL SELECT 'sistema', nombre FROM sistemas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'tema', nombre FROM temas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'producto', nombre FROM productos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
+    UNION ALL SELECT 'tecnología', nombre FROM tecnologias WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'línea', nombre FROM lineas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'modelo', nombre FROM modelos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     LIMIT 1

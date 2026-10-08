@@ -8,12 +8,19 @@ export function AuthCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-6 rounded-2xl border bg-card p-5 shadow-xs sm:p-7">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description && <p className="text-muted-foreground">{description}</p>}
+    <>
+      {/* Franja roja de borde a borde bajo la barra pizarra, como el resto de la app. */}
+      <div className="mx-[calc(50%-50vw)] bg-brand franja-trazos text-white">
+        <div className="mx-auto max-w-md px-4 pt-6 pb-7">
+          <h1 className="font-display text-[1.75rem] leading-tight font-extrabold">
+            {title}
+          </h1>
+        </div>
       </div>
-      {children}
-    </section>
+      <section className="flex flex-col gap-6 rounded-2xl border bg-card p-5 shadow-sm sm:p-7">
+        {description && <p className="text-muted-foreground">{description}</p>}
+        {children}
+      </section>
+    </>
   );
 }

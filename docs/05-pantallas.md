@@ -26,7 +26,7 @@ Los clientes finales usan las mismas pantallas de consulta **sin iniciar sesión
 
 - Buscador arriba, con el texto actual. Sin búsqueda ni filtros, debajo van las búsquedas recientes del usuario (igual que en el inicio).
 - Chips de filtros activos, cada uno con su ✕, y "Limpiar filtros".
-- Botón "Filtros" (bottom sheet en celular) con: producto (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra), máquina (segmento → línea → modelo), tipo, sistema, tema, etiquetas, e "Incluir obsoletos" (desactivado por defecto).
+- Botón "Filtros" (bottom sheet en celular) con: producto (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra), tecnología (Precision Planting, Leaf…), máquina (segmento → línea → modelo), tipo, sistema, tema, etiquetas, e "Incluir obsoletos" (desactivado por defecto).
 - Cantidad de resultados. Si la búsqueda se corrigió por un error de tipeo: "Buscamos «X» porque «Y» no aparece en la biblioteca".
 - Tarjeta de resultado: título, tipo (ícono + texto), máquinas, fragmento con el texto resaltado, páginas del PDF donde aparece lo buscado ("Págs. 12, 40 y 47"; con el nombre del archivo si hay más de un PDF), formato (PDF/video) y badge "Obsoleto" si corresponde.
 - Paginación con "Cargar más".
@@ -42,7 +42,7 @@ Los clientes finales usan las mismas pantallas de consulta **sin iniciar sesión
 
 - Título, tipo, versión y fecha.
 - Aviso destacado si es obsoleto: "Hay una versión más nueva → ver vigente".
-- Máquinas, producto, sistemas, temas y etiquetas como chips clickeables (llevan a la búsqueda con ese filtro).
+- Máquinas, producto, tecnología, sistemas, temas y etiquetas como chips clickeables (llevan a la búsqueda con ese filtro).
 - Descripción.
 - Archivos:
   - **PDF:** botón principal "Ver" (abre `/api/archivos/[id]` en el visor nativo del navegador) y botón "Descargar".
@@ -92,6 +92,7 @@ En escritorio, menú lateral. En celular, el admin funciona pero no es prioritar
 - Título, descripción, tipo, versión, fecha del documento.
 - Máquinas: selector jerárquico en el que se puede marcar una línea completa o modelos puntuales.
 - Producto: selección múltiple (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra).
+- Tecnología: selección múltiple (Precision Planting, Leaf…), para documentos de Tecnología.
 - Sistemas y temas: selección múltiple (lo normal es uno).
 - Etiquetas: input con autocompletado y creación al vuelo.
 - Visibilidad: casillas "Concesionarios" y "Clientes" (fábrica ve todo; ninguna = Solo fábrica).
@@ -123,7 +124,7 @@ Desde la ficha de un documento vigente: crea el borrador copiando la clasificaci
 
 ### Taxonomía `/admin/taxonomia`
 
-- Pestañas para tipos, sistemas, temas, productos y etiquetas: crear, renombrar, reordenar, activar/desactivar.
+- Pestañas para tipos, sistemas, temas, productos, tecnologías y etiquetas: crear, renombrar, reordenar, activar/desactivar.
 - Etiquetas: fusionar duplicadas.
 - Al renombrar, recalcular el índice de búsqueda de los documentos afectados.
 

@@ -12,6 +12,8 @@ type SearchFormProps = {
   hidden?: Record<string, string | undefined>;
   placeholder?: string;
   label?: string;
+  /** "franja": sobre el rojo de la cabecera (botón pizarra para que no se pierda). */
+  tone?: "default" | "franja";
 };
 
 // Formulario GET común: funciona sin JavaScript y deja la búsqueda en la URL (docs/05).
@@ -23,9 +25,11 @@ export function SearchForm({
   hidden = {},
   placeholder = "Ej.: dosificador Gringa",
   label = "Buscar documentación",
+  tone = "default",
 }: SearchFormProps) {
   const inputId = "buscar-q";
   const large = size === "lg";
+  const franja = tone === "franja";
 
   return (
     <form
@@ -58,15 +62,22 @@ export function SearchForm({
           autoComplete="off"
           enterKeyHint="search"
           className={cn(
-            "w-full rounded-xl border border-input bg-card pr-3 text-foreground shadow-xs transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-ring/25 focus-visible:outline-none",
-            large ? "h-14 pl-12 text-lg" : "h-11 pl-11 text-base",
+            "w-full rounded-xl border bg-card pr-3 text-foreground transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:outline-none",
+            franja
+              ? "border-transparent shadow-[0_2px_8px_rgb(34_45_53/0.25)] focus-visible:ring-4 focus-visible:ring-slate/60"
+              : "border-input shadow-xs focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-ring/25",
+            large ? "h-14 pl-12 text-lg" : "h-12 pl-11 text-base",
           )}
         />
       </div>
       <Button
         type="submit"
         size={large ? "lg" : "default"}
-        className={cn(large && "h-14 px-6")}
+        className={cn(
+          large ? "h-14 px-6" : "h-12",
+          franja &&
+            "bg-slate text-white hover:bg-slate-raised focus-visible:ring-white/60 active:bg-slate-raised",
+        )}
       >
         Buscar
       </Button>

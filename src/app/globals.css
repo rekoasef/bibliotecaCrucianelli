@@ -7,6 +7,10 @@
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
+  --color-slate: var(--slate);
+  --color-slate-raised: var(--slate-raised);
+  --color-on-slate-muted: var(--on-slate-muted);
+  --font-display: var(--font-display);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -51,13 +55,17 @@
 }
 
 :root {
-  /* Marca Crucianelli (docs/05). Rojo aproximado: confirmar con el manual de marca.
-     El rojo es para acciones y acentos, nunca para grandes superficies. */
-  --brand: #e30613; /* relleno de botones: 4.9:1 con texto blanco */
-  --brand-strong: #c00511; /* estado presionado y texto rojo sobre fondo claro: 6.4:1 */
+  /* Marca Crucianelli: rojo de la máquina + gris pizarra del sitio oficial.
+     El rojo pinta una sola franja por pantalla (la cabecera de la página) y las
+     acciones; el pizarra es el cromo (barra superior y navegación). */
+  --brand: #e30613; /* franja y botones: 4.9:1 con texto blanco */
+  --brand-strong: #c00511; /* presionado y texto rojo sobre fondo claro: 5.8:1 */
+  --slate: #222d35; /* barra superior y navegación: 14:1 con blanco */
+  --slate-raised: #2f3c46; /* pizarra presionado / separadores sobre pizarra */
+  --on-slate-muted: #b9c3ca; /* texto secundario sobre pizarra: 7.8:1 */
 
-  /* Neutros: grises oscuros con contraste alto, pensado para leer al sol. */
-  --background: #f4f4f5;
+  /* Neutros fríos, con un dejo del pizarra; contraste alto para leer al sol. */
+  --background: #f2f4f5;
   --foreground: #18181b;
   --card: #ffffff;
   --card-foreground: #18181b;
@@ -65,15 +73,15 @@
   --popover-foreground: #18181b;
   --primary: var(--brand);
   --primary-foreground: #ffffff;
-  --secondary: #e4e4e7;
+  --secondary: #e3e7ea;
   --secondary-foreground: #18181b;
-  --muted: #e4e4e7;
-  --muted-foreground: #52525b; /* 7:1 sobre blanco; no usar grises más claros para texto */
-  --accent: #f4f4f5;
+  --muted: #e3e7ea;
+  --muted-foreground: #4a5660; /* 7.5:1 sobre blanco; no usar grises más claros para texto */
+  --accent: #eef1f3;
   --accent-foreground: #18181b;
   --destructive: #b91c1c;
-  --border: #d4d4d8;
-  --input: #a1a1aa;
+  --border: #d3d9dd;
+  --input: #9aa5ad;
   --ring: var(--brand);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -113,6 +121,15 @@
   h3 {
     text-wrap: balance;
   }
+  html {
+    caret-color: var(--brand);
+  }
+  a {
+    text-underline-offset: 0.2em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand) 22%, transparent);
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
@@ -121,4 +138,17 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* Doble trazo del isotipo como fondo de la franja roja: dos bandas paralelas
+   inclinadas, como las calcos de la máquina. Solo decoración (sin contenido). */
+@utility franja-trazos {
+  background-image: linear-gradient(
+    112deg,
+    transparent 0 62%,
+    rgb(255 255 255 / 0.13) 62% 69%,
+    transparent 69% 72%,
+    rgb(255 255 255 / 0.13) 72% 79%,
+    transparent 79%
+  );
 }

@@ -9,6 +9,7 @@ import {
   documentoModelos,
   documentoProductos,
   documentoSistemas,
+  documentoTecnologias,
   documentos,
   etiquetas,
   lineas,
@@ -16,6 +17,7 @@ import {
   productos,
   segmentos,
   sistemas,
+  tecnologias,
   tipos,
   usuarios,
   type EstadoDoc,
@@ -86,6 +88,10 @@ async function createFixture(tx: Tx) {
     .insert(productos)
     .values({ nombre: `Tecnologíax ${x}`, slug: `tecnologia-${x}` })
     .returning();
+  const [precision] = await tx
+    .insert(tecnologias)
+    .values({ nombre: `Precisionx ${x}`, slug: `precision-${x}` })
+    .returning();
   const [sensor] = await tx
     .insert(etiquetas)
     .values({
@@ -109,6 +115,7 @@ async function createFixture(tx: Tx) {
       modelos?: string[];
       sistemas?: string[];
       productos?: string[];
+      tecnologias?: string[];
       etiquetas?: string[];
     },
   ) {
@@ -140,6 +147,10 @@ async function createFixture(tx: Tx) {
     for (const id of data.productos ?? [])
       await tx
         .insert(documentoProductos)
+        .values({ documentoId: d.id, itemId: id });
+    for (const id of data.tecnologias ?? [])
+      await tx
+        .insert(documentoTecnologias)
         .values({ documentoId: d.id, itemId: id });
     for (const id of data.etiquetas ?? [])
       await tx
@@ -184,6 +195,7 @@ async function createFixture(tx: Tx) {
     titulo: "Monitor de siembra: configuración",
     tipoId: instructivo.id,
     productos: [tecnologia.id],
+    tecnologias: [precision.id],
     publico: "conc+cli",
   });
   await doc("enElTexto", {
@@ -225,6 +237,7 @@ async function createFixture(tx: Tx) {
       despiece: despiece.slug,
       dosificacion: dosificacion.slug,
       tecnologia: tecnologia.slug,
+      precision: precision.slug,
     },
   };
 }
@@ -339,6 +352,17 @@ describe("searchDocuments", () => {
         await buscar(tx, f, { producto: f.slugs.tecnologia }, "fabrica"),
       ).toEqual(["monitor"]);
       expect(await buscar(tx, f, { q: `tecnologiax ${f.x}` })).toContain(
+        "monitor",
+      );
+    });
+  });
+
+  it("filtra por tecnología y encuentra por su nombre", async () => {
+    await withFixture(async (tx, f) => {
+      expect(
+        await buscar(tx, f, { tecnologia: f.slugs.precision }, "fabrica"),
+      ).toEqual(["monitor"]);
+      expect(await buscar(tx, f, { q: `precisionx ${f.x}` })).toContain(
         "monitor",
       );
     });

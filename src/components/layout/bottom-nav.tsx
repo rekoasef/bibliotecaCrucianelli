@@ -13,7 +13,7 @@ export function BottomNav({ mode }: { mode: NavMode }) {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-slate pb-[env(safe-area-inset-bottom)] text-white md:hidden"
     >
       <ul
         className={cn(
@@ -29,22 +29,22 @@ export function BottomNav({ mode }: { mode: NavMode }) {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none focus-visible:ring-inset active:bg-accent",
-                  active && "text-brand-strong",
+                  "relative flex h-full flex-col items-center justify-center gap-1 text-xs font-medium text-on-slate-muted transition-colors focus-visible:ring-3 focus-visible:ring-white/60 focus-visible:outline-none focus-visible:ring-inset active:bg-slate-raised",
+                  active && "font-bold text-white",
                 )}
               >
-                <span
-                  className={cn(
-                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
-                    active && "bg-brand/10",
-                  )}
-                >
-                  <Icon
+                {/* Lo activo: barra roja arriba, inclinada como el trazo del isotipo. */}
+                {active && (
+                  <span
                     aria-hidden
-                    className="size-6"
-                    strokeWidth={active ? 2.25 : 2}
+                    className="absolute inset-x-4 top-0 h-1 -skew-x-[22deg] bg-brand"
                   />
-                </span>
+                )}
+                <Icon
+                  aria-hidden
+                  className="size-6"
+                  strokeWidth={active ? 2.5 : 2}
+                />
                 {label}
               </Link>
             </li>

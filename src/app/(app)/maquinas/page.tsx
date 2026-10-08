@@ -1,6 +1,6 @@
-import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Franja } from "@/components/layout/franja";
+import { LineaList, LineaRow } from "@/components/maquinas/linea-row";
 import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions } from "@/lib/search/options";
 import { db } from "@/db";
@@ -22,52 +22,33 @@ export default async function MaquinasPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-        Máquinas
-      </h1>
-      {maquinas.map((s) => (
-        <section key={s.segmento} className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            {s.segmento}
-          </h2>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Franja>
+        <h1 className="font-display text-[1.75rem] leading-tight font-extrabold md:text-4xl">
+          Máquinas
+        </h1>
+        <p className="mt-1 text-white">
+          Elegí la línea para ver toda su documentación.
+        </p>
+      </Franja>
+      <div className="grid gap-6 md:grid-cols-2">
+        {maquinas.map((s) => (
+          <LineaList key={s.segmento} segmento={s.segmento} headingLevel={2}>
             {s.lineas.map((l) => (
-              <li key={l.slug}>
-                <Link
-                  href={`/maquinas/${l.slug}`}
-                  className="flex h-full items-center gap-4 overflow-hidden rounded-xl border bg-card pr-4 transition-colors hover:border-foreground/30 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:bg-accent"
-                >
-                  {fotos.has(l.id) ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- servida por /api/lineas/[id]/foto
-                    <img
-                      src={`/api/lineas/${l.id}/foto`}
-                      alt=""
-                      loading="lazy"
-                      width={112}
-                      height={84}
-                      className="h-21 w-28 shrink-0 bg-muted object-cover"
-                    />
-                  ) : (
-                    <span aria-hidden className="h-21 w-2 shrink-0 bg-brand" />
-                  )}
-                  <span className="flex flex-1 flex-col py-4">
-                    <span className="text-lg font-semibold">{l.nombre}</span>
-                    {l.modelos.length > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        {l.modelos.map((m) => m.nombre).join(", ")}
-                      </span>
-                    )}
-                  </span>
-                  <ChevronRight
-                    aria-hidden
-                    className="size-5 shrink-0 text-muted-foreground"
-                  />
-                </Link>
-              </li>
+              <LineaRow
+                key={l.slug}
+                href={`/maquinas/${l.slug}`}
+                nombre={l.nombre}
+                detalle={
+                  l.modelos.length > 0
+                    ? l.modelos.map((m) => m.nombre).join(", ")
+                    : undefined
+                }
+                foto={fotos.has(l.id) ? `/api/lineas/${l.id}/foto` : undefined}
+              />
             ))}
-          </ul>
-        </section>
-      ))}
+          </LineaList>
+        ))}
+      </div>
     </div>
   );
 }

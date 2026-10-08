@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T18:30:00.000Z",
+  "title": "Design System: Biblioteca Técnica Crucianelli",
+  "extensions": {
+    "colorMeta": {
+      "rojo-crucianelli": { "role": "primary", "displayName": "Rojo Crucianelli", "canonical": "#e30613", "tonalRamp": ["#3d0205", "#6b030a", "#99040e", "#c00511", "#e30613", "#f2525a", "#f8a1a5", "#fde4e5"] },
+      "rojo-presionado": { "role": "primary", "displayName": "Rojo presionado", "canonical": "#c00511", "tonalRamp": ["#330104", "#5c0208", "#85030c", "#c00511", "#e0303a", "#ec7077", "#f6b3b7", "#fce6e7"] },
+      "pizarra": { "role": "secondary", "displayName": "Pizarra", "canonical": "#222d35", "tonalRamp": ["#11171b", "#222d35", "#2f3c46", "#465663", "#64737f", "#8e9aa3", "#b9c3ca", "#e3e7ea"] },
+      "pizarra-elevado": { "role": "secondary", "displayName": "Pizarra elevado", "canonical": "#2f3c46", "tonalRamp": ["#11171b", "#222d35", "#2f3c46", "#465663", "#64737f", "#8e9aa3", "#b9c3ca", "#e3e7ea"] },
+      "texto-sobre-pizarra": { "role": "secondary", "displayName": "Texto sobre pizarra", "canonical": "#b9c3ca", "tonalRamp": ["#11171b", "#222d35", "#2f3c46", "#465663", "#64737f", "#8e9aa3", "#b9c3ca", "#e3e7ea"] },
+      "fondo-frio": { "role": "neutral", "displayName": "Fondo frío", "canonical": "#f2f4f5", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "tinta": { "role": "neutral", "displayName": "Tinta", "canonical": "#18181b", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "panel": { "role": "neutral", "displayName": "Panel", "canonical": "#ffffff", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "gris-suave": { "role": "neutral", "displayName": "Gris suave", "canonical": "#e3e7ea", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "gris-hover": { "role": "neutral", "displayName": "Gris hover", "canonical": "#eef1f3", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#eef1f3", "#ffffff"] },
+      "texto-secundario": { "role": "neutral", "displayName": "Texto secundario", "canonical": "#4a5660", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "borde": { "role": "neutral", "displayName": "Borde", "canonical": "#d3d9dd", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "borde-campo": { "role": "neutral", "displayName": "Borde de campo", "canonical": "#9aa5ad", "tonalRamp": ["#18181b", "#2f3c46", "#4a5660", "#9aa5ad", "#d3d9dd", "#e3e7ea", "#f2f4f5", "#ffffff"] },
+      "error": { "role": "neutral", "displayName": "Error", "canonical": "#b91c1c", "tonalRamp": ["#2a0606", "#550c0c", "#7f1313", "#b91c1c", "#dc4545", "#ea8585", "#f5c0c0", "#fdecec"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Nombre de la línea en su página, en mayúsculas." },
+      "headline": { "displayName": "Headline", "purpose": "Titular de la franja de cada página." },
+      "title": { "displayName": "Title", "purpose": "Títulos de sección y de grupo sobre el fondo." },
+      "calco": { "displayName": "Calco", "purpose": "Nombres de línea en filas y en la franja de la ficha." },
+      "body": { "displayName": "Body", "purpose": "Texto corrido, base de 16 px." },
+      "body-strong": { "displayName": "Body strong", "purpose": "Título del documento en la tarjeta de resultado." },
+      "label": { "displayName": "Label", "purpose": "Nombre del segmento sobre cada lista, en mayúsculas." }
+    },
+    "shadows": [
+      { "name": "campo-franja", "value": "0 2px 8px rgb(34 45 53 / 0.25)", "purpose": "Buscador blanco dentro de la franja roja." },
+      { "name": "campo", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Campos de texto sobre fondo claro." },
+      { "name": "panel-ingreso", "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "purpose": "Panel del formulario de ingreso." }
+    ],
+    "motion": [
+      { "name": "transicion-color", "value": "color, background-color, border-color 150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Hover y presionado; se anula con prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal sobre fondo claro.",
+      "html": "<button class=\"ds-btn-primary\">Abrir documento</button>",
+      "css": ".ds-btn-primary { background: var(--brand, #e30613); color: #fff; height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 10px; font: 500 16px/1 'Atkinson Hyperlegible Next', system-ui, sans-serif; cursor: pointer; transition: background-color 150ms; } .ds-btn-primary:hover { background: rgb(227 6 19 / 0.9); } .ds-btn-primary:active { background: var(--brand-strong, #c00511); transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(227 6 19 / 0.5); }"
+    },
+    {
+      "name": "Franja con buscador",
+      "kind": "custom",
+      "refersTo": "button-sobre-franja",
+      "description": "Cabecera roja de borde a borde con el doble trazo, titular y buscador; botón pizarra.",
+      "html": "<div class=\"ds-franja\"><h1 class=\"ds-franja-h\">¿Qué documentación necesitás?</h1><form class=\"ds-franja-form\" role=\"search\"><span class=\"ds-franja-field\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" placeholder=\"Ej.: dosificador Gringa\" aria-label=\"Buscar documentación\"></span><button type=\"submit\" class=\"ds-franja-btn\">Buscar</button></form></div>",
+      "css": ".ds-franja { background-color: var(--brand, #e30613); background-image: linear-gradient(112deg, transparent 0 62%, rgb(255 255 255 / 0.13) 62% 69%, transparent 69% 72%, rgb(255 255 255 / 0.13) 72% 79%, transparent 79%); color: #fff; padding: 24px 16px 28px; display: flex; flex-direction: column; gap: 16px; } .ds-franja-h { margin: 0; max-width: 16ch; font: 800 28px/1.1 Montserrat, system-ui, sans-serif; } .ds-franja-form { display: flex; gap: 8px; } .ds-franja-field { position: relative; flex: 1; } .ds-franja-field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #4a5660; pointer-events: none; } .ds-franja-field input { width: 100%; box-sizing: border-box; height: 56px; padding: 0 12px 0 48px; border: 1px solid transparent; border-radius: 14px; background: #fff; color: #18181b; font: 400 18px 'Atkinson Hyperlegible Next', system-ui, sans-serif; box-shadow: 0 2px 8px rgb(34 45 53 / 0.25); } .ds-franja-field input::placeholder { color: #4a5660; } .ds-franja-field input:focus-visible { outline: none; box-shadow: 0 0 0 4px rgb(34 45 53 / 0.6); } .ds-franja-btn { height: 56px; padding: 0 24px; border: none; border-radius: 10px; background: var(--slate, #222d35); color: #fff; font: 500 16px 'Atkinson Hyperlegible Next', system-ui, sans-serif; cursor: pointer; } .ds-franja-btn:hover, .ds-franja-btn:active { background: var(--slate-raised, #2f3c46); } .ds-franja-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(255 255 255 / 0.6); }"
+    },
+    {
+      "name": "Buscador",
+      "kind": "input",
+      "refersTo": "input-busqueda",
+      "description": "Campo de búsqueda sobre fondo claro.",
+      "html": "<span class=\"ds-input-wrap\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-input-busqueda\" type=\"search\" placeholder=\"Buscar en Domina…\" aria-label=\"Buscar\"></span>",
+      "css": ".ds-input-wrap { position: relative; display: block; } .ds-input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #4a5660; pointer-events: none; } .ds-input-busqueda { width: 100%; box-sizing: border-box; height: 48px; padding: 0 12px 0 44px; border: 1px solid var(--input, #9aa5ad); border-radius: 14px; background: #fff; color: #18181b; font: 400 16px 'Atkinson Hyperlegible Next', system-ui, sans-serif; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05); transition: border-color 150ms, box-shadow 150ms; } .ds-input-busqueda::placeholder { color: #4a5660; } .ds-input-busqueda:focus-visible { outline: none; border-color: var(--brand, #e30613); box-shadow: 0 0 0 3px rgb(227 6 19 / 0.25); }"
+    },
+    {
+      "name": "Lista de líneas",
+      "kind": "custom",
+      "refersTo": "fila-linea",
+      "description": "Segmento con filas de línea: doble trazo rojo y nombre como calco.",
+      "html": "<section class=\"ds-lineas\"><h3 class=\"ds-lineas-seg\">Granos gruesos</h3><ul class=\"ds-lineas-list\"><li><a href=\"#\" class=\"ds-linea\"><svg viewBox=\"0 0 14 16\" width=\"16\" height=\"20\" class=\"ds-trazo\"><path d=\"M5 0h4L4 16H0z\"/><path d=\"M10 0h4L9 16H5z\"/></svg><span class=\"ds-linea-nombre\">Gringa</span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" class=\"ds-chev\"><path d=\"m9 18 6-6-6-6\"/></svg></a></li><li><a href=\"#\" class=\"ds-linea\"><svg viewBox=\"0 0 14 16\" width=\"16\" height=\"20\" class=\"ds-trazo\"><path d=\"M5 0h4L4 16H0z\"/><path d=\"M10 0h4L9 16H5z\"/></svg><span class=\"ds-linea-nombre\">Plantor</span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" class=\"ds-chev\"><path d=\"m9 18 6-6-6-6\"/></svg></a></li></ul></section>",
+      "css": ".ds-lineas { display: flex; flex-direction: column; gap: 8px; } .ds-lineas-seg { margin: 0; padding: 0 4px; font: 700 14px 'Atkinson Hyperlegible Next', system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: #4a5660; } .ds-lineas-list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #d3d9dd; border-radius: 14px; overflow: hidden; } .ds-lineas-list li + li { border-top: 1px solid #d3d9dd; } .ds-linea { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; box-sizing: border-box; color: #18181b; text-decoration: none; transition: background-color 150ms; } .ds-linea:hover { background: #eef1f3; } .ds-linea:active { background: #e3e7ea; } .ds-linea:focus-visible { outline: none; box-shadow: inset 0 0 0 3px rgb(227 6 19 / 0.5); } .ds-trazo { fill: var(--brand, #e30613); flex-shrink: 0; } .ds-linea-nombre { flex: 1; font: 800 20px/1.25 Montserrat, system-ui, sans-serif; letter-spacing: 0.025em; text-transform: uppercase; } .ds-chev { color: #4a5660; flex-shrink: 0; }"
+    },
+    {
+      "name": "Chip de tipo",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Acceso por tipo de documento o filtro.",
+      "html": "<a href=\"#\" class=\"ds-chip\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg>Manual</a>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 16px 0 12px; box-sizing: border-box; background: #fff; border: 1px solid #d3d9dd; border-radius: 9999px; color: #18181b; font: 600 16px 'Atkinson Hyperlegible Next', system-ui, sans-serif; text-decoration: none; transition: border-color 150ms, background-color 150ms; } .ds-chip svg { color: var(--brand-strong, #c00511); flex-shrink: 0; } .ds-chip:hover { border-color: rgb(24 24 27 / 0.3); } .ds-chip:active { background: #eef1f3; } .ds-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(227 6 19 / 0.5); }"
+    },
+    {
+      "name": "Tarjeta de resultado",
+      "kind": "card",
+      "refersTo": "card-resultado",
+      "description": "Documento en resultados y listados.",
+      "html": "<a href=\"#\" class=\"ds-card\"><span class=\"ds-card-t\">Capacitación Domina 1° Parte - Características técnicas</span><span class=\"ds-card-d\">Presentación de la línea, dosificación y regulaciones principales.</span><span class=\"ds-card-meta\"><span class=\"ds-card-tipo\">Manual</span><span class=\"ds-card-maq\">Domina</span><span class=\"ds-card-fmt\">PDF</span></span></a>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: #fff; border: 1px solid #d3d9dd; border-radius: 14px; color: #18181b; text-decoration: none; font-family: 'Atkinson Hyperlegible Next', system-ui, sans-serif; transition: border-color 150ms, background-color 150ms; } .ds-card:hover { border-color: rgb(24 24 27 / 0.3); } .ds-card:active { background: #eef1f3; } .ds-card:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(227 6 19 / 0.5); } .ds-card-t { font-size: 18px; line-height: 1.375; font-weight: 700; } .ds-card-d { color: #4a5660; } .ds-card-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; } .ds-card-tipo { color: var(--brand-strong, #c00511); font-weight: 600; } .ds-card-maq { font-weight: 600; letter-spacing: 0.025em; text-transform: uppercase; } .ds-card-fmt { color: #4a5660; }"
+    },
+    {
+      "name": "Navegación inferior",
+      "kind": "nav",
+      "refersTo": "nav-inferior",
+      "description": "Barra pizarra fija en celular; lo activo lleva la barrita roja inclinada.",
+      "html": "<nav class=\"ds-bnav\" aria-label=\"Principal\"><a href=\"#\" class=\"ds-bnav-i is-active\" aria-current=\"page\"><span class=\"ds-bnav-bar\"></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg>Inicio</a><a href=\"#\" class=\"ds-bnav-i\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg>Buscar</a><a href=\"#\" class=\"ds-bnav-i\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"8\" width=\"18\" height=\"8\" rx=\"2\"/><circle cx=\"7\" cy=\"18\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/></svg>Máquinas</a><a href=\"#\" class=\"ds-bnav-i\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4\"/><path d=\"m10 17 5-5-5-5\"/><path d=\"M15 12H3\"/></svg>Ingresar</a></nav>",
+      "css": ".ds-bnav { display: grid; grid-template-columns: repeat(4, 1fr); height: 64px; background: var(--slate, #222d35); } .ds-bnav-i { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--on-slate-muted, #b9c3ca); font: 500 12px 'Atkinson Hyperlegible Next', system-ui, sans-serif; text-decoration: none; transition: color 150ms, background-color 150ms; } .ds-bnav-i:active { background: var(--slate-raised, #2f3c46); } .ds-bnav-i:focus-visible { outline: none; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.6); } .ds-bnav-i.is-active { color: #fff; font-weight: 700; } .ds-bnav-bar { position: absolute; left: 16px; right: 16px; top: 0; height: 4px; background: var(--brand, #e30613); transform: skewX(-22deg); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Pintura de máquina",
+    "overview": "La app se pinta como una sembradora Crucianelli. El cromo es gris pizarra (la barra superior y la navegación inferior, como el sitio oficial); el rojo Crucianelli aparece como una sola franja de borde a borde por pantalla, la cabecera de la página, con el doble trazo inclinado del isotipo de fondo, igual que la calco sobre la tolva. Los nombres de máquina (GRINGA, PLANTOR, DOMINA…) se escriben como calcos: Montserrat ExtraBold en mayúsculas, marcados con el doble trazo rojo. Todo lo demás es un fondo claro frío con paneles blancos y texto de alto contraste, pensado para leerse al sol con una mano.\n\nLa densidad es de herramienta de campo: objetivos táctiles grandes (44 px como mínimo, filas de máquina de 64 px), listas con separadores en lugar de grillas de tarjetas, y nada que dependa de hover. El sistema rechaza la grilla genérica de tarjetas grises y el rojo esparcido por toda la pantalla: el rojo es pintura de identidad y de acción, no decoración.\n\nSolo tema claro. El movimiento se limita a transiciones de color en estados (hover, presionado) y se anula con prefers-reduced-motion.",
+    "keyCharacteristics": [
+      "Cromo pizarra arriba y abajo; una franja roja con doble trazo por pantalla.",
+      "Nombres de máquina como calcos: Montserrat 800, mayúsculas, con el doble trazo.",
+      "Cuerpo en Atkinson Hyperlegible Next a 16 px, contraste 7:1 o más en texto secundario.",
+      "Listas en paneles blancos con separadores; chips redondos para filtros y tipos.",
+      "Plano: profundidad por tono (fondo frío, panel blanco, borde), casi sin sombras."
+    ],
+    "rules": [
+      { "name": "The Una Franja Rule", "body": "Cada pantalla tiene exactamente una superficie roja grande: la franja de cabecera, de borde a borde. El resto del rojo son acciones y marcas chicas (botón, doble trazo, barrita activa).", "section": "colors" },
+      { "name": "The Rojo Fuerte para Texto Rule", "body": "El rojo de marca nunca se usa como color de texto sobre fondo claro; para eso está el rojo presionado. Sobre la franja, el texto es siempre blanco.", "section": "colors" },
+      { "name": "The Pizarra sobre Rojo Rule", "body": "Un botón dentro de la franja es pizarra, no rojo. Los chips y etiquetas dentro de la franja son contorno blanco al 70% con texto blanco.", "section": "colors" },
+      { "name": "The Calco Rule", "body": "Mayúsculas en Montserrat ExtraBold son solo para nombres de máquina y línea (y el label de segmento). Los titulares y títulos van en frase normal.", "section": "typography" },
+      { "name": "The Atkinson para Leer Rule", "body": "Nada que se lea en párrafo va en Montserrat; nada de texto por debajo de 14 px salvo los rótulos de la navegación inferior (12 px bajo un ícono de 24 px).", "section": "typography" },
+      { "name": "The Plano por Tono Rule", "body": "Las tarjetas y listas no llevan sombra. Si algo necesita separarse, primero borde y tono; la sombra queda para campos de texto.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do abrir cada página con una única Franja roja de borde a borde y poner ahí el titular.",
+      "Do escribir los nombres de máquina como calco (Montserrat 800, mayúsculas) con el doble trazo al lado.",
+      "Do usar rojo presionado para cualquier texto o ícono rojo sobre fondo claro.",
+      "Do mantener todo objetivo táctil en 44 px o más (filas de línea 64 px, chips 48 px).",
+      "Do usar pizarra para el cromo (barra superior, navegación) y para botones dentro de la franja.",
+      "Do separar con borde y tono, no con sombra."
+    ],
+    "donts": [
+      "Don't poner una segunda superficie roja grande en la misma pantalla.",
+      "Don't usar el rojo de marca como color de texto sobre fondo claro.",
+      "Don't poner un botón rojo dentro de la franja roja.",
+      "Don't usar Montserrat para párrafos ni mayúsculas para titulares que no sean nombres de máquina.",
+      "Don't usar grises más claros que texto secundario para texto.",
+      "Don't depender de hover para mostrar información o acciones.",
+      "Don't escribir colores hex sueltos en los componentes; usar los tokens de src/app/globals.css."
+    ]
+  }
+}

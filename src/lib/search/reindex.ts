@@ -19,6 +19,7 @@ export type TaxonomiaKind =
   | "sistemas"
   | "temas"
   | "productos"
+  | "tecnologias"
   | "etiquetas";
 
 /**
@@ -43,6 +44,7 @@ export async function rebuildSearchForTaxonomia(
     sistemas: sql`SELECT documento_id FROM documento_sistemas WHERE sistema_id = ${id}`,
     temas: sql`SELECT documento_id FROM documento_temas WHERE tema_id = ${id}`,
     productos: sql`SELECT documento_id FROM documento_productos WHERE producto_id = ${id}`,
+    tecnologias: sql`SELECT documento_id FROM documento_tecnologias WHERE tecnologia_id = ${id}`,
     etiquetas: sql`SELECT documento_id FROM documento_etiquetas WHERE etiqueta_id = ${id}`,
   }[kind];
 

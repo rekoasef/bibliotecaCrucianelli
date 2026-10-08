@@ -59,6 +59,8 @@ export const SEED_PRODUCTOS = [
   "Accesorios siembra",
 ];
 
+export const SEED_TECNOLOGIAS = ["Precision Planting", "Leaf"];
+
 export const SEED_TEMAS = [
   "Regulación",
   "Calibración",

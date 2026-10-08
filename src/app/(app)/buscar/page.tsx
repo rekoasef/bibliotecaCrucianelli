@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RecentSearches } from "@/components/search/recent-searches";
+import { Franja } from "@/components/layout/franja";
 import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export const metadata: Metadata = { title: "Buscar" };
 
 const FILTER_KEYS = [
   "producto",
+  "tecnologia",
   "linea",
   "modelo",
   "tipo",
@@ -68,6 +70,7 @@ export default async function BuscarPage({
   const filters: SearchFilters = {
     q: str(sp.q, 200),
     producto: str(sp.producto),
+    tecnologia: str(sp.tecnologia),
     linea: str(sp.linea),
     modelo: str(sp.modelo),
     tipo: str(sp.tipo),
@@ -118,21 +121,28 @@ export default async function BuscarPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="sr-only">Buscar documentación</h1>
-      <SearchForm
-        defaultValue={filters.q}
-        hidden={{ ...current, q: undefined }}
-        autoFocusOnDesktop={!filters.q}
-        className="max-w-3xl"
-      />
-      <RecentSearches searches={busquedas} className="max-w-3xl" />
+      <Franja className="flex flex-col gap-4 pt-5 pb-6 md:pt-6 md:pb-7">
+        <h1 className="sr-only">Buscar documentación</h1>
+        <SearchForm
+          defaultValue={filters.q}
+          hidden={{ ...current, q: undefined }}
+          autoFocusOnDesktop={!filters.q}
+          tone="franja"
+          className="max-w-3xl"
+        />
+        <RecentSearches
+          searches={busquedas}
+          tone="franja"
+          className="max-w-3xl"
+        />
+      </Franja>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <aside
           aria-label="Filtros"
           className="hidden w-72 shrink-0 rounded-xl border bg-card p-4 lg:block"
         >
-          <h2 className="mb-3 text-lg font-bold">Filtros</h2>
+          <h2 className="mb-3 font-display text-lg font-extrabold">Filtros</h2>
           <FiltersForm idPrefix="d" options={options} filters={filters} />
         </aside>
 
@@ -179,7 +189,7 @@ export default async function BuscarPage({
 
           <h2
             id="titulo-resultados"
-            className="font-semibold text-muted-foreground"
+            className="font-display text-lg font-bold"
             aria-live="polite"
           >
             {limitado
@@ -283,6 +293,8 @@ function chipLabel(key: FilterKey, value: string, o: SearchOptions) {
   switch (key) {
     case "producto":
       return o.productos.find((t) => t.slug === value)?.nombre ?? value;
+    case "tecnologia":
+      return o.tecnologias.find((t) => t.slug === value)?.nombre ?? value;
     case "linea":
       return lineas.find((l) => l.slug === value)?.nombre ?? value;
     case "modelo":

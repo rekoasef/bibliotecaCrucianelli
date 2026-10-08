@@ -39,6 +39,12 @@ const TABS = [
       "Familia de producto, con su propio filtro en la búsqueda. Cero, uno o varios por documento.",
   },
   {
+    id: "tecnologias",
+    label: "Tecnologías",
+    ayuda:
+      "Tecnología de los documentos de Tecnología (Precision Planting, Leaf…), con su propio filtro en la búsqueda. Cero, una o varias por documento.",
+  },
+  {
     id: "etiquetas",
     label: "Etiquetas",
     ayuda: "Texto libre; se normalizan para evitar duplicados.",

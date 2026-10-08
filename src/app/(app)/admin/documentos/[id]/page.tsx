@@ -63,6 +63,7 @@ export default async function EditarDocumentoPage({
     sistemas,
     temas,
     productos,
+    tecnologias,
     segmentos,
     lineasConModelos,
     etiquetas,
@@ -73,6 +74,7 @@ export default async function EditarDocumentoPage({
     listCatalogo("sistemas"),
     listCatalogo("temas"),
     listCatalogo("productos"),
+    listCatalogo("tecnologias"),
     listSegmentos(),
     opcionesMaquinas(),
     listEtiquetas(),
@@ -284,12 +286,14 @@ export default async function EditarDocumentoPage({
           sistemaIds: doc.sistemaIds,
           temaIds: doc.temaIds,
           productoIds: doc.productoIds,
+          tecnologiaIds: doc.tecnologiaIds,
           etiquetas: doc.etiquetas,
         }}
         tipos={tipos}
         sistemas={sistemas}
         temas={temas}
         productos={productos}
+        tecnologias={tecnologias}
         segmentos={segmentos.map((s) => ({
           id: s.id,
           nombre: s.nombre,

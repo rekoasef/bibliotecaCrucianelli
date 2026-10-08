@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Franja } from "@/components/layout/franja";
 import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { TipoIcon } from "@/components/tipo-icon";
@@ -45,62 +46,65 @@ export async function MaquinaView({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href={modelo ? `/maquinas/${linea.slug}` : "/maquinas"}
-        className="-mb-2 flex min-h-11 items-center gap-1.5 self-start font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft aria-hidden className="size-5" />
-        {modelo ? linea.nombre : "Máquinas"}
-      </Link>
+      <Franja className="flex flex-col gap-4">
+        <Link
+          href={modelo ? `/maquinas/${linea.slug}` : "/maquinas"}
+          className="-mt-2 -ml-1 flex min-h-11 items-center gap-1.5 self-start rounded-md px-1 font-semibold text-white focus-visible:ring-3 focus-visible:ring-white/70 focus-visible:outline-none"
+        >
+          <ArrowLeft aria-hidden className="size-5" />
+          {modelo ? linea.nombre : "Máquinas"}
+        </Link>
 
-      <header className="flex items-center gap-4">
-        {tieneFoto && (
-          // eslint-disable-next-line @next/next/no-img-element -- servida por /api/lineas/[id]/foto
-          <img
-            src={`/api/lineas/${linea.id}/foto`}
-            alt=""
-            width={128}
-            height={96}
-            className="h-24 w-32 shrink-0 rounded-lg border bg-muted object-cover"
-          />
-        )}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            {nombre}
-          </h1>
-          <p className="text-muted-foreground">
-            {results.length === 1
-              ? "1 documento"
-              : `${results.length} documentos`}
-          </p>
-        </div>
-      </header>
+        <header className="flex items-center gap-4">
+          {tieneFoto && (
+            // eslint-disable-next-line @next/next/no-img-element -- servida por /api/lineas/[id]/foto
+            <img
+              src={`/api/lineas/${linea.id}/foto`}
+              alt=""
+              width={128}
+              height={96}
+              className="h-20 w-28 shrink-0 rounded-lg bg-white object-cover md:h-24 md:w-32"
+            />
+          )}
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="font-display text-4xl leading-none font-extrabold tracking-wide break-words uppercase md:text-6xl">
+              {nombre}
+            </h1>
+            <p className="font-semibold text-white">
+              {results.length === 1
+                ? "1 documento"
+                : `${results.length} documentos`}
+            </p>
+          </div>
+        </header>
 
-      {linea.modelos.length > 0 && (
-        <nav aria-label="Modelos" className="-mx-4 overflow-x-auto px-4">
-          <ul className="flex gap-2">
-            <ModeloChip href={`/maquinas/${linea.slug}`} active={!modelo}>
-              Todos los modelos
-            </ModeloChip>
-            {linea.modelos.map((m) => (
-              <ModeloChip
-                key={m.slug}
-                href={`/maquinas/${linea.slug}/${m.slug}`}
-                active={modelo?.slug === m.slug}
-              >
-                {m.nombre}
+        {linea.modelos.length > 0 && (
+          <nav aria-label="Modelos" className="-mx-4 overflow-x-auto px-4">
+            <ul className="flex gap-2">
+              <ModeloChip href={`/maquinas/${linea.slug}`} active={!modelo}>
+                Todos los modelos
               </ModeloChip>
-            ))}
-          </ul>
-        </nav>
-      )}
+              {linea.modelos.map((m) => (
+                <ModeloChip
+                  key={m.slug}
+                  href={`/maquinas/${linea.slug}/${m.slug}`}
+                  active={modelo?.slug === m.slug}
+                >
+                  {m.nombre}
+                </ModeloChip>
+              ))}
+            </ul>
+          </nav>
+        )}
 
-      <SearchForm
-        hidden={modelo ? { modelo: modelo.slug } : { linea: linea.slug }}
-        placeholder={`Buscar en ${nombre}…`}
-        label={`Buscar en ${nombre}`}
-        className="max-w-3xl"
-      />
+        <SearchForm
+          hidden={modelo ? { modelo: modelo.slug } : { linea: linea.slug }}
+          placeholder={`Buscar en ${nombre}…`}
+          label={`Buscar en ${nombre}`}
+          tone="franja"
+          className="max-w-3xl"
+        />
+      </Franja>
 
       {grupos.size === 0 ? (
         <p className="rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
@@ -137,7 +141,7 @@ export async function MaquinaView({
             >
               <h2
                 id={`titulo-${g.slug ?? "otros"}`}
-                className="flex items-center gap-2 text-xl font-bold"
+                className="flex items-center gap-2 font-display text-xl font-extrabold"
               >
                 {g.slug && (
                   <TipoIcon
@@ -180,9 +184,8 @@ function ModeloChip({
         href={href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-11 items-center rounded-full border bg-card px-4 font-medium hover:border-foreground/30",
-          active &&
-            "border-foreground bg-foreground text-background hover:border-foreground",
+          "flex min-h-11 items-center rounded-full border border-white/70 px-4 font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/10 focus-visible:ring-3 focus-visible:ring-white/70 focus-visible:outline-none",
+          active && "border-white bg-white text-brand-strong hover:bg-white",
         )}
       >
         {children}

@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 
-// Tipos, sistemas, temas y productos comparten estructura (docs/03-modelo-de-datos.md).
+// Tipos, sistemas, temas, productos y tecnologías comparten estructura (docs/03-modelo-de-datos.md).
 // Inactivo = no se ofrece al cargar, pero los documentos existentes lo conservan.
 function catalogo(nombreTabla: string) {
   return pgTable(nombreTabla, {
@@ -26,6 +26,8 @@ export const sistemas = catalogo("sistemas");
 export const temas = catalogo("temas");
 // Familia de producto: Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra.
 export const productos = catalogo("productos");
+// Tecnologías de los documentos de Tecnología: Precision Planting, Leaf…
+export const tecnologias = catalogo("tecnologias");
 
 export type ItemCatalogo = typeof tipos.$inferSelect;
 

@@ -49,6 +49,13 @@ Familia de producto, con su propio filtro en la búsqueda. Cero, uno o varios po
 
 > El producto "Fertilizadoras" sirve para clasificar desde ya. Mientras el segmento Fertilización esté inactivo, los documentos asociados solo a sus máquinas siguen ocultos (ver "Reglas" de máquinas).
 
+## Tecnologías
+
+Para los documentos de Tecnología: qué tecnología cubren. Cero, una o varias por documento, con su propio filtro en la búsqueda. Se administra en `/admin/taxonomia` (pestaña Tecnologías) y se pueden agregar las que hagan falta.
+
+- Precision Planting
+- Leaf
+
 ## Tipos de documento
 
 Uno por documento (obligatorio para publicar).

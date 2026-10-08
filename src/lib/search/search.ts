@@ -21,6 +21,7 @@ const TYPO_THRESHOLD = 0.5;
 export type SearchFilters = {
   q?: string;
   producto?: string; // slug
+  tecnologia?: string; // slug
   linea?: string; // slug
   modelo?: string; // slug
   tipo?: string; // slug
@@ -92,6 +93,10 @@ function filterConditions(f: SearchFilters): SQL[] {
   if (f.producto) {
     c.push(sql`EXISTS (SELECT 1 FROM documento_productos dp JOIN productos p ON p.id = dp.producto_id
                        WHERE dp.documento_id = documentos.id AND p.slug = ${f.producto})`);
+  }
+  if (f.tecnologia) {
+    c.push(sql`EXISTS (SELECT 1 FROM documento_tecnologias dte JOIN tecnologias te ON te.id = dte.tecnologia_id
+                       WHERE dte.documento_id = documentos.id AND te.slug = ${f.tecnologia})`);
   }
   if (f.sistema) {
     c.push(sql`EXISTS (SELECT 1 FROM documento_sistemas ds JOIN sistemas s ON s.id = ds.sistema_id
