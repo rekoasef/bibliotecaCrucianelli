@@ -1,0 +1,40 @@
+# Nginx de la VPS → app de la biblioteca (docker-compose.nginx.yml).
+# Copiar a /etc/nginx/sites-available/biblioteca, ajustar dominio y puerto,
+# enlazar en sites-enabled y sacar el certificado con:
+#   sudo certbot --nginx -d biblioteca.crucianelli.com
+
+server {
+    listen 80;
+    server_name biblioteca.crucianelli.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name biblioteca.crucianelli.com;
+
+    # Las completa certbot.
+    # ssl_certificate     /etc/letsencrypt/live/biblioteca.crucianelli.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/biblioteca.crucianelli.com/privkey.pem;
+
+    # La app no recibe subidas de archivos (vienen de Drive).
+    client_max_body_size 2m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3010;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        # REEMPLAZAR (no agregar) la IP del cliente: la app la usa para limitar
+        # intentos de login y descargas sin cuenta. No usar $proxy_add_x_forwarded_for.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # PDFs y planos se transmiten desde Drive: sin buffer y con tiempo para
+        # conexiones lentas del campo.
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

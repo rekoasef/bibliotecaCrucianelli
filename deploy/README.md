@@ -5,7 +5,7 @@ Todo corre con `docker-compose.prod.yml`: Postgres, migraciones, app (Next.js), 
 ## Requisitos
 
 - VPS con Docker y Docker Compose.
-- Un dominio o subdominio con un registro A apuntando a la VPS, y los puertos 80 y 443 abiertos (Caddy saca el certificado de Let's Encrypt solo).
+- Un dominio o subdominio con un registro A apuntando a la VPS, y los puertos 80 y 443 abiertos. Con Caddy el certificado sale solo; si la VPS ya tiene Nginx, ver "Con el Nginx de la VPS".
 - Archivos de Drive compartidos con "Cualquier persona con el vínculo" (no hace falta Google Cloud; ver `docs/08-google-drive-y-smtp.md`).
 - Datos del SMTP de la empresa.
 - Ancho de banda de subida suficiente: los PDFs y planos pasan por la VPS (los videos con link público, no).
@@ -76,9 +76,27 @@ docker compose -f docker-compose.prod.yml exec db dropdb -U biblioteca prueba_re
 
 (Este procedimiento se probó en desarrollo: misma cantidad de filas en todas las tablas e índice de búsqueda funcionando en la base restaurada.)
 
-## Si la empresa ya usa Nginx
+## Con el Nginx de la VPS
 
-Se puede sacar el servicio `proxy` y apuntar el Nginx existente a la app (publicando el puerto 3000 de `app` solo en `127.0.0.1`). Importante: Nginx tiene que **reemplazar** `X-Forwarded-For` con la IP real del cliente (`proxy_set_header X-Forwarded-For $remote_addr;`), porque la app la usa para limitar los intentos de login.
+La VPS de la empresa ya tiene Nginx (con otra app), así que no se usa Caddy: se agrega `docker-compose.nginx.yml`, que desactiva el servicio `proxy` y publica la app solo en `127.0.0.1:${APP_PORT}` (3010 por defecto; cambiarlo en `.env.production` si está ocupado).
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.nginx.yml --env-file .env.production up -d --build
+```
+
+Todos los comandos de este README llevan entonces los dos `-f` (actualizar, seed, logs, backups). Para no repetirlos, en la VPS se puede dejar en el `.env` de la carpeta (el que Compose lee solo):
+
+```bash
+COMPOSE_FILE=docker-compose.prod.yml:docker-compose.nginx.yml
+```
+
+Nginx: partir de `deploy/nginx.conf.example` (dominio, puerto) y sacar el certificado con `certbot --nginx`. Importante:
+
+- `X-Forwarded-For` se **reemplaza** con la IP real (`$remote_addr`), no se agrega: la app la usa para limitar intentos de login y descargas sin cuenta. Con `$proxy_add_x_forwarded_for` un cliente podría falsearla.
+- `proxy_buffering off` y timeouts largos, porque los PDFs se transmiten desde Drive.
+- Las cabeceras de seguridad (CSP, HSTS, etc.) las pone la app; no hace falta repetirlas en Nginx.
+
+`DOMAIN` sigue siendo obligatorio en `.env.production` (Compose lo valida), aunque Caddy no arranque.
 
 ## Tareas del worker
 
