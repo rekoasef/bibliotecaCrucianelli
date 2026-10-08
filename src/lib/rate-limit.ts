@@ -13,6 +13,9 @@ export const rateLimits = {
   // Archivos abiertos sin cuenta (clientes): cuida el ancho de banda de la VPS.
   // Generoso porque muchos celulares salen por la misma IP de la operadora.
   archivosClienteIp: { max: 200, windowSeconds: 60 * 60 },
+  // Búsquedas sin cuenta: cada una consulta la base y se registra; frena bots
+  // que buscan sin parar (inflan los registros y cargan Postgres).
+  busquedasClienteIp: { max: 300, windowSeconds: 60 * 60 },
 } satisfies Record<string, Rule>;
 
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };

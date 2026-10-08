@@ -129,6 +129,7 @@ No hay registro público. Los clientes finales no tienen cuenta: consultan sin l
 - `proxy.ts` solo exige cookie de sesión en `/admin` y `/cuenta`. El inicio, `/buscar`, `/maquinas`, las fichas, `/api/archivos/[id]` y las fotos de líneas se pueden abrir sin sesión.
 - Esas páginas usan `getViewer()`: devuelve el usuario y el `viewer` para la visibilidad, que sin sesión es `CLIENTE` (`{ rol: "cliente" }`). Nunca se arma un viewer a partir de datos del request.
 - Los accesos y búsquedas de clientes se registran con `usuario_id` null. Los clientes no tienen búsquedas recientes propias.
+- Límites por IP sin sesión: 200 archivos por hora (`/api/archivos/[id]`) y 300 búsquedas por hora (`/buscar`; pasado el límite no se busca ni se registra y se avisa cuándo volver a probar). Son generosos porque muchos celulares salen por la misma IP de la operadora.
 - Navegación sin sesión: Inicio, Buscar, Máquinas e "Ingresar" (en lugar de "Cuenta").
 
 ### Implementación (fase 1)

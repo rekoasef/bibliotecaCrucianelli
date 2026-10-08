@@ -35,6 +35,7 @@ Revisión del código antes del piloto, centrada en las reglas de `CLAUDE.md`. F
 | Sin sesión = cliente | `getViewer()` devuelve `CLIENTE` sin sesión; el viewer nunca sale del request. `/admin` y `/cuenta` siguen exigiendo sesión en el proxy y en el servidor. | OK |
 | Visibilidad del cliente | `documentVisibilityFilter` con `rol: "cliente"` exige `visible_clientes`. Tests por rol (incluido cliente) en visibilidad y búsqueda. Probado: sin sesión, ficha y archivo de un documento solo para concesionarios responden 404; marcado para clientes, 200/206. | OK |
 | Ancho de banda | `/api/archivos/[id]` sin sesión: 200 archivos por hora por IP (solo cuenta el primer pedido, no los `Range`). | OK |
+| Búsquedas de bots | `/buscar` sin sesión: 300 búsquedas por hora por IP; pasado el límite no consulta la base ni registra la búsqueda. Probado con una IP al tope: aviso y 0 registros nuevos. | OK |
 | Pausa por inactividad | Se verifica en el login (después de validar la contraseña, sin revelar si la cuenta existe) y en cada request; al pausar se borran las sesiones. | OK |
 
 ## Riesgos aceptados / pendientes

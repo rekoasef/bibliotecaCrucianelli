@@ -1,4 +1,4 @@
-import { SearchX, X } from "lucide-react";
+import { Clock, SearchX, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -7,6 +7,8 @@ import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { Button } from "@/components/ui/button";
 import { getViewer } from "@/lib/auth/session";
+import { formatRetryAfter, hit, rateLimits } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request";
 import { getSearchOptions, type SearchOptions } from "@/lib/search/options";
 import {
   PAGE_SIZE,
@@ -79,14 +81,26 @@ export default async function BuscarPage({
   const activeFilters = FILTER_KEYS.filter((k) => filters[k]);
   const hayBusqueda = Boolean(filters.q) || activeFilters.length > 0;
 
+  // Sin cuenta, tope de búsquedas por IP: pasado el límite no se busca ni se registra.
+  const limite =
+    !user && hayBusqueda
+      ? await hit(
+          `busqueda:ip:${await getClientIp()}`,
+          rateLimits.busquedasClienteIp,
+        )
+      : null;
+  const limitado = limite ? !limite.allowed : false;
+
   const [options, { total, results, correccion }, busquedas] =
     await Promise.all([
       getSearchOptions(viewer),
-      searchDocuments(filters, viewer, pagina * PAGE_SIZE),
+      limitado
+        ? { total: 0, results: [], correccion: undefined }
+        : searchDocuments(filters, viewer, pagina * PAGE_SIZE),
       // Sin búsqueda en curso: accesos directos a las últimas.
       hayBusqueda || !user ? [] : recentSearches(user.id),
     ]);
-  if (hayBusqueda && pagina === 1) {
+  if (hayBusqueda && pagina === 1 && !limitado) {
     await registrarBusqueda({
       usuarioId: user?.id ?? null,
       filters,
@@ -168,12 +182,14 @@ export default async function BuscarPage({
             className="font-semibold text-muted-foreground"
             aria-live="polite"
           >
-            {total === 0
-              ? "Sin resultados"
-              : total === 1
-                ? "1 resultado"
-                : `${total} resultados`}
-            {filters.q && (
+            {limitado
+              ? "Búsqueda en pausa"
+              : total === 0
+                ? "Sin resultados"
+                : total === 1
+                  ? "1 resultado"
+                  : `${total} resultados`}
+            {filters.q && !limitado && (
               <>
                 {" "}
                 para{" "}
@@ -190,7 +206,25 @@ export default async function BuscarPage({
             </p>
           )}
 
-          {total === 0 ? (
+          {limitado ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-dashed bg-card p-5">
+              <Clock aria-hidden className="size-8 text-muted-foreground" />
+              <p className="text-lg font-semibold">
+                Hubo demasiadas búsquedas desde tu conexión.
+              </p>
+              <p className="text-muted-foreground">
+                Probá de nuevo en {formatRetryAfter(limite!.retryAfterSeconds)}.
+                Mientras tanto podés{" "}
+                <Link
+                  href="/maquinas"
+                  className="font-medium text-brand-strong underline"
+                >
+                  buscar por máquina
+                </Link>
+                .
+              </p>
+            </div>
+          ) : total === 0 ? (
             <EmptyState hayFiltros={activeFilters.length > 0} q={filters.q} />
           ) : (
             <>
