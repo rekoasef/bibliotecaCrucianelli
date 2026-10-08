@@ -16,7 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { listCatalogo, listLineasConSegmento } from "@/db/queries/taxonomia";
-import { estadoDoc, visibilidadDoc } from "@/db/schema";
+import { estadoDoc } from "@/db/schema";
+import { publicosLabel } from "@/lib/documentos/rules";
 import {
   listDocumentosAdmin,
   type DocumentoFilters,
@@ -27,9 +28,10 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Documentos" };
 
-const VISIBILIDAD = {
-  concesionarios: "Concesionarios",
-  fabrica: "Solo fábrica",
+const PUBLICO = {
+  concesionarios: "Para concesionarios",
+  clientes: "Para clientes",
+  "solo-fabrica": "Solo fábrica",
 } as const;
 const ESTADO = {
   borrador: "Borrador",
@@ -56,11 +58,11 @@ export default async function DocumentosPage({
       .optional()
       .catch(undefined)
       .parse(str(sp.estado)),
-    visibilidad: z
-      .enum(visibilidadDoc.enumValues)
+    publico: z
+      .enum(["concesionarios", "clientes", "solo-fabrica"])
       .optional()
       .catch(undefined)
-      .parse(str(sp.visibilidad)),
+      .parse(str(sp.publico)),
     tipoId: tipos.find((t) => t.id === sp.tipo)?.id,
     lineaId: lineas.find((l) => l.id === sp.linea)?.id,
     revision: sp.revision === "1",
@@ -141,11 +143,11 @@ export default async function DocumentosPage({
         </Filter>
         <Filter
           id="f-vis"
-          name="visibilidad"
+          name="publico"
           label="Visibilidad"
-          value={filters.visibilidad}
+          value={filters.publico}
         >
-          {Object.entries(VISIBILIDAD).map(([v, l]) => (
+          {Object.entries(PUBLICO).map(([v, l]) => (
             <option key={v} value={v}>
               {l}
             </option>
@@ -223,7 +225,7 @@ export default async function DocumentosPage({
                   <TableCell>
                     <EstadoDocBadge estado={d.estado} />
                   </TableCell>
-                  <TableCell>{VISIBILIDAD[d.visibilidad]}</TableCell>
+                  <TableCell>{publicosLabel(d)}</TableCell>
                   <TableCell className="tabular-nums">
                     {formatFecha(d.actualizadoEn)}
                   </TableCell>

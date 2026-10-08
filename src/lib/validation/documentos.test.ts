@@ -9,30 +9,36 @@ describe("clasificacionSchema", () => {
     fd.set("titulo", "  Manual Gringa  ");
     fd.set("tipoId", "");
     fd.set("fechaDocumento", "");
-    fd.set("visibilidad", "fabrica");
+    fd.append("publicos", "concesionarios");
+    fd.append("publicos", "clientes");
     fd.append("lineas", UUID);
+    fd.append("productos", UUID);
     fd.append("sistemas", UUID);
     const r = clasificacionSchema.parse(clasificacionFromForm(fd));
     expect(r).toMatchObject({
       titulo: "Manual Gringa",
       tipoId: null,
       fechaDocumento: null,
-      visibilidad: "fabrica",
+      visibleConcesionarios: true,
+      visibleClientes: true,
       lineaIds: [UUID],
       modeloIds: [],
       sistemaIds: [UUID],
+      productoIds: [UUID],
     });
   });
 
-  it("rechaza fechas inválidas y visibilidades desconocidas", () => {
+  it("sin casillas de público queda Solo fábrica", () => {
+    const r = clasificacionSchema.parse(clasificacionFromForm(new FormData()));
+    expect(r).toMatchObject({
+      visibleConcesionarios: false,
+      visibleClientes: false,
+    });
+  });
+
+  it("rechaza fechas inválidas", () => {
     expect(
-      clasificacionSchema.safeParse({
-        visibilidad: "fabrica",
-        fechaDocumento: "31/12/2024",
-      }).success,
-    ).toBe(false);
-    expect(
-      clasificacionSchema.safeParse({ visibilidad: "todos" }).success,
+      clasificacionSchema.safeParse({ fechaDocumento: "31/12/2024" }).success,
     ).toBe(false);
   });
 });

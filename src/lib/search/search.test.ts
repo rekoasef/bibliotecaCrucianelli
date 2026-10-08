@@ -7,18 +7,20 @@ import {
   documentoEtiquetas,
   documentoLineas,
   documentoModelos,
+  documentoProductos,
   documentoSistemas,
   documentos,
   etiquetas,
   lineas,
   modelos,
+  productos,
   segmentos,
   sistemas,
   tipos,
   usuarios,
   type EstadoDoc,
-  type VisibilidadDoc,
 } from "@/db/schema";
+import type { RolLector } from "@/lib/documentos/visibility";
 import { normalizeTag } from "@/lib/text";
 import { rebuildDocumentSearch } from "./reindex";
 import {
@@ -80,6 +82,10 @@ async function createFixture(tx: Tx) {
     .insert(sistemas)
     .values({ nombre: `Dosificación ${x}`, slug: `dosificacion-${x}` })
     .returning();
+  const [tecnologia] = await tx
+    .insert(productos)
+    .values({ nombre: `Tecnologíax ${x}`, slug: `tecnologia-${x}` })
+    .returning();
   const [sensor] = await tx
     .insert(etiquetas)
     .values({
@@ -95,12 +101,14 @@ async function createFixture(tx: Tx) {
       titulo: string;
       tipoId: string;
       estado?: EstadoDoc;
-      visibilidad?: VisibilidadDoc;
+      /** Para quién está marcado (fábrica ve todo). Default: concesionarios. */
+      publico?: "conc" | "fab" | "cli" | "conc+cli";
       descripcion?: string;
       texto?: string;
       lineas?: string[];
       modelos?: string[];
       sistemas?: string[];
+      productos?: string[];
       etiquetas?: string[];
     },
   ) {
@@ -111,7 +119,8 @@ async function createFixture(tx: Tx) {
         tipoId: data.tipoId,
         descripcion: data.descripcion,
         estado: data.estado ?? "vigente",
-        visibilidad: data.visibilidad ?? "concesionarios",
+        visibleConcesionarios: (data.publico ?? "conc").includes("conc"),
+        visibleClientes: (data.publico ?? "conc").includes("cli"),
         publicadoEn: new Date(),
       })
       .returning({ id: documentos.id });
@@ -127,6 +136,10 @@ async function createFixture(tx: Tx) {
     for (const id of data.sistemas ?? [])
       await tx
         .insert(documentoSistemas)
+        .values({ documentoId: d.id, itemId: id });
+    for (const id of data.productos ?? [])
+      await tx
+        .insert(documentoProductos)
         .values({ documentoId: d.id, itemId: id });
     for (const id of data.etiquetas ?? [])
       await tx
@@ -166,6 +179,13 @@ async function createFixture(tx: Tx) {
     tipoId: despiece.id,
     modelos: [gringaV.id],
   });
+  // Sin máquina: solo producto, para clientes y concesionarios.
+  await doc("monitor", {
+    titulo: "Monitor de siembra: configuración",
+    tipoId: instructivo.id,
+    productos: [tecnologia.id],
+    publico: "conc+cli",
+  });
   await doc("enElTexto", {
     titulo: "Manual general",
     tipoId: instructivo.id,
@@ -182,7 +202,7 @@ async function createFixture(tx: Tx) {
   await doc("soloFabrica", {
     titulo: "Plano del dosificador",
     tipoId: despiece.id,
-    visibilidad: "fabrica",
+    publico: "fab",
     lineas: [gringa.id],
     descripcion: `Cambio del ${palabraFabrica}.`,
   });
@@ -204,6 +224,7 @@ async function createFixture(tx: Tx) {
       plantor: plantor.slug,
       despiece: despiece.slug,
       dosificacion: dosificacion.slug,
+      tecnologia: tecnologia.slug,
     },
   };
 }
@@ -212,7 +233,7 @@ async function buscar(
   tx: Tx,
   f: Fixture,
   filters: SearchFilters,
-  rol: "fabrica" | "concesionario" = "concesionario",
+  rol: Exclude<RolLector, "admin"> = "concesionario",
 ) {
   // Acotado a los documentos del fixture (la base de desarrollo puede tener otros).
   const { results } = await searchDocuments(filters, { rol }, 50, tx);
@@ -299,6 +320,26 @@ describe("searchDocuments", () => {
       expect(conc).not.toContain("borrador");
       expect(await buscar(tx, f, { q: "dosificador" }, "fabrica")).toContain(
         "soloFabrica",
+      );
+    });
+  });
+
+  it("cliente final (sin cuenta) solo encuentra lo marcado para clientes", async () => {
+    await withFixture(async (tx, f) => {
+      expect(await buscar(tx, f, { q: "siembra" }, "cliente")).toEqual([
+        "monitor",
+      ]);
+      expect(await buscar(tx, f, { q: "dosificador" }, "cliente")).toEqual([]);
+    });
+  });
+
+  it("filtra por producto y encuentra por el nombre del producto", async () => {
+    await withFixture(async (tx, f) => {
+      expect(
+        await buscar(tx, f, { producto: f.slugs.tecnologia }, "fabrica"),
+      ).toEqual(["monitor"]);
+      expect(await buscar(tx, f, { q: `tecnologiax ${f.x}` })).toContain(
+        "monitor",
       );
     });
   });

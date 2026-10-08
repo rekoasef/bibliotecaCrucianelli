@@ -7,12 +7,14 @@ import {
   documentoEtiquetas,
   documentoLineas,
   documentoModelos,
+  documentoProductos,
   documentoSistemas,
   documentoTemas,
   documentos,
   etiquetas,
   lineas,
   modelos,
+  productos,
   sistemas,
   temas,
   tipos,
@@ -41,7 +43,8 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
       titulo: documentos.titulo,
       descripcion: documentos.descripcion,
       estado: documentos.estado,
-      visibilidad: documentos.visibilidad,
+      visibleConcesionarios: documentos.visibleConcesionarios,
+      visibleClientes: documentos.visibleClientes,
       version: documentos.version,
       fechaDocumento: documentos.fechaDocumento,
       publicadoEn: documentos.publicadoEn,
@@ -56,7 +59,7 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
   if (!doc) return null;
 
   const soloActivos = viewer.rol !== "admin";
-  const [arch, lins, mods, sis, tems, etqs] = await Promise.all([
+  const [arch, lins, mods, sis, tems, prods, etqs] = await Promise.all([
     db
       .select()
       .from(archivos)
@@ -104,6 +107,12 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
       .where(eq(documentoTemas.documentoId, id))
       .orderBy(asc(temas.orden)),
     db
+      .select({ nombre: productos.nombre, slug: productos.slug })
+      .from(documentoProductos)
+      .innerJoin(productos, eq(documentoProductos.itemId, productos.id))
+      .where(eq(documentoProductos.documentoId, id))
+      .orderBy(asc(productos.orden)),
+    db
       .select({
         nombre: etiquetas.nombre,
         normalizado: etiquetas.nombreNormalizado,
@@ -131,6 +140,7 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
     modelos: mods,
     sistemas: sis,
     temas: tems,
+    productos: prods,
     etiquetas: etqs,
     historial: await getHistorial(id, viewer),
   };
@@ -207,7 +217,8 @@ export async function getArchivoVisible(archivoId: string, viewer: Viewer) {
 }
 
 export async function registrarAcceso(input: {
-  usuarioId: string;
+  /** null = cliente final sin cuenta. */
+  usuarioId: string | null;
   documentoId: string;
   archivoId?: string;
   accion: "ver" | "descargar" | "video";

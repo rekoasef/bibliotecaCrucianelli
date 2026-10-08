@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { lineas, modelos } from "@/db/schema";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions } from "@/lib/search/options";
 import { MaquinaView } from "../../maquina-view";
 
@@ -21,9 +21,9 @@ export async function generateMetadata({
 export default async function ModeloPage({
   params,
 }: PageProps<"/maquinas/[linea]/[modelo]">) {
-  const user = await requireUser();
+  const { viewer } = await getViewer();
   const { linea: lineaSlug, modelo: modeloSlug } = await params;
-  const { maquinas } = await getSearchOptions(user);
+  const { maquinas } = await getSearchOptions(viewer);
   const linea = maquinas
     .flatMap((s) => s.lineas)
     .find((l) => l.slug === lineaSlug);
@@ -36,7 +36,7 @@ export default async function ModeloPage({
     .where(eq(lineas.id, linea.id));
   return (
     <MaquinaView
-      user={user}
+      viewer={viewer}
       linea={linea}
       modelo={modelo}
       tieneFoto={Boolean(row?.foto)}

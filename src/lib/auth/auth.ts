@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   concesionarios,
@@ -15,21 +15,53 @@ import {
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail/mailer";
 import { passwordResetEmail } from "@/lib/mail/templates";
+import { superaInactividad } from "./inactividad";
 
-/** Usuario activo y, si es de concesionario, con el concesionario activo. */
-export async function isUsuarioHabilitado(usuarioId: string) {
+export const USUARIO_INACTIVO = "USUARIO_INACTIVO";
+export const USUARIO_PAUSADO = "USUARIO_PAUSADO";
+
+/**
+ * Si el usuario puede usar la app: activo, con el concesionario activo (si es de
+ * concesionario) y sin pausa por inactividad. Si recién superó el plazo de
+ * inactividad, guarda la pausa (queda así hasta que el admin la levante).
+ */
+export async function estadoAcceso(
+  usuarioId: string,
+): Promise<"ok" | typeof USUARIO_INACTIVO | typeof USUARIO_PAUSADO> {
   const [row] = await db
     .select({
+      rol: usuarios.rol,
       activo: usuarios.activo,
+      pausadoEn: usuarios.pausadoEn,
+      ultimaActividad: usuarios.ultimaActividad,
+      ultimoIngreso: usuarios.ultimoIngreso,
       concesionarioActivo: concesionarios.activo,
     })
     .from(usuarios)
     .leftJoin(concesionarios, eq(usuarios.concesionarioId, concesionarios.id))
     .where(eq(usuarios.id, usuarioId));
-  return Boolean(row?.activo && row.concesionarioActivo !== false);
+  if (!row?.activo || row.concesionarioActivo === false)
+    return USUARIO_INACTIVO;
+  if (row.pausadoEn) return USUARIO_PAUSADO;
+  if (superaInactividad(row, env().INACTIVIDAD_DIAS, new Date())) {
+    await pausarUsuario(usuarioId);
+    return USUARIO_PAUSADO;
+  }
+  return "ok";
 }
 
-export const USUARIO_INACTIVO = "USUARIO_INACTIVO";
+/** Marca la pausa por inactividad y cierra sus sesiones. */
+export async function pausarUsuario(usuarioId: string) {
+  await db
+    .update(usuarios)
+    .set({ pausadoEn: new Date() })
+    .where(and(eq(usuarios.id, usuarioId), isNull(usuarios.pausadoEn)));
+  await db.delete(sesiones).where(eq(sesiones.userId, usuarioId));
+}
+
+export async function isUsuarioHabilitado(usuarioId: string) {
+  return (await estadoAcceso(usuarioId)) === "ok";
+}
 
 // La app no expone el handler HTTP de Better Auth (/api/auth/*): todo pasa por
 // Server Actions que llaman a `auth.api.*` y aplican nuestro rate limiting.
@@ -92,16 +124,19 @@ export const auth = betterAuth({
   databaseHooks: {
     session: {
       create: {
-        // Bloqueo de usuarios y concesionarios inactivos al iniciar sesión.
+        // Bloqueo de usuarios y concesionarios inactivos, y de cuentas pausadas
+        // por inactividad, al iniciar sesión.
         before: async (session) => {
-          if (!(await isUsuarioHabilitado(session.userId))) {
-            throw new APIError("FORBIDDEN", { message: USUARIO_INACTIVO });
+          const estado = await estadoAcceso(session.userId);
+          if (estado !== "ok") {
+            throw new APIError("FORBIDDEN", { message: estado });
           }
         },
         after: async (session) => {
+          const ahora = new Date();
           await db
             .update(usuarios)
-            .set({ ultimoIngreso: new Date() })
+            .set({ ultimoIngreso: ahora, ultimaActividad: ahora })
             .where(eq(usuarios.id, session.userId));
         },
       },

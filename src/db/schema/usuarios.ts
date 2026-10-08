@@ -43,6 +43,10 @@ export const usuarios = pgTable(
     ),
     activo: boolean("activo").notNull().default(true),
     ultimoIngreso: timestamp("ultimo_ingreso", { withTimezone: true }),
+    // Último uso de la app (la sesión se renueva sola, así que el login no alcanza).
+    ultimaActividad: timestamp("ultima_actividad", { withTimezone: true }),
+    // Cuenta pausada por inactividad; solo el admin la vuelve a habilitar.
+    pausadoEn: timestamp("pausado_en", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [

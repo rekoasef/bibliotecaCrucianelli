@@ -3,27 +3,24 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { PATHNAME_HEADER } from "@/lib/auth/constants";
 
-// Rutas que no requieren sesión.
-const PUBLIC_PATHS = [
-  "/login",
-  "/olvide-contrasena",
-  "/restablecer/",
-  "/invitacion/",
-  "/api/health",
-];
+// Rutas que exigen sesión. El resto (inicio, búsqueda, máquinas, fichas y
+// archivos) es de acceso libre para clientes finales: sin sesión, el servidor
+// muestra solo lo marcado para clientes (documentVisibilityFilter).
+const PRIVATE_PATHS = ["/admin", "/cuenta"];
 
 /**
- * Chequeo optimista: si no hay cookie de sesión, manda al login sin renderizar.
- * La verificación real (sesión válida, usuario activo, rol) se hace en el
- * servidor con `requireUser` / `requireAdmin` en cada página y Server Action.
+ * Chequeo optimista: en rutas privadas, si no hay cookie de sesión, manda al
+ * login sin renderizar. La verificación real (sesión válida, usuario activo,
+ * rol) se hace en el servidor con `requireUser` / `requireAdmin` en cada página
+ * y Server Action.
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
+  const isPrivate = PRIVATE_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
-  if (!getSessionCookie(request, { cookiePrefix: "biblioteca" })) {
+  if (isPrivate && !getSessionCookie(request, { cookiePrefix: "biblioteca" })) {
     const url = new URL("/login", request.url);
     if (pathname !== "/") url.searchParams.set("next", pathname + search);
     return NextResponse.redirect(url);

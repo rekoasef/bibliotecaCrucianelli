@@ -28,6 +28,14 @@ export function FiltersForm({
     <form action="/buscar" className="flex flex-col gap-4">
       {filters.q && <input type="hidden" name="q" value={filters.q} />}
 
+      <Select
+        id={id("producto")}
+        name="producto"
+        label="Producto"
+        value={filters.producto}
+        opciones={options.productos}
+      />
+
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("maquina")}>Máquina</Label>
         <NativeSelect id={id("maquina")} name="maquina" defaultValue={maquina}>

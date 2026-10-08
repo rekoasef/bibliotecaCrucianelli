@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { visibilidadDoc } from "@/db/schema/documentos";
 
 const textoOpcional = (max: number, campo: string) =>
   z
@@ -25,11 +24,14 @@ export const clasificacionSchema = z.object({
     .optional()
     .transform((v) => v || null)
     .pipe(z.iso.date("Fecha inválida.").nullable()),
-  visibilidad: z.enum(visibilidadDoc.enumValues),
+  // Casillas "Concesionarios" y "Clientes" (fábrica ve todo; ninguna = Solo fábrica).
+  visibleConcesionarios: z.boolean().default(false),
+  visibleClientes: z.boolean().default(false),
   lineaIds: ids,
   modeloIds: ids,
   sistemaIds: ids,
   temaIds: ids,
+  productoIds: ids,
   etiquetas: z.string().max(1000).default(""),
 });
 
@@ -47,11 +49,13 @@ export function clasificacionFromForm(formData: FormData) {
     tipoId: one("tipoId"),
     version: one("version"),
     fechaDocumento: one("fechaDocumento"),
-    visibilidad: one("visibilidad"),
+    visibleConcesionarios: all("publicos").includes("concesionarios"),
+    visibleClientes: all("publicos").includes("clientes"),
     lineaIds: all("lineas"),
     modeloIds: all("modelos"),
     sistemaIds: all("sistemas"),
     temaIds: all("temas"),
+    productoIds: all("productos"),
     etiquetas: one("etiquetas") ?? "",
   };
 }

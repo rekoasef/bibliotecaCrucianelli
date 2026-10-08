@@ -6,7 +6,7 @@ import { RecentSearches } from "@/components/search/recent-searches";
 import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { Button } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions, type SearchOptions } from "@/lib/search/options";
 import {
   PAGE_SIZE,
@@ -21,6 +21,7 @@ import { FiltersSheet } from "./filters-sheet";
 export const metadata: Metadata = { title: "Buscar" };
 
 const FILTER_KEYS = [
+  "producto",
   "linea",
   "modelo",
   "tipo",
@@ -45,7 +46,7 @@ function buscarUrl(params: Record<string, string | undefined>) {
 export default async function BuscarPage({
   searchParams,
 }: PageProps<"/buscar">) {
-  const user = await requireUser();
+  const { user, viewer } = await getViewer();
   const sp = await searchParams;
 
   // El selector "Máquina" del formulario manda maquina=linea:x / modelo:x;
@@ -64,6 +65,7 @@ export default async function BuscarPage({
 
   const filters: SearchFilters = {
     q: str(sp.q, 200),
+    producto: str(sp.producto),
     linea: str(sp.linea),
     modelo: str(sp.modelo),
     tipo: str(sp.tipo),
@@ -79,13 +81,17 @@ export default async function BuscarPage({
 
   const [options, { total, results, correccion }, busquedas] =
     await Promise.all([
-      getSearchOptions(user),
-      searchDocuments(filters, user, pagina * PAGE_SIZE),
+      getSearchOptions(viewer),
+      searchDocuments(filters, viewer, pagina * PAGE_SIZE),
       // Sin búsqueda en curso: accesos directos a las últimas.
-      hayBusqueda ? [] : recentSearches(user.id),
+      hayBusqueda || !user ? [] : recentSearches(user.id),
     ]);
   if (hayBusqueda && pagina === 1) {
-    await registrarBusqueda({ usuarioId: user.id, filters, cantidad: total });
+    await registrarBusqueda({
+      usuarioId: user?.id ?? null,
+      filters,
+      cantidad: total,
+    });
   }
 
   const current: Record<string, string | undefined> = {
@@ -241,6 +247,8 @@ export default async function BuscarPage({
 function chipLabel(key: FilterKey, value: string, o: SearchOptions) {
   const lineas = o.maquinas.flatMap((s) => s.lineas);
   switch (key) {
+    case "producto":
+      return o.productos.find((t) => t.slug === value)?.nombre ?? value;
     case "linea":
       return lineas.find((l) => l.slug === value)?.nombre ?? value;
     case "modelo":

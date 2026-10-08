@@ -20,17 +20,17 @@ segmentos 1─N lineas 1─N modelos
 
    documentos 1─N archivos
    documentos N─M etiquetas (documento_etiquetas)
+   documentos N─M productos (documento_productos)
 
 concesionarios 1─N usuarios
-usuarios 1─N accesos N─1 documentos
-usuarios 1─N busquedas
+usuarios 0..1─N accesos N─1 documentos   (usuario null = cliente final sin cuenta)
+usuarios 0..1─N busquedas
 ```
 
 ## Tipos enumerados
 
 ```sql
 CREATE TYPE rol_usuario       AS ENUM ('admin', 'fabrica', 'concesionario');
-CREATE TYPE visibilidad_doc   AS ENUM ('concesionarios', 'fabrica');
 CREATE TYPE estado_doc        AS ENUM ('borrador', 'vigente', 'obsoleto');
 CREATE TYPE modo_acceso       AS ENUM ('servidor', 'publico');
 CREATE TYPE estado_extraccion AS ENUM ('pendiente', 'procesando', 'ok', 'sin_texto', 'error', 'no_aplica');
@@ -100,6 +100,8 @@ Gringa V, Gringa Nueva…
 | concesionario_id | uuid FK → concesionarios, null | |
 | activo | boolean | |
 | ultimo_ingreso | timestamptz | null |
+| ultima_actividad | timestamptz | null; último uso de la app (se actualiza como mucho una vez por hora). Mide la inactividad |
+| pausado_en | timestamptz | null; cuenta pausada por inactividad, hasta que el admin la rehabilite |
 
 ```sql
 CHECK ((rol = 'concesionario') = (concesionario_id IS NOT NULL))
@@ -131,8 +133,8 @@ Contadores de ventana fija para el rate limiting de login, recuperación de cont
 
 ## Taxonomía
 
-### `tipos`, `sistemas`, `temas`
-Las tres con la misma estructura:
+### `tipos`, `sistemas`, `temas`, `productos`
+Las cuatro con la misma estructura (`productos`: Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra):
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -162,7 +164,8 @@ Las etiquetas se crean al vuelo desde el formulario de carga (con autocompletado
 | titulo | text | obligatorio para publicar |
 | descripcion | text | opcional |
 | tipo_id | uuid FK → tipos, null | obligatorio para publicar |
-| visibilidad | visibilidad_doc | default `concesionarios` |
+| visible_concesionarios | boolean | default `true`; lo ven los concesionarios |
+| visible_clientes | boolean | default `false`; lo ven los clientes finales (sin cuenta). Fábrica ve todo; sin ninguno de los dos = "Solo fábrica" |
 | estado | estado_doc | default `borrador` |
 | reemplazado_por_id | uuid FK → documentos, null | solo cuando `estado = 'obsoleto'` |
 | reemplaza_id | uuid FK → documentos, null | en un borrador creado con "Nueva versión": el documento que pasa a obsoleto al publicarlo |
@@ -184,9 +187,9 @@ Reglas para publicar (validadas en el servidor, además de los `CHECK`):
 
 - título y tipo cargados,
 - al menos un archivo,
-- al menos una máquina (línea o modelo) asociada.
+- al menos una máquina (línea o modelo) **o** un producto asociado (Tecnología y Accesorios pueden no corresponder a una máquina).
 
-Sistemas, temas y etiquetas son opcionales (un manual general puede no tener).
+Sistemas, temas, productos y etiquetas son opcionales (un manual general puede no tener).
 
 ### `archivos`
 
@@ -214,6 +217,7 @@ Sistemas, temas y etiquetas son opcionales (un manual general puede no tener).
 | `documento_modelos` | documento_id, modelo_id | (documento_id, modelo_id) |
 | `documento_sistemas` | documento_id, sistema_id | (documento_id, sistema_id) |
 | `documento_temas` | documento_id, tema_id | (documento_id, tema_id) |
+| `documento_productos` | documento_id, producto_id | (documento_id, producto_id) |
 | `documento_etiquetas` | documento_id, etiqueta_id | (documento_id, etiqueta_id) |
 
 Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna (borrar una etiqueta la quita de los documentos; líneas, modelos, sistemas y temas no se borran, se desactivan).
@@ -224,7 +228,7 @@ Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna 
 
 - Las versiones conviven: el documento viejo no se borra.
 - Flujo "Nueva versión" desde la ficha de admin:
-  1. se crea un documento nuevo en `borrador` copiando título, tipo, visibilidad, máquinas, sistemas, temas y etiquetas, con `reemplaza_id` apuntando al vigente;
+  1. se crea un documento nuevo en `borrador` copiando título, tipo, públicos, máquinas, sistemas, temas, productos y etiquetas, con `reemplaza_id` apuntando al vigente;
   2. el admin elige el archivo nuevo en Drive y ajusta lo que haga falta;
   3. al publicar el nuevo, en la misma transacción el anterior pasa a `obsoleto` con `reemplazado_por_id` apuntando al nuevo.
 - Para mostrar el historial, se recorre la cadena de `reemplazado_por_id` (consulta recursiva).
@@ -237,7 +241,7 @@ Todas con `ON DELETE CASCADE` en ambos lados y un índice en la segunda columna 
 | Columna | Tipo | Notas |
 |---|---|---|
 | id | bigserial PK | |
-| usuario_id | uuid FK → usuarios | |
+| usuario_id | uuid FK → usuarios, null | null = cliente final sin cuenta |
 | documento_id | uuid FK → documentos | |
 | archivo_id | uuid FK → archivos, null | |
 | accion | accion_acceso | |
@@ -250,7 +254,7 @@ Se registra al ver la ficha (`ver`), al abrir o descargar un archivo servido (`v
 | Columna | Tipo | Notas |
 |---|---|---|
 | id | bigserial PK | |
-| usuario_id | uuid FK → usuarios | |
+| usuario_id | uuid FK → usuarios, null | null = cliente final sin cuenta |
 | texto | text | null si fue solo navegación por filtros |
 | filtros | jsonb | filtros aplicados |
 | cantidad_resultados | int | |
@@ -290,7 +294,7 @@ CREATE INDEX documentos_busqueda_idx  ON documentos USING gin (busqueda);
 CREATE INDEX documentos_titulo_trgm   ON documentos USING gin (titulo gin_trgm_ops);
 CREATE INDEX etiquetas_nombre_trgm    ON etiquetas  USING gin (nombre_normalizado gin_trgm_ops);
 CREATE INDEX vocabulario_palabra_trgm ON vocabulario USING gin (palabra gin_trgm_ops);
-CREATE INDEX documentos_estado_vis    ON documentos (estado, visibilidad);
+CREATE INDEX documentos_estado_idx    ON documentos (estado);
 CREATE INDEX archivos_documento_idx   ON archivos (documento_id);
 CREATE INDEX archivos_extraccion_idx  ON archivos (estado_extraccion) WHERE estado_extraccion = 'pendiente';
 CREATE INDEX accesos_documento_idx    ON accesos (documento_id, creado_en);
@@ -305,5 +309,5 @@ Para el índice trigram sin acentos sobre `titulo`, usar una función `immutable
 
 - Segmentos: Granos gruesos, Granos finos (activos) y Fertilización (inactivo).
 - Líneas y modelos: ver `04-taxonomia.md`.
-- Tipos, sistemas y temas iniciales: ver `04-taxonomia.md`.
+- Tipos, sistemas, temas y productos iniciales: ver `04-taxonomia.md`.
 - Un usuario admin inicial, con email tomado de una variable de entorno (`ADMIN_EMAIL`) y que recibe la invitación al ejecutar el seed.

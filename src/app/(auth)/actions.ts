@@ -8,7 +8,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { usuarios } from "@/db/schema";
 import type { FormState } from "@/components/forms/form-state";
-import { auth, USUARIO_INACTIVO } from "@/lib/auth/auth";
+import { auth, USUARIO_INACTIVO, USUARIO_PAUSADO } from "@/lib/auth/auth";
 import { findUsuarioIdByToken } from "@/lib/auth/invitations";
 import { formatRetryAfter, hit, rateLimits, reset } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
@@ -17,11 +17,11 @@ import { safeRedirectPath } from "@/lib/safe-redirect";
 const MSG_INACTIVO =
   "Tu usuario está desactivado. Consultá con el responsable de la biblioteca.";
 
-function isInactiveError(error: APIError) {
-  return (
-    error.message === USUARIO_INACTIVO ||
-    error.body?.message === USUARIO_INACTIVO
-  );
+const MSG_PAUSADO =
+  "Tu cuenta está pausada porque no la usaste por un tiempo. Pedile a fábrica que la vuelva a habilitar.";
+
+function isApiError(error: APIError, code: string) {
+  return error.message === code || error.body?.message === code;
 }
 
 const loginSchema = z.object({
@@ -63,7 +63,10 @@ export async function login(
     });
   } catch (error) {
     if (error instanceof APIError) {
-      if (isInactiveError(error)) return { error: MSG_INACTIVO, values };
+      if (isApiError(error, USUARIO_INACTIVO))
+        return { error: MSG_INACTIVO, values };
+      if (isApiError(error, USUARIO_PAUSADO))
+        return { error: MSG_PAUSADO, values };
       return { error: "Email o contraseña incorrectos.", values };
     }
     throw error;
@@ -181,8 +184,11 @@ export async function setPassword(
       headers: await headers(),
     });
   } catch (error) {
-    if (error instanceof APIError && isInactiveError(error)) {
+    if (error instanceof APIError && isApiError(error, USUARIO_INACTIVO)) {
       return { error: MSG_INACTIVO };
+    }
+    if (error instanceof APIError && isApiError(error, USUARIO_PAUSADO)) {
+      return { error: MSG_PAUSADO };
     }
     throw error;
   }

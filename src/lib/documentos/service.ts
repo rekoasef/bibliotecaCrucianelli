@@ -16,6 +16,7 @@ import {
   documentoEtiquetas,
   documentoLineas,
   documentoModelos,
+  documentoProductos,
   documentoSistemas,
   documentoTemas,
   documentos,
@@ -25,7 +26,6 @@ import {
   tipos,
   type EstadoDoc,
   type ModoAcceso,
-  type VisibilidadDoc,
 } from "@/db/schema";
 import { findClasificacionExistente } from "@/db/queries/taxonomia";
 import { getDrive, pathFromRoot, type DriveItem } from "@/lib/drive";
@@ -172,7 +172,8 @@ export type DocumentoFilters = {
   q?: string;
   estado?: EstadoDoc;
   tipoId?: string;
-  visibilidad?: VisibilidadDoc;
+  /** Para quién está marcado (fábrica ve todo). */
+  publico?: "concesionarios" | "clientes" | "solo-fabrica";
   lineaId?: string;
   revision?: boolean;
   /** Archivos no disponibles en Drive o con error de extracción. */
@@ -184,7 +185,18 @@ export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
   if (f.q) where.push(ilike(documentos.titulo, `%${f.q}%`));
   if (f.estado) where.push(eq(documentos.estado, f.estado));
   if (f.tipoId) where.push(eq(documentos.tipoId, f.tipoId));
-  if (f.visibilidad) where.push(eq(documentos.visibilidad, f.visibilidad));
+  if (f.publico === "concesionarios")
+    where.push(eq(documentos.visibleConcesionarios, true));
+  if (f.publico === "clientes")
+    where.push(eq(documentos.visibleClientes, true));
+  if (f.publico === "solo-fabrica") {
+    where.push(
+      and(
+        eq(documentos.visibleConcesionarios, false),
+        eq(documentos.visibleClientes, false),
+      )!,
+    );
+  }
   if (f.revision) where.push(eq(documentos.requiereRevision, true));
   if (f.problemas) {
     where.push(sql`EXISTS (SELECT 1 FROM archivos a WHERE a.documento_id = ${documentos.id}
@@ -203,7 +215,8 @@ export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
       id: documentos.id,
       titulo: documentos.titulo,
       estado: documentos.estado,
-      visibilidad: documentos.visibilidad,
+      visibleConcesionarios: documentos.visibleConcesionarios,
+      visibleClientes: documentos.visibleClientes,
       requiereRevision: documentos.requiereRevision,
       actualizadoEn: documentos.actualizadoEn,
       tipoNombre: tipos.nombre,
@@ -220,7 +233,7 @@ export async function getDocumentoAdmin(id: string) {
   const [doc] = await db.select().from(documentos).where(eq(documentos.id, id));
   if (!doc) return null;
 
-  const [arch, lin, mod, sis, tem, etq] = await Promise.all([
+  const [arch, lin, mod, sis, tem, prod, etq] = await Promise.all([
     db
       .select()
       .from(archivos)
@@ -243,6 +256,10 @@ export async function getDocumentoAdmin(id: string) {
       .from(documentoTemas)
       .where(eq(documentoTemas.documentoId, id)),
     db
+      .select({ id: documentoProductos.itemId })
+      .from(documentoProductos)
+      .where(eq(documentoProductos.documentoId, id)),
+    db
       .select({ nombre: etiquetas.nombre })
       .from(documentoEtiquetas)
       .innerJoin(etiquetas, eq(documentoEtiquetas.itemId, etiquetas.id))
@@ -257,6 +274,7 @@ export async function getDocumentoAdmin(id: string) {
     modeloIds: mod.map((r) => r.id),
     sistemaIds: sis.map((r) => r.id),
     temaIds: tem.map((r) => r.id),
+    productoIds: prod.map((r) => r.id),
     etiquetas: etq.map((r) => r.nombre),
   };
 }
@@ -284,11 +302,13 @@ export type ClasificacionInput = {
   tipoId: string | null;
   version: string | null;
   fechaDocumento: string | null;
-  visibilidad: VisibilidadDoc;
+  visibleConcesionarios: boolean;
+  visibleClientes: boolean;
   lineaIds: string[];
   modeloIds: string[];
   sistemaIds: string[];
   temaIds: string[];
+  productoIds: string[];
   etiquetas: string;
 };
 
@@ -299,6 +319,7 @@ async function replaceRelation(
     | typeof documentoModelos
     | typeof documentoSistemas
     | typeof documentoTemas
+    | typeof documentoProductos
     | typeof documentoEtiquetas,
   documentoId: string,
   ids: string[],
@@ -368,6 +389,7 @@ export async function guardarClasificacion(
         tipoId: input.tipoId,
         cantidadArchivos: 1,
         cantidadMaquinas: input.lineaIds.length + input.modeloIds.length,
+        cantidadProductos: input.productoIds.length,
       });
       if (faltan.length > 0) throw new DocumentoError(faltan.join(" "));
     }
@@ -387,7 +409,8 @@ export async function guardarClasificacion(
         tipoId: input.tipoId,
         version: input.version,
         fechaDocumento: input.fechaDocumento,
-        visibilidad: input.visibilidad,
+        visibleConcesionarios: input.visibleConcesionarios,
+        visibleClientes: input.visibleClientes,
         actualizadoPor: usuarioId,
       })
       .where(eq(documentos.id, documentoId));
@@ -403,6 +426,12 @@ export async function guardarClasificacion(
     await replaceRelation(tx, documentoTemas, documentoId, input.temaIds);
     await replaceRelation(
       tx,
+      documentoProductos,
+      documentoId,
+      input.productoIds,
+    );
+    await replaceRelation(
+      tx,
       documentoEtiquetas,
       documentoId,
       await resolverEtiquetas(tx, input.etiquetas),
@@ -414,11 +443,16 @@ export async function guardarClasificacion(
 // ── Publicación y versiones ─────────────────────────────────────────────────
 
 async function contarParaPublicar(tx: Tx, documentoId: string) {
-  const [row] = await tx.execute<{ archivos: number; maquinas: number }>(sql`
+  const [row] = await tx.execute<{
+    archivos: number;
+    maquinas: number;
+    productos: number;
+  }>(sql`
     SELECT
       (SELECT count(*)::int FROM archivos WHERE documento_id = ${documentoId}) AS archivos,
       (SELECT count(*)::int FROM documento_lineas WHERE documento_id = ${documentoId})
-      + (SELECT count(*)::int FROM documento_modelos WHERE documento_id = ${documentoId}) AS maquinas
+      + (SELECT count(*)::int FROM documento_modelos WHERE documento_id = ${documentoId}) AS maquinas,
+      (SELECT count(*)::int FROM documento_productos WHERE documento_id = ${documentoId}) AS productos
   `);
   return row;
 }
@@ -444,6 +478,7 @@ export async function publicar(documentoId: string, usuarioId: string) {
       tipoId: doc.tipoId,
       cantidadArchivos: counts.archivos,
       cantidadMaquinas: counts.maquinas,
+      cantidadProductos: counts.productos,
     });
     if (faltan.length > 0) throw new DocumentoError(faltan.join(" "));
 
@@ -539,7 +574,8 @@ export async function nuevaVersion(documentoId: string, usuarioId: string) {
         titulo: orig.titulo,
         descripcion: orig.descripcion,
         tipoId: orig.tipoId,
-        visibilidad: orig.visibilidad,
+        visibleConcesionarios: orig.visibleConcesionarios,
+        visibleClientes: orig.visibleClientes,
         reemplazaId: orig.id,
         creadoPor: usuarioId,
         actualizadoPor: usuarioId,
@@ -551,6 +587,7 @@ export async function nuevaVersion(documentoId: string, usuarioId: string) {
       documentoModelos,
       documentoSistemas,
       documentoTemas,
+      documentoProductos,
       documentoEtiquetas,
     ]) {
       const rows = await tx
@@ -694,7 +731,8 @@ export async function resumenPanel() {
       .where(
         and(
           eq(archivos.modoAcceso, "publico"),
-          eq(documentos.visibilidad, "fabrica"),
+          eq(documentos.visibleConcesionarios, false),
+          eq(documentos.visibleClientes, false),
         ),
       )
       .limit(50),

@@ -16,9 +16,8 @@ export const busquedas = pgTable(
   "busquedas",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    usuarioId: uuid("usuario_id")
-      .notNull()
-      .references(() => usuarios.id),
+    // null = cliente final sin cuenta (acceso libre).
+    usuarioId: uuid("usuario_id").references(() => usuarios.id),
     texto: text("texto"),
     filtros: jsonb("filtros")
       .$type<Record<string, string>>()

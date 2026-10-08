@@ -62,6 +62,7 @@ export default async function EditarDocumentoPage({
     tipos,
     sistemas,
     temas,
+    productos,
     segmentos,
     lineasConModelos,
     etiquetas,
@@ -71,6 +72,7 @@ export default async function EditarDocumentoPage({
     listCatalogo("tipos"),
     listCatalogo("sistemas"),
     listCatalogo("temas"),
+    listCatalogo("productos"),
     listSegmentos(),
     opcionesMaquinas(),
     listEtiquetas(),
@@ -85,9 +87,10 @@ export default async function EditarDocumentoPage({
           tipoId: doc.tipoId,
           cantidadArchivos: doc.archivos.length,
           cantidadMaquinas: doc.lineaIds.length + doc.modeloIds.length,
+          cantidadProductos: doc.productoIds.length,
         })
       : [];
-  const avisos = advertenciasArchivos(doc.visibilidad, doc.archivos);
+  const avisos = advertenciasArchivos(doc, doc.archivos);
   const reemplaza = doc.reemplazaId
     ? await getDocumentoAdmin(doc.reemplazaId)
     : null;
@@ -273,17 +276,20 @@ export default async function EditarDocumentoPage({
           tipoId: doc.tipoId,
           version: doc.version,
           fechaDocumento: doc.fechaDocumento,
-          visibilidad: doc.visibilidad,
+          visibleConcesionarios: doc.visibleConcesionarios,
+          visibleClientes: doc.visibleClientes,
           estado: doc.estado,
           lineaIds: doc.lineaIds,
           modeloIds: doc.modeloIds,
           sistemaIds: doc.sistemaIds,
           temaIds: doc.temaIds,
+          productoIds: doc.productoIds,
           etiquetas: doc.etiquetas,
         }}
         tipos={tipos}
         sistemas={sistemas}
         temas={temas}
+        productos={productos}
         segmentos={segmentos.map((s) => ({
           id: s.id,
           nombre: s.nombre,

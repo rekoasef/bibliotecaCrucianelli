@@ -1,6 +1,8 @@
 import "server-only";
 import { and, asc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
+import { pausadoSql } from "@/lib/auth/inactividad";
+import { env } from "@/lib/env";
 import {
   concesionarios,
   sesiones,
@@ -11,7 +13,12 @@ import {
 /** true si el usuario ya definió su contraseña (aceptó la invitación). */
 const tienePassword = sql<boolean>`exists (select 1 from cuentas c where c.user_id = ${usuarios.id})`;
 
-export type EstadoUsuario = "activo" | "inactivo" | "pendiente";
+export type EstadoUsuario = "activo" | "inactivo" | "pendiente" | "pausado";
+
+/** Pausado por inactividad (guardado, o ya vencido el plazo aunque no haya vuelto a entrar). */
+const pausado = () => pausadoSql(env().INACTIVIDAD_DIAS);
+/** Último uso de la app: actividad o, para cuentas viejas, último ingreso. */
+const ultimoUso = sql<Date | null>`greatest(${usuarios.ultimaActividad}, ${usuarios.ultimoIngreso})`;
 
 export type UsuarioFilters = {
   rol?: RolUsuario;
@@ -25,8 +32,12 @@ export async function listUsuarios(filters: UsuarioFilters = {}) {
   if (filters.concesionarioId)
     where.push(eq(usuarios.concesionarioId, filters.concesionarioId));
   if (filters.estado === "inactivo") where.push(eq(usuarios.activo, false));
+  if (filters.estado === "pausado")
+    where.push(and(eq(usuarios.activo, true), pausado())!);
   if (filters.estado === "activo")
-    where.push(and(eq(usuarios.activo, true), tienePassword)!);
+    where.push(
+      and(eq(usuarios.activo, true), tienePassword, sql`not ${pausado()}`)!,
+    );
   if (filters.estado === "pendiente")
     where.push(and(eq(usuarios.activo, true), sql`not ${tienePassword}`)!);
 
@@ -38,7 +49,9 @@ export async function listUsuarios(filters: UsuarioFilters = {}) {
       rol: usuarios.rol,
       activo: usuarios.activo,
       ultimoIngreso: usuarios.ultimoIngreso,
+      ultimoUso: ultimoUso.mapWith(usuarios.ultimaActividad),
       tienePassword,
+      pausado: pausado(),
       concesionarioId: usuarios.concesionarioId,
       concesionarioNombre: concesionarios.nombre,
     })
@@ -59,8 +72,11 @@ export async function getUsuario(id: string) {
       rol: usuarios.rol,
       activo: usuarios.activo,
       ultimoIngreso: usuarios.ultimoIngreso,
+      ultimoUso: ultimoUso.mapWith(usuarios.ultimaActividad),
+      pausadoEn: usuarios.pausadoEn,
       creadoEn: usuarios.creadoEn,
       tienePassword,
+      pausado: pausado(),
       concesionarioId: usuarios.concesionarioId,
     })
     .from(usuarios)
@@ -71,8 +87,10 @@ export async function getUsuario(id: string) {
 export function estadoUsuario(u: {
   activo: boolean;
   tienePassword: boolean;
+  pausado: boolean;
 }): EstadoUsuario {
   if (!u.activo) return "inactivo";
+  if (u.pausado) return "pausado";
   return u.tienePassword ? "activo" : "pendiente";
 }
 

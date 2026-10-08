@@ -9,7 +9,8 @@ import {
   listConcesionarios,
 } from "@/db/queries/usuarios";
 import { requireAdmin } from "@/lib/auth/session";
-import { setUsuarioActivo } from "../../actions";
+import { env } from "@/lib/env";
+import { reactivarPausado, setUsuarioActivo } from "../../actions";
 import { EstadoBadge, formatFecha, PageHeader, Panel } from "../../ui";
 import { UsuarioForm } from "../usuario-form";
 import { ResendInvitation } from "./resend-invitation";
@@ -37,7 +38,7 @@ export default async function UsuarioPage({
     <div className="flex max-w-2xl flex-col gap-5">
       <PageHeader
         title={usuario.nombre}
-        description={`Último ingreso: ${formatFecha(usuario.ultimoIngreso)}`}
+        description={`Último uso: ${formatFecha(usuario.ultimoUso)}`}
         back={{ href: "/admin/usuarios", label: "Usuarios" }}
         actions={<EstadoBadge estado={estado} />}
       />
@@ -64,6 +65,20 @@ export default async function UsuarioPage({
             reenviarla invalida el link anterior.
           </p>
           <ResendInvitation id={usuario.id} />
+        </Panel>
+      )}
+
+      {estado === "pausado" && (
+        <Panel title="Cuenta pausada por inactividad">
+          <p className="text-muted-foreground">
+            No usó la biblioteca en más de {env().INACTIVIDAD_DIAS} días, así
+            que no puede ingresar hasta que la vuelvas a habilitar. Sigue
+            entrando con su misma contraseña.
+          </p>
+          <form action={reactivarPausado}>
+            <input type="hidden" name="id" value={usuario.id} />
+            <Button type="submit">Volver a habilitar</Button>
+          </form>
         </Panel>
       )}
 

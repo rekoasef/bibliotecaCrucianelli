@@ -1,10 +1,17 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
-import { requireUser } from "@/lib/auth/session";
+import type { NavMode } from "@/components/layout/nav-items";
+import { getCurrentUser } from "@/lib/auth/session";
 
+// Sin sesión se navega como cliente final (acceso libre). Cada página decide qué
+// exige: /cuenta y /admin piden sesión con requireUser / requireAdmin.
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const user = await requireUser();
-  const isAdmin = user.rol === "admin";
+  const user = await getCurrentUser();
+  const mode: NavMode = !user
+    ? "cliente"
+    : user.rol === "admin"
+      ? "admin"
+      : "usuario";
 
   return (
     <>
@@ -14,7 +21,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       >
         Saltar al contenido
       </a>
-      <SiteHeader isAdmin={isAdmin} />
+      <SiteHeader mode={mode} />
       {/* En celular se reserva el alto de la navegación inferior para que no tape contenido. */}
       <main
         id="contenido"
@@ -22,7 +29,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       >
         {children}
       </main>
-      <BottomNav isAdmin={isAdmin} />
+      <BottomNav mode={mode} />
     </>
   );
 }

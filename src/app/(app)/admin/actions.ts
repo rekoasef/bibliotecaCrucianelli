@@ -190,6 +190,17 @@ export async function setUsuarioActivo(formData: FormData) {
   revalidatePath(`/admin/usuarios/${id}`);
 }
 
+/** Levanta la pausa por inactividad: el plazo vuelve a contar desde hoy. */
+export async function reactivarPausado(formData: FormData) {
+  await requireAdmin();
+  const id = idSchema.parse(formData.get("id"));
+  await db
+    .update(usuarios)
+    .set({ pausadoEn: null, ultimaActividad: new Date() })
+    .where(eq(usuarios.id, id));
+  revalidatePath("/admin", "layout");
+}
+
 export async function resendInvitation(
   _prev: FormState,
   formData: FormData,

@@ -6,6 +6,7 @@ import {
   etiquetas,
   lineas,
   modelos,
+  productos,
   segmentos,
   sistemas,
   temas,
@@ -14,7 +15,7 @@ import {
 import type { Catalogo, Nivel } from "@/lib/validation/taxonomia";
 import { normalizeTag } from "@/lib/text";
 
-export const catalogoTables = { tipos, sistemas, temas } as const;
+export const catalogoTables = { tipos, sistemas, temas, productos } as const;
 
 // ── Máquinas ────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,7 @@ const ORDENABLES: Record<
   tipos: { table: tipos },
   sistemas: { table: sistemas },
   temas: { table: temas },
+  productos: { table: productos },
 };
 
 /** Próximo valor de `orden` al final de la lista (dentro del padre si corresponde). */
@@ -197,7 +199,7 @@ export async function moveItem(
   });
 }
 
-// ── Tipos, sistemas, temas ──────────────────────────────────────────────────
+// ── Tipos, sistemas, temas, productos ──────────────────────────────────────────────────
 
 export async function listCatalogo(kind: Catalogo) {
   const table = catalogoTables[kind];
@@ -240,7 +242,7 @@ export async function countEtiquetas() {
 }
 
 /**
- * Si el nombre ya existe como tipo, sistema, tema, línea o modelo, lo devuelve
+ * Si el nombre ya existe como tipo, sistema, tema, producto, línea o modelo, lo devuelve
  * (docs/04: no repetir como etiqueta algo que ya es otra clasificación).
  */
 export async function findClasificacionExistente(nombreNormalizado: string) {
@@ -248,6 +250,7 @@ export async function findClasificacionExistente(nombreNormalizado: string) {
     SELECT 'tipo' AS donde, nombre FROM tipos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'sistema', nombre FROM sistemas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'tema', nombre FROM temas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
+    UNION ALL SELECT 'producto', nombre FROM productos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'línea', nombre FROM lineas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'modelo', nombre FROM modelos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     LIMIT 1

@@ -87,6 +87,16 @@ Trabajar fase por fase. Cada fase termina con algo que funciona y se puede proba
 - [ ] Carga completa de la línea piloto
 - [ ] Prueba con 3 o 4 técnicos reales y ajustes
 
+## Fase 6 · Pedidos de fábrica (2026-10-08)
+
+- [x] Visibilidad por públicos: casillas Concesionarios y Clientes por documento (fábrica ve todo; ninguna = Solo fábrica), reemplaza la columna `visibilidad`
+- [x] Cliente final con acceso libre (sin login) a lo marcado para clientes, con límite de archivos por IP
+- [x] Productos (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra): taxonomía, filtro de búsqueda, índice; se puede publicar con producto y sin máquina
+- [x] Pausa de cuentas por inactividad (`INACTIVIDAD_DIAS`) y rehabilitación desde el admin
+- [x] Registros: búsquedas frecuentes y documentos más consultados, ordenables A → Z / Z → A
+- [ ] Revisar con fábrica qué documentos se marcan para clientes y qué plazo de inactividad usar
+- [ ] Clasificar los documentos existentes por producto
+
 ## Después del piloto
 
 - Cargar el resto de las líneas de sembradoras

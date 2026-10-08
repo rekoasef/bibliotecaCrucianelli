@@ -59,5 +59,5 @@ export const etiquetaSchema = z.object({
 export const NIVELES = ["segmentos", "lineas", "modelos"] as const;
 export type Nivel = (typeof NIVELES)[number];
 
-export const CATALOGOS = ["tipos", "sistemas", "temas"] as const;
+export const CATALOGOS = ["tipos", "sistemas", "temas", "productos"] as const;
 export type Catalogo = (typeof CATALOGOS)[number];

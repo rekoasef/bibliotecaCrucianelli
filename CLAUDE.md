@@ -2,7 +2,7 @@
 
 # Biblioteca Técnica Crucianelli
 
-Aplicación web para que mecánicos de concesionarios y personal de fábrica de Crucianelli (fabricante de sembradoras, Armstrong, Santa Fe) encuentren documentación técnica en segundos. Flujo central: **Buscar → Filtrar → Encontrar → Abrir**.
+Aplicación web para que mecánicos de concesionarios, personal de fábrica y clientes finales de Crucianelli (fabricante de sembradoras, Armstrong, Santa Fe) encuentren documentación técnica en segundos. Flujo central: **Buscar → Filtrar → Encontrar → Abrir**.
 
 Los archivos viven en Google Drive (usado como depósito). La app tiene su propia base de datos con la organización, clasificación, permisos y búsqueda.
 
@@ -33,7 +33,7 @@ Leer antes de empezar cualquier tarea:
 ## Reglas que no se rompen
 
 1. **Permisos siempre en el servidor.** Ocultar algo en la UI no es seguridad. Toda consulta y todo acceso a archivos verifica rol y visibilidad del lado del servidor.
-2. **Un usuario de rol `concesionario` solo ve documentos con `visibilidad = 'concesionarios'` y `estado <> 'borrador'`.** Centralizar este filtro en una sola función reutilizable; no reescribirlo en cada consulta.
+2. **Cada documento se marca para sus públicos** (`visible_concesionarios`, `visible_clientes`; fábrica ve todo). Un concesionario solo ve lo marcado para concesionarios, un cliente final (sin sesión) solo lo marcado para clientes, y nadie fuera del admin ve borradores. Centralizar este filtro en una sola función reutilizable; no reescribirlo en cada consulta.
 3. **Nunca exponer al cliente el `drive_file_id` ni URLs de Drive de archivos con `modo_acceso = 'servidor'`.** Esos archivos se sirven únicamente por `/api/archivos/[id]`, que verifica permisos y hace streaming desde Drive.
 4. **Los links públicos de Drive (videos) solo se renderizan dentro de la ficha, para usuarios que tienen permiso de ver ese documento.**
 5. **Mobile-first.** Los mecánicos usan la app desde el celular en el campo, a veces con mala señal. Páginas livianas, objetivos táctiles grandes, nada que dependa de hover. En escritorio también tiene que verse bien.
@@ -84,8 +84,10 @@ Migraciones con SQL propio (extensiones, funciones, índices especiales): `npx d
 ## Auth y permisos
 
 - Páginas y **cada Server Action** empiezan con `requireUser()` o `requireAdmin()` (`src/lib/auth/session.ts`). Proteger un layout no protege las acciones.
-- Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
-- Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`). Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
+- Excepción: las páginas de consulta (inicio, `/buscar`, `/maquinas`, `/documentos/[id]`, `/api/archivos/[id]`) son de **acceso libre** para clientes finales y usan `getViewer()`: sin sesión, `viewer` es el cliente (`CLIENTE`) y la visibilidad se aplica igual. `/admin` y `/cuenta` exigen sesión.
+- Cuentas pausadas por inactividad (`INACTIVIDAD_DIAS`, `usuarios.pausado_en`): las verifican el login y `getCurrentUser`; solo el admin las rehabilita.
+- Índice de búsqueda: después de cambiar algo que lo compone (título, descripción, tipo, máquinas, sistemas, temas, productos, etiquetas, archivos o su texto, nombres de taxonomía) llamar a `rebuildDocumentSearch` / `rebuildSearchForTaxonomia`.
+- Visibilidad de documentos: **solo** con `documentVisibilityFilter` (`src/lib/documentos/visibility.ts`), con el `viewer` de `getViewer()` o el usuario. Las consultas para usuarios están en `src/lib/documentos/queries.ts`; los archivos se mandan al cliente como `ArchivoPublico` (sin `drive_file_id` salvo modo público).
 - No se monta `/api/auth`: usar `auth.api.*` desde el servidor.
 - Páginas del admin: `requireAdmin()` en cada página, no solo en el layout (se renderizan en paralelo).
 - A componentes cliente pasarles solo los campos que usan (nunca el objeto entero de la base: puede traer `drive_file_id` o texto extraído). Ver `docs/02-arquitectura.md` (Implementación fase 1).

@@ -8,12 +8,14 @@ import { db } from "./index";
 import {
   SEED_MAQUINAS,
   SEED_SISTEMAS,
+  SEED_PRODUCTOS,
   SEED_TEMAS,
   SEED_TIPOS,
 } from "./seed-data";
 import {
   lineas,
   modelos,
+  productos,
   segmentos,
   sistemas,
   temas,
@@ -93,6 +95,7 @@ async function seedCatalogos() {
     [tipos, SEED_TIPOS],
     [sistemas, SEED_SISTEMAS],
     [temas, SEED_TEMAS],
+    [productos, SEED_PRODUCTOS],
   ] as const;
   for (const [tabla, nombres] of catalogos) {
     await db
@@ -106,7 +109,7 @@ async function seedCatalogos() {
       )
       .onConflictDoNothing();
   }
-  console.info("Tipos, sistemas y temas: listo.");
+  console.info("Tipos, sistemas, temas y productos: listo.");
 }
 
 async function main() {

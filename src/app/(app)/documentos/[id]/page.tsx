@@ -6,7 +6,8 @@ import { z } from "zod";
 import { FileIcon, fileKindLabel } from "@/components/file-icon";
 import { TipoIcon } from "@/components/tipo-icon";
 import { Button } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
+import { CLIENTE } from "@/lib/documentos/visibility";
 import {
   getDocumentoVisible,
   registrarAcceso,
@@ -23,6 +24,15 @@ import { VideoPlayer } from "./video-player";
 
 export const metadata: Metadata = { title: "Documento" };
 
+const PREVIEW = {
+  concesionario: {
+    viewer: { rol: "concesionario" },
+    quien: "Un concesionario",
+    publico: "concesionarios",
+  },
+  cliente: { viewer: CLIENTE, quien: "Un cliente", publico: "clientes" },
+} as const;
+
 const fechaLarga = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "long",
   timeZone: "UTC",
@@ -32,22 +42,27 @@ export default async function DocumentoPage({
   params,
   searchParams,
 }: PageProps<"/documentos/[id]">) {
-  const user = await requireUser();
+  const { user, viewer: lector } = await getViewer();
   const { id } = await params;
   const sp = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
 
-  // Vista previa para el admin: "cómo lo ve un concesionario" (docs/05).
-  const preview = user.rol === "admin" && sp.como === "concesionario";
-  const viewer = preview ? { rol: "concesionario" as const } : user;
+  // Vista previa para el admin: "cómo lo ve un concesionario / un cliente" (docs/05).
+  const preview =
+    user?.rol === "admin" &&
+    (sp.como === "concesionario" || sp.como === "cliente")
+      ? PREVIEW[sp.como]
+      : null;
+  const viewer = preview?.viewer ?? lector;
 
   const doc = await getDocumentoVisible(id, viewer);
   if (!doc) {
     if (preview) {
       return (
         <PreviewBanner id={id}>
-          Un concesionario <strong>no puede ver</strong> este documento (es
-          borrador, es “Solo fábrica” o sus máquinas están inactivas).
+          {preview.quien} <strong>no puede ver</strong> este documento (es
+          borrador, no está marcado para {preview.publico} o sus máquinas están
+          inactivas).
         </PreviewBanner>
       );
     }
@@ -55,7 +70,7 @@ export default async function DocumentoPage({
   }
   if (!preview)
     await registrarAcceso({
-      usuarioId: user.id,
+      usuarioId: user?.id ?? null,
       documentoId: id,
       accion: "ver",
     });
@@ -72,7 +87,7 @@ export default async function DocumentoPage({
     <article className="flex max-w-3xl flex-col gap-6">
       {preview && (
         <PreviewBanner id={id}>
-          Así ve este documento un concesionario.
+          Así ve este documento {preview.quien.toLowerCase()}.
         </PreviewBanner>
       )}
 
@@ -80,7 +95,7 @@ export default async function DocumentoPage({
         <p className="flex items-center gap-2 font-semibold text-brand-strong">
           <TipoIcon slug={doc.tipoSlug ?? ""} className="size-5" />
           {doc.tipoNombre}
-          {doc.visibilidad === "fabrica" && (
+          {!doc.visibleConcesionarios && !doc.visibleClientes && (
             <span className="rounded-full border px-2 py-0.5 text-sm text-muted-foreground">
               Solo fábrica
             </span>
@@ -146,6 +161,13 @@ export default async function DocumentoPage({
             ],
           },
           {
+            label: "Producto",
+            chips: doc.productos.map((p) => ({
+              label: p.nombre,
+              href: `/buscar?producto=${p.slug}`,
+            })),
+          },
+          {
             label: "Sistemas",
             chips: doc.sistemas.map((s) => ({
               label: s.nombre,
@@ -199,7 +221,7 @@ export default async function DocumentoPage({
 
       <div className="flex flex-wrap gap-2">
         <ShareButton title={doc.titulo ?? "Documento"} />
-        {user.rol === "admin" && !preview && (
+        {user?.rol === "admin" && !preview && (
           <>
             <Button asChild variant="ghost">
               <Link href={`/admin/documentos/${doc.id}`}>Editar</Link>
@@ -207,6 +229,11 @@ export default async function DocumentoPage({
             <Button asChild variant="ghost">
               <Link href={`/documentos/${doc.id}?como=concesionario`}>
                 Ver como concesionario
+              </Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href={`/documentos/${doc.id}?como=cliente`}>
+                Ver como cliente
               </Link>
             </Button>
           </>

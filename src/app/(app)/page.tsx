@@ -4,7 +4,7 @@ import { ResultCard } from "@/components/search/result-card";
 import { RecentSearches } from "@/components/search/recent-searches";
 import { SearchForm } from "@/components/search/search-form";
 import { TipoIcon } from "@/components/tipo-icon";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { latestDocuments, recentSearches } from "@/lib/search/search";
 import {
   getSegmentosActivosConLineas,
@@ -12,12 +12,13 @@ import {
 } from "@/db/queries/taxonomia";
 
 export default async function HomePage() {
-  const user = await requireUser();
+  const { user, viewer } = await getViewer();
   const [segmentos, tipos, recientes, busquedas] = await Promise.all([
     getSegmentosActivosConLineas(),
     listTiposActivos(),
-    latestDocuments(user, 6),
-    recentSearches(user.id),
+    latestDocuments(viewer, 6),
+    // Los clientes sin cuenta no tienen historial propio.
+    user ? recentSearches(user.id) : [],
   ]);
 
   return (

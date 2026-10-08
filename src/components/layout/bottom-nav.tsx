@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getNavItems, isActive } from "./nav-items";
+import { getNavItems, isActive, type NavMode } from "./nav-items";
 
 // Navegación principal en celular: al alcance del pulgar, con ícono y texto.
-export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
+export function BottomNav({ mode }: { mode: NavMode }) {
   const pathname = usePathname();
-  const navItems = getNavItems(isAdmin);
+  const navItems = getNavItems(mode);
 
   return (
     <nav
@@ -18,7 +18,7 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
       <ul
         className={cn(
           "grid h-(--bottom-nav-height)",
-          isAdmin ? "grid-cols-5" : "grid-cols-4",
+          navItems.length === 5 ? "grid-cols-5" : "grid-cols-4",
         )}
       >
         {navItems.map(({ href, label, icon: Icon }) => {

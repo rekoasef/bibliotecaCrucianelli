@@ -18,13 +18,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 import { lineas, modelos } from "./maquinas";
-import { etiquetas, sistemas, temas, tipos } from "./taxonomia";
+import { etiquetas, productos, sistemas, temas, tipos } from "./taxonomia";
 import { usuarios } from "./usuarios";
 
-export const visibilidadDoc = pgEnum("visibilidad_doc", [
-  "concesionarios",
-  "fabrica",
-]);
 export const estadoDoc = pgEnum("estado_doc", [
   "borrador",
   "vigente",
@@ -56,9 +52,11 @@ export const documentos = pgTable(
     tipoId: uuid("tipo_id").references(() => tipos.id, {
       onDelete: "restrict",
     }),
-    visibilidad: visibilidadDoc("visibilidad")
+    // Públicos que lo ven además de fábrica (que ve todo). Ninguno = "Solo fábrica".
+    visibleConcesionarios: boolean("visible_concesionarios")
       .notNull()
-      .default("concesionarios"),
+      .default(true),
+    visibleClientes: boolean("visible_clientes").notNull().default(false),
     estado: estadoDoc("estado").notNull().default("borrador"),
     reemplazadoPorId: uuid("reemplazado_por_id").references(
       (): AnyPgColumn => documentos.id,
@@ -101,7 +99,7 @@ export const documentos = pgTable(
       "gin",
       sql`f_unaccent_lower(${t.titulo}) gin_trgm_ops`,
     ),
-    index("documentos_estado_vis").on(t.estado, t.visibilidad),
+    index("documentos_estado_idx").on(t.estado),
     index("documentos_tipo_idx").on(t.tipoId),
   ],
 );
@@ -194,6 +192,11 @@ export const documentoTemas = relacion(
   "tema_id",
   () => temas.id,
 );
+export const documentoProductos = relacion(
+  "documento_productos",
+  "producto_id",
+  () => productos.id,
+);
 export const documentoEtiquetas = relacion(
   "documento_etiquetas",
   "etiqueta_id",
@@ -204,9 +207,8 @@ export const accesos = pgTable(
   "accesos",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    usuarioId: uuid("usuario_id")
-      .notNull()
-      .references(() => usuarios.id),
+    // null = cliente final sin cuenta (acceso libre).
+    usuarioId: uuid("usuario_id").references(() => usuarios.id),
     documentoId: uuid("documento_id")
       .notNull()
       .references(() => documentos.id, { onDelete: "cascade" }),
@@ -227,5 +229,4 @@ export const accesos = pgTable(
 export type Documento = typeof documentos.$inferSelect;
 export type Archivo = typeof archivos.$inferSelect;
 export type EstadoDoc = (typeof estadoDoc.enumValues)[number];
-export type VisibilidadDoc = (typeof visibilidadDoc.enumValues)[number];
 export type ModoAcceso = (typeof modoAcceso.enumValues)[number];

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { lineas } from "@/db/schema";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions } from "@/lib/search/options";
 import { MaquinaView } from "../maquina-view";
 
@@ -21,10 +21,10 @@ export async function generateMetadata({
 export default async function LineaPage({
   params,
 }: PageProps<"/maquinas/[linea]">) {
-  const user = await requireUser();
+  const { viewer } = await getViewer();
   const { linea: slug } = await params;
   // Solo líneas visibles para el usuario (activas, salvo para el admin).
-  const { maquinas } = await getSearchOptions(user);
+  const { maquinas } = await getSearchOptions(viewer);
   const linea = maquinas.flatMap((s) => s.lineas).find((l) => l.slug === slug);
   if (!linea) notFound();
 
@@ -33,6 +33,6 @@ export default async function LineaPage({
     .from(lineas)
     .where(eq(lineas.id, linea.id));
   return (
-    <MaquinaView user={user} linea={linea} tieneFoto={Boolean(row?.foto)} />
+    <MaquinaView viewer={viewer} linea={linea} tieneFoto={Boolean(row?.foto)} />
   );
 }

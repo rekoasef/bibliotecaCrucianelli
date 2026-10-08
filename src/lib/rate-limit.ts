@@ -10,6 +10,9 @@ export const rateLimits = {
   passwordResetEmail: { max: 3, windowSeconds: 60 * 60 },
   passwordResetIp: { max: 10, windowSeconds: 60 * 60 },
   invitationResend: { max: 5, windowSeconds: 60 * 60 },
+  // Archivos abiertos sin cuenta (clientes): cuida el ancho de banda de la VPS.
+  // Generoso porque muchos celulares salen por la misma IP de la operadora.
+  archivosClienteIp: { max: 200, windowSeconds: 60 * 60 },
 } satisfies Record<string, Rule>;
 
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };

@@ -1,11 +1,27 @@
-import type { ModoAcceso, VisibilidadDoc } from "@/db/schema";
+import type { ModoAcceso } from "@/db/schema";
 
 type Publicable = {
   titulo: string | null;
   tipoId: string | null;
   cantidadArchivos: number;
   cantidadMaquinas: number;
+  cantidadProductos: number;
 };
+
+/** Públicos de un documento además de fábrica, que ve todo (docs/04, "Visibilidad"). */
+export type Publicos = {
+  visibleConcesionarios: boolean;
+  visibleClientes: boolean;
+};
+
+/** "Concesionarios y clientes", "Solo fábrica"… para mostrar en el admin. */
+export function publicosLabel(p: Publicos) {
+  if (p.visibleConcesionarios && p.visibleClientes)
+    return "Concesionarios y clientes";
+  if (p.visibleConcesionarios) return "Concesionarios";
+  if (p.visibleClientes) return "Clientes";
+  return "Solo fábrica";
+}
 
 /** Requisitos para publicar (docs/03): devuelve lo que falta, vacío si está listo. */
 export function faltantesParaPublicar(doc: Publicable): string[] {
@@ -13,8 +29,9 @@ export function faltantesParaPublicar(doc: Publicable): string[] {
   if (!doc.titulo?.trim()) faltan.push("Falta el título.");
   if (!doc.tipoId) faltan.push("Falta el tipo de documento.");
   if (doc.cantidadArchivos === 0) faltan.push("Falta al menos un archivo.");
-  if (doc.cantidadMaquinas === 0)
-    faltan.push("Falta asociarlo al menos a una línea o modelo.");
+  // Tecnología y accesorios pueden no corresponder a una máquina puntual.
+  if (doc.cantidadMaquinas === 0 && doc.cantidadProductos === 0)
+    faltan.push("Falta asociarlo al menos a una máquina o a un producto.");
   return faltan;
 }
 
@@ -23,11 +40,11 @@ export function faltantesParaPublicar(doc: Publicable): string[] {
  * lo podría abrir cualquiera que tenga el link (docs/02): debería ir en modo servidor.
  */
 export function advertenciasArchivos(
-  visibilidad: VisibilidadDoc,
+  publicos: Publicos,
   archivos: { nombre: string; modoAcceso: ModoAcceso; disponible: boolean }[],
 ): string[] {
   const avisos: string[] = [];
-  if (visibilidad === "fabrica") {
+  if (!publicos.visibleConcesionarios && !publicos.visibleClientes) {
     for (const a of archivos.filter((a) => a.modoAcceso === "publico")) {
       avisos.push(
         `"${a.nombre}" tiene link público de Drive y el documento es "Solo fábrica": pasalo a modo servidor.`,

@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions } from "@/lib/search/options";
 import { db } from "@/db";
 import { lineas } from "@/db/schema";
@@ -10,9 +10,9 @@ import { isNotNull } from "drizzle-orm";
 export const metadata: Metadata = { title: "Máquinas" };
 
 export default async function MaquinasPage() {
-  const user = await requireUser();
+  const { viewer } = await getViewer();
   const [{ maquinas }, conFoto] = await Promise.all([
-    getSearchOptions(user),
+    getSearchOptions(viewer),
     db
       .select({ id: lineas.id })
       .from(lineas)

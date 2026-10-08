@@ -15,6 +15,19 @@ describe("faltantesParaPublicar", () => {
         tipoId: "t",
         cantidadArchivos: 1,
         cantidadMaquinas: 1,
+        cantidadProductos: 0,
+      }),
+    ).toEqual([]);
+  });
+
+  it("alcanza con un producto si no corresponde a una máquina", () => {
+    expect(
+      faltantesParaPublicar({
+        titulo: "Monitor",
+        tipoId: "t",
+        cantidadArchivos: 1,
+        cantidadMaquinas: 0,
+        cantidadProductos: 1,
       }),
     ).toEqual([]);
   });
@@ -26,6 +39,7 @@ describe("faltantesParaPublicar", () => {
         tipoId: null,
         cantidadArchivos: 0,
         cantidadMaquinas: 0,
+        cantidadProductos: 0,
       }),
     ).toHaveLength(4);
   });
@@ -38,17 +52,23 @@ describe("advertenciasArchivos", () => {
     disponible: true,
   };
 
+  const soloFabrica = { visibleConcesionarios: false, visibleClientes: false };
+  const conc = { visibleConcesionarios: true, visibleClientes: false };
+
   it("avisa video público en documento Solo fábrica", () => {
-    expect(advertenciasArchivos("fabrica", [video])).toHaveLength(1);
+    expect(advertenciasArchivos(soloFabrica, [video])).toHaveLength(1);
   });
 
-  it("no avisa si el documento es para concesionarios", () => {
-    expect(advertenciasArchivos("concesionarios", [video])).toEqual([]);
+  it("no avisa si el documento es para concesionarios o clientes", () => {
+    expect(advertenciasArchivos(conc, [video])).toEqual([]);
+    expect(
+      advertenciasArchivos({ ...soloFabrica, visibleClientes: true }, [video]),
+    ).toEqual([]);
   });
 
   it("avisa archivos no disponibles", () => {
     expect(
-      advertenciasArchivos("concesionarios", [
+      advertenciasArchivos(conc, [
         { ...video, modoAcceso: "servidor", disponible: false },
       ]),
     ).toHaveLength(1);

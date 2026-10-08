@@ -38,6 +38,17 @@ Si para una línea todavía no hay modelos cargados, los documentos se asocian a
 - Asociar a un **modelo** = aplica solo a ese modelo.
 - Un segmento, línea o modelo inactivo no aparece para usuarios no admin, junto con los documentos asociados únicamente a máquinas inactivas.
 
+## Productos
+
+Familia de producto, con su propio filtro en la búsqueda. Cero, uno o varios por documento. Un documento de Tecnología o Accesorios puede no estar asociado a ninguna máquina: para publicar alcanza con un producto.
+
+- Sembradoras
+- Fertilizadoras
+- Tecnología
+- Accesorios siembra
+
+> El producto "Fertilizadoras" sirve para clasificar desde ya. Mientras el segmento Fertilización esté inactivo, los documentos asociados solo a sus máquinas siguen ocultos (ver "Reglas" de máquinas).
+
 ## Tipos de documento
 
 Uno por documento (obligatorio para publicar).
@@ -89,12 +100,16 @@ Segmentos, líneas, modelos, tipos, sistemas y temas tienen un `slug` único que
 
 ## Visibilidad
 
-| Valor | Quién lo ve |
+Fábrica (y el admin) ven siempre todo. Además, cada documento se marca para uno o más públicos con dos casillas:
+
+| Casillas marcadas | Quién lo ve |
 |---|---|
 | Concesionarios *(default)* | Fábrica y concesionarios |
-| Solo fábrica | Solo fábrica (y admin) |
+| Clientes | Fábrica y clientes finales (sin cuenta) |
+| Concesionarios y Clientes | Fábrica, concesionarios y clientes |
+| Ninguna | Solo fábrica |
 
-Los planos y documentación sensible van como "Solo fábrica".
+Los planos y documentación sensible van como "Solo fábrica". Los manuales de operador y la información comercial-técnica para el productor se marcan para clientes.
 
 ## Estados
 

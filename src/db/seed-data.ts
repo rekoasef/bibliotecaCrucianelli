@@ -52,6 +52,13 @@ export const SEED_SISTEMAS = [
   "Tren de siembra",
 ];
 
+export const SEED_PRODUCTOS = [
+  "Sembradoras",
+  "Fertilizadoras",
+  "Tecnología",
+  "Accesorios siembra",
+];
+
 export const SEED_TEMAS = [
   "Regulación",
   "Calibración",

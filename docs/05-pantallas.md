@@ -10,7 +10,9 @@
 - **El estado de la URL es la búsqueda.** Texto y filtros viven en los query params (`/buscar?q=dosificador&modelo=gringa-v&tipo=instructivo`), así se pueden compartir y el botón "atrás" funciona.
 - **Estados vacíos útiles.** Sin resultados → sugerir quitar filtros o buscar por máquina.
 
-## Usuario (fábrica y concesionario)
+## Usuario (fábrica, concesionario y cliente final)
+
+Los clientes finales usan las mismas pantallas de consulta **sin iniciar sesión** y ven solo lo marcado para clientes. En su navegación, "Cuenta" se reemplaza por "Ingresar" (para concesionarios y fábrica). No tienen búsquedas recientes.
 
 ### Inicio `/`
 
@@ -24,7 +26,7 @@
 
 - Buscador arriba, con el texto actual. Sin búsqueda ni filtros, debajo van las búsquedas recientes del usuario (igual que en el inicio).
 - Chips de filtros activos, cada uno con su ✕, y "Limpiar filtros".
-- Botón "Filtros" (bottom sheet en celular) con: máquina (segmento → línea → modelo), tipo, sistema, tema, etiquetas, e "Incluir obsoletos" (desactivado por defecto).
+- Botón "Filtros" (bottom sheet en celular) con: producto (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra), máquina (segmento → línea → modelo), tipo, sistema, tema, etiquetas, e "Incluir obsoletos" (desactivado por defecto).
 - Cantidad de resultados. Si la búsqueda se corrigió por un error de tipeo: "Buscamos «X» porque «Y» no aparece en la biblioteca".
 - Tarjeta de resultado: título, tipo (ícono + texto), máquinas, fragmento con el texto resaltado, páginas del PDF donde aparece lo buscado ("Págs. 12, 40 y 47"; con el nombre del archivo si hay más de un PDF), formato (PDF/video) y badge "Obsoleto" si corresponde.
 - Paginación con "Cargar más".
@@ -40,18 +42,18 @@
 
 - Título, tipo, versión y fecha.
 - Aviso destacado si es obsoleto: "Hay una versión más nueva → ver vigente".
-- Máquinas, sistemas, temas y etiquetas como chips clickeables (llevan a la búsqueda con ese filtro).
+- Máquinas, producto, sistemas, temas y etiquetas como chips clickeables (llevan a la búsqueda con ese filtro).
 - Descripción.
 - Archivos:
   - **PDF:** botón principal "Ver" (abre `/api/archivos/[id]` en el visor nativo del navegador) y botón "Descargar".
   - **Video:** reproductor embebido de Drive + botón "Abrir en Drive".
   - **Imagen:** vista previa + descargar.
 - Historial de versiones (si existe).
-- Botón "Compartir" (copia el link de la ficha; quien lo abra igual necesita iniciar sesión y tener permiso).
+- Botón "Compartir" (copia el link de la ficha; quien lo abra necesita tener permiso: sin sesión, solo abre documentos marcados para clientes).
 
 ### Cuenta
 
-- Login `/login`: email y contraseña, "Olvidé mi contraseña".
+- Login `/login`: email y contraseña, "Olvidé mi contraseña", y para clientes "Entrá sin cuenta". Si la cuenta está pausada por inactividad, lo avisa y pide contactar a fábrica.
 - Aceptar invitación `/invitacion/[token]`: definir contraseña.
 - Restablecer contraseña `/restablecer/[token]`.
 - Mi cuenta: nombre, cambiar contraseña, cerrar sesión.
@@ -82,18 +84,19 @@ En escritorio, menú lateral. En celular, el admin funciona pero no es prioritar
 
 ### Documentos `/admin/documentos`
 
-- Tabla con búsqueda y filtros por estado, tipo, máquina y visibilidad.
+- Tabla con búsqueda y filtros por estado, tipo, máquina y visibilidad (para concesionarios, para clientes, solo fábrica).
 - Acciones: editar, publicar, nueva versión, marcar obsoleto, eliminar (solo borradores).
 
 ### Editar documento `/admin/documentos/[id]`
 
 - Título, descripción, tipo, versión, fecha del documento.
 - Máquinas: selector jerárquico en el que se puede marcar una línea completa o modelos puntuales.
+- Producto: selección múltiple (Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra).
 - Sistemas y temas: selección múltiple (lo normal es uno).
 - Etiquetas: input con autocompletado y creación al vuelo.
-- Visibilidad: Concesionarios / Solo fábrica.
+- Visibilidad: casillas "Concesionarios" y "Clientes" (fábrica ve todo; ninguna = Solo fábrica).
 - Archivos: lista ordenable, modo de acceso por archivo, estado de extracción, agregar otro archivo desde Drive, quitar.
-- Vista previa de cómo lo ve un concesionario.
+- Vista previa de cómo lo ve un concesionario y cómo lo ve un cliente.
 - Botones: "Guardar borrador" y "Publicar" (valida los requisitos de `03-modelo-de-datos.md` y muestra qué falta).
 - Productividad para la carga inicial: "Guardar y siguiente borrador".
 
@@ -103,10 +106,11 @@ Desde la ficha de un documento vigente: crea el borrador copiando la clasificaci
 
 ### Usuarios `/admin/usuarios`
 
-- Tabla con filtros por rol, concesionario y activo.
+- Tabla con filtros por rol, concesionario y estado (activo, invitación pendiente, pausado por inactividad, inactivo).
 - Crear usuario: nombre, email, rol, concesionario (obligatorio si el rol es concesionario) → envía la invitación.
 - Reenviar invitación, desactivar o reactivar.
-- Último ingreso.
+- Cuenta pausada por inactividad: aviso y botón "Volver a habilitar".
+- Último uso.
 
 ### Concesionarios `/admin/concesionarios`
 
@@ -119,11 +123,14 @@ Desde la ficha de un documento vigente: crea el borrador copiando la clasificaci
 
 ### Taxonomía `/admin/taxonomia`
 
-- Pestañas para tipos, sistemas, temas y etiquetas: crear, renombrar, reordenar, activar/desactivar.
+- Pestañas para tipos, sistemas, temas, productos y etiquetas: crear, renombrar, reordenar, activar/desactivar.
 - Etiquetas: fusionar duplicadas.
 - Al renombrar, recalcular el índice de búsqueda de los documentos afectados.
 
 ### Registros `/admin/registros`
 
-- Accesos: filtrar por usuario, concesionario, documento y fechas.
+- Accesos: filtrar por usuario (o "Clientes sin cuenta"), concesionario, documento y fechas.
+- Búsquedas frecuentes: texto, veces, cuántas sin resultados, última vez.
+- Documentos más consultados: documento, veces, descargas, última vez.
+- En esas dos: período (30 días, 90 días, último año, todo), quién (todos, con cuenta, clientes sin cuenta) y orden (más veces, A → Z, Z → A).
 - Búsquedas sin resultados: texto, cantidad de veces, última vez.

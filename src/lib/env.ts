@@ -16,6 +16,8 @@ const schema = z.object({
   SMTP_FROM: z.string().optional(),
   // Sin SMTP, mostrar los mails en la consola también en modo producción (pruebas locales).
   MAIL_TO_CONSOLE: z.stringbool().default(false),
+  // Días sin usar la app tras los cuales la cuenta se pausa (0 = nunca).
+  INACTIVIDAD_DIAS: z.coerce.number().int().min(0).default(90),
 });
 
 // Se valida al primer uso. Durante `next build` (imagen Docker) no hay secretos:

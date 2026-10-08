@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getNavItems, isActive } from "./nav-items";
+import { getNavItems, isActive, type NavMode } from "./nav-items";
 
-export function DesktopNav({ isAdmin }: { isAdmin: boolean }) {
+export function DesktopNav({ mode }: { mode: NavMode }) {
   const pathname = usePathname();
-  const navItems = getNavItems(isAdmin);
+  const navItems = getNavItems(mode);
 
   return (
     <nav aria-label="Principal" className="hidden md:block">

@@ -15,9 +15,13 @@ import {
 } from "@/components/ui/table";
 import {
   ACCESOS_LIMIT,
+  busquedasFrecuentes,
   busquedasSinResultados,
+  documentosConsultados,
   listAccesos,
+  RECURRENCIA_LIMIT,
   type AccesosFilters,
+  type Recurrencia,
 } from "@/db/queries/registros";
 import { listConcesionarios, listUsuarios } from "@/db/queries/usuarios";
 import { cn } from "@/lib/utils";
@@ -25,6 +29,50 @@ import { formatFecha, PageHeader } from "../ui";
 import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Registros" };
+
+const TABS = [
+  ["accesos", "Accesos a documentos"],
+  ["frecuentes", "Búsquedas frecuentes"],
+  ["documentos", "Documentos más consultados"],
+  ["busquedas", "Búsquedas sin resultados"],
+] as const;
+type Tab = (typeof TABS)[number][0];
+
+const PERIODOS = [
+  [30, "Últimos 30 días"],
+  [90, "Últimos 90 días"],
+  [365, "Último año"],
+  [0, "Desde el principio"],
+] as const;
+
+const QUIEN = {
+  todos: "Todos",
+  usuarios: "Con cuenta (fábrica y concesionarios)",
+  clientes: "Clientes sin cuenta",
+} as const;
+
+const ORDEN = {
+  veces: "Más veces",
+  az: "A → Z",
+  za: "Z → A",
+} as const;
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function recurrencia(sp: SearchParams): Recurrencia {
+  return {
+    dias: z.coerce
+      .number()
+      .pipe(z.union(PERIODOS.map(([d]) => z.literal(d))))
+      .catch(90)
+      .parse(sp.dias),
+    quien: z
+      .enum(["todos", "usuarios", "clientes"])
+      .catch("todos")
+      .parse(sp.quien),
+    orden: z.enum(["veces", "az", "za"]).catch("veces").parse(sp.orden),
+  };
+}
 
 const ACCION = {
   ver: "Vio",
@@ -38,19 +86,14 @@ export default async function RegistrosPage({
   // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
   await requireAdmin();
   const sp = await searchParams;
-  const tab = sp.tab === "busquedas" ? "busquedas" : "accesos";
+  const tab = TABS.some(([id]) => id === sp.tab) ? (sp.tab as Tab) : "accesos";
 
   return (
     <>
       <PageHeader title="Registros" />
       <nav aria-label="Registros" className="-mx-4 mb-5 overflow-x-auto px-4">
         <ul className="flex gap-1 border-b">
-          {(
-            [
-              ["accesos", "Accesos a documentos"],
-              ["busquedas", "Búsquedas sin resultados"],
-            ] as const
-          ).map(([id, label]) => (
+          {TABS.map(([id, label]) => (
             <li key={id} className="shrink-0">
               <Link
                 href={`/admin/registros?tab=${id}`}
@@ -66,16 +109,15 @@ export default async function RegistrosPage({
           ))}
         </ul>
       </nav>
-      {tab === "accesos" ? <Accesos sp={sp} /> : <Busquedas />}
+      {tab === "accesos" && <Accesos sp={sp} />}
+      {tab === "frecuentes" && <BusquedasFrecuentes r={recurrencia(sp)} />}
+      {tab === "documentos" && <DocumentosConsultados r={recurrencia(sp)} />}
+      {tab === "busquedas" && <Busquedas />}
     </>
   );
 }
 
-async function Accesos({
-  sp,
-}: {
-  sp: Record<string, string | string[] | undefined>;
-}) {
+async function Accesos({ sp }: { sp: SearchParams }) {
   const [usuarios, concesionarios] = await Promise.all([
     listUsuarios(),
     listConcesionarios(),
@@ -83,6 +125,7 @@ async function Accesos({
   const fecha = z.iso.date().optional().catch(undefined);
   const filters: AccesosFilters = {
     usuarioId: usuarios.find((u) => u.id === sp.usuario)?.id,
+    soloClientes: sp.usuario === "clientes",
     concesionarioId: concesionarios.find((c) => c.id === sp.concesionario)?.id,
     documento:
       typeof sp.documento === "string" && sp.documento
@@ -103,9 +146,12 @@ async function Accesos({
           <NativeSelect
             id="r-usuario"
             name="usuario"
-            defaultValue={filters.usuarioId ?? ""}
+            defaultValue={
+              filters.soloClientes ? "clientes" : (filters.usuarioId ?? "")
+            }
           >
             <option value="">Todos</option>
+            <option value="clientes">Clientes sin cuenta</option>
             {usuarios.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.nombre}
@@ -192,9 +238,11 @@ async function Accesos({
                     {formatFecha(r.creadoEn)}
                   </TableCell>
                   <TableCell>
-                    {r.usuarioNombre}
+                    {r.usuarioNombre ?? "Cliente"}
                     <div className="text-sm text-muted-foreground">
-                      {r.concesionarioNombre ?? "Fábrica"}
+                      {r.usuarioNombre
+                        ? (r.concesionarioNombre ?? "Fábrica")
+                        : "Sin cuenta"}
                     </div>
                   </TableCell>
                   <TableCell>{ACCION[r.accion]}</TableCell>
@@ -255,6 +303,188 @@ async function Busquedas() {
                   </TableCell>
                   <TableCell className="tabular-nums">
                     {formatFecha(new Date(r.ultima))}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Período, quién y orden (A→Z / Z→A / más veces) para las pestañas de recurrencia. */
+function RecurrenciaControles({ tab, r }: { tab: Tab; r: Recurrencia }) {
+  const ordenHref = (orden: Recurrencia["orden"]) => {
+    const params = new URLSearchParams({
+      tab,
+      dias: String(r.dias),
+      quien: r.quien,
+      orden,
+    });
+    return `/admin/registros?${params}`;
+  };
+  return (
+    <div className="flex flex-col gap-3">
+      <form className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <input type="hidden" name="tab" value={tab} />
+        <input type="hidden" name="orden" value={r.orden} />
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="rc-dias">Período</Label>
+          <NativeSelect id="rc-dias" name="dias" defaultValue={String(r.dias)}>
+            {PERIODOS.map(([d, label]) => (
+              <option key={d} value={d}>
+                {label}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="rc-quien">Quién</Label>
+          <NativeSelect id="rc-quien" name="quien" defaultValue={r.quien}>
+            {Object.entries(QUIEN).map(([v, label]) => (
+              <option key={v} value={v}>
+                {label}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <Button type="submit" variant="secondary">
+          Ver
+        </Button>
+      </form>
+      <nav aria-label="Ordenar" className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-muted-foreground">Ordenar:</span>
+        {(Object.keys(ORDEN) as Recurrencia["orden"][]).map((orden) => (
+          <Link
+            key={orden}
+            href={ordenHref(orden)}
+            aria-current={r.orden === orden ? "true" : undefined}
+            className={cn(
+              "flex min-h-11 items-center rounded-full border bg-card px-4 font-medium hover:border-foreground/30",
+              r.orden === orden && "border-brand bg-brand/5 text-foreground",
+            )}
+          >
+            {ORDEN[orden]}
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function Vacio({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+async function BusquedasFrecuentes({ r }: { r: Recurrencia }) {
+  const rows = await busquedasFrecuentes(r);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-muted-foreground">
+        Qué se busca y cuántas veces, sin distinguir acentos ni mayúsculas.
+      </p>
+      <RecurrenciaControles tab="frecuentes" r={r} />
+      {rows.length === RECURRENCIA_LIMIT && (
+        <p className="text-muted-foreground">
+          Se muestran {RECURRENCIA_LIMIT}. Acotá el período para ver otras.
+        </p>
+      )}
+      {rows.length === 0 ? (
+        <Vacio>No hubo búsquedas con texto en este período.</Vacio>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border bg-card">
+          <Table className="text-base">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Texto buscado</TableHead>
+                <TableHead className="text-right">Veces</TableHead>
+                <TableHead className="text-right">Sin resultados</TableHead>
+                <TableHead>Última vez</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.texto}>
+                  <TableCell className="font-medium whitespace-normal">
+                    <Link
+                      href={`/buscar?q=${encodeURIComponent(row.texto)}`}
+                      className="text-brand-strong hover:underline"
+                    >
+                      {row.texto}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {row.veces}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {row.sinResultados || "—"}
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    {formatFecha(new Date(row.ultima))}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function DocumentosConsultados({ r }: { r: Recurrencia }) {
+  const rows = await documentosConsultados(r);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-muted-foreground">
+        Cuántas veces se abrió cada documento (ficha, archivo o video).
+      </p>
+      <RecurrenciaControles tab="documentos" r={r} />
+      {rows.length === RECURRENCIA_LIMIT && (
+        <p className="text-muted-foreground">
+          Se muestran {RECURRENCIA_LIMIT}. Acotá el período para ver otros.
+        </p>
+      )}
+      {rows.length === 0 ? (
+        <Vacio>No hubo consultas de documentos en este período.</Vacio>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border bg-card">
+          <Table className="text-base">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Documento</TableHead>
+                <TableHead className="text-right">Veces</TableHead>
+                <TableHead className="text-right">Descargas</TableHead>
+                <TableHead>Última vez</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="max-w-sm font-medium whitespace-normal">
+                    <Link
+                      href={`/admin/documentos/${row.id}`}
+                      className="text-brand-strong hover:underline"
+                    >
+                      {row.titulo ?? "Sin título"}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {row.veces}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {row.descargas || "—"}
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    {formatFecha(new Date(row.ultima))}
                   </TableCell>
                 </TableRow>
               ))}

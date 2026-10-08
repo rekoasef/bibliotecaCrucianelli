@@ -7,7 +7,7 @@ import { initialFormState } from "@/components/forms/form-state";
 import { NativeSelect } from "@/components/forms/native-select";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
-import type { EstadoDoc, VisibilidadDoc } from "@/db/schema";
+import type { EstadoDoc } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { saveDocumento } from "../actions";
 import { MaquinasPicker } from "./maquinas-picker";
@@ -23,17 +23,20 @@ export type DocumentoFormProps = {
     tipoId: string | null;
     version: string | null;
     fechaDocumento: string | null;
-    visibilidad: VisibilidadDoc;
+    visibleConcesionarios: boolean;
+    visibleClientes: boolean;
     estado: EstadoDoc;
     lineaIds: string[];
     modeloIds: string[];
     sistemaIds: string[];
     temaIds: string[];
+    productoIds: string[];
     etiquetas: string[];
   };
   tipos: Opcion[];
   sistemas: Opcion[];
   temas: Opcion[];
+  productos: Opcion[];
   segmentos: React.ComponentProps<typeof MaquinasPicker>["segmentos"];
   etiquetasExistentes: string[];
   haySiguienteBorrador: boolean;
@@ -47,6 +50,7 @@ export function DocumentoForm({
   tipos,
   sistemas,
   temas,
+  productos,
   segmentos,
   etiquetasExistentes,
   haySiguienteBorrador,
@@ -122,28 +126,37 @@ export function DocumentoForm({
         </div>
       </Section>
 
-      <Section title="Visibilidad">
+      <Section
+        title="Visibilidad"
+        help="Fábrica ve todo. Marcá quién más puede verlo; sin ninguna casilla queda Solo fábrica (planos y documentación sensible)."
+      >
         <fieldset className="grid gap-3 sm:grid-cols-2">
-          <legend className="sr-only">Visibilidad</legend>
+          <legend className="sr-only">Quién más lo ve</legend>
           {(
             [
               [
                 "concesionarios",
                 "Concesionarios",
-                "La ven fábrica y concesionarios.",
+                "Mecánicos de los concesionarios, con su cuenta.",
+                doc.visibleConcesionarios,
               ],
-              ["fabrica", "Solo fábrica", "Planos y documentación sensible."],
+              [
+                "clientes",
+                "Clientes",
+                "Clientes finales: acceso libre, sin cuenta.",
+                doc.visibleClientes,
+              ],
             ] as const
-          ).map(([value, label, help]) => (
+          ).map(([value, label, help, checked]) => (
             <label
               key={value}
               className="flex cursor-pointer gap-3 rounded-lg border p-4 has-checked:border-brand has-checked:bg-brand/5"
             >
               <input
-                type="radio"
-                name="visibilidad"
+                type="checkbox"
+                name="publicos"
                 value={value}
-                defaultChecked={doc.visibilidad === value}
+                defaultChecked={checked}
                 className="mt-0.5 size-5 accent-brand"
               />
               <span className="flex flex-col">
@@ -156,8 +169,20 @@ export function DocumentoForm({
       </Section>
 
       <Section
+        title="Producto"
+        help="Sembradoras, Fertilizadoras, Tecnología… Para publicar hace falta al menos una máquina o un producto."
+      >
+        <CheckboxGroup
+          legend="Producto"
+          name="productos"
+          opciones={productos}
+          elegidos={doc.productoIds}
+        />
+      </Section>
+
+      <Section
         title="Máquinas"
-        help="Al menos una para publicar. Marcá la línea completa si aplica a todos sus modelos."
+        help="Marcá la línea completa si aplica a todos sus modelos. Puede quedar vacío si no corresponde a una máquina (por ejemplo, un monitor)."
       >
         <MaquinasPicker
           segmentos={segmentos}

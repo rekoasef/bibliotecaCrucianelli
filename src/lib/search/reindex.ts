@@ -13,7 +13,13 @@ export async function rebuildDocumentSearch(
 }
 
 export type TaxonomiaKind =
-  "lineas" | "modelos" | "tipos" | "sistemas" | "temas" | "etiquetas";
+  | "lineas"
+  | "modelos"
+  | "tipos"
+  | "sistemas"
+  | "temas"
+  | "productos"
+  | "etiquetas";
 
 /**
  * Al renombrar una entrada de taxonomía, recalcula los documentos que la usan
@@ -36,6 +42,7 @@ export async function rebuildSearchForTaxonomia(
     tipos: sql`SELECT id FROM documentos WHERE tipo_id = ${id}`,
     sistemas: sql`SELECT documento_id FROM documento_sistemas WHERE sistema_id = ${id}`,
     temas: sql`SELECT documento_id FROM documento_temas WHERE tema_id = ${id}`,
+    productos: sql`SELECT documento_id FROM documento_productos WHERE producto_id = ${id}`,
     etiquetas: sql`SELECT documento_id FROM documento_etiquetas WHERE etiqueta_id = ${id}`,
   }[kind];
 

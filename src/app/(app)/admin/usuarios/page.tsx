@@ -28,6 +28,7 @@ export const metadata: Metadata = { title: "Usuarios" };
 const ESTADOS = {
   activo: "Activo",
   pendiente: "Invitación pendiente",
+  pausado: "Pausado por inactividad",
   inactivo: "Inactivo",
 } as const;
 
@@ -137,7 +138,7 @@ export default async function UsuariosPage({
                 <TableHead>Nombre</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Último ingreso</TableHead>
+                <TableHead>Último uso</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -166,7 +167,7 @@ export default async function UsuariosPage({
                     <EstadoBadge estado={estadoUsuario(u)} />
                   </TableCell>
                   <TableCell className="tabular-nums">
-                    {formatFecha(u.ultimoIngreso)}
+                    {formatFecha(u.ultimoUso)}
                   </TableCell>
                 </TableRow>
               ))}

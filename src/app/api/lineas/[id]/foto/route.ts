@@ -3,19 +3,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { lineas, segmentos } from "@/db/schema";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { DriveNotFoundError, getDrive } from "@/lib/drive";
 import { canDisplayInline } from "@/lib/drive/mime";
 
-/** Foto de una línea para la navegación por máquina. Solo líneas visibles para el usuario. */
+/**
+ * Foto de una línea para la navegación por máquina. Solo líneas visibles para quien
+ * mira (sin sesión, como cliente final: acceso libre).
+ */
 export async function GET(
   _request: NextRequest,
   ctx: RouteContext<"/api/lineas/[id]/foto">,
 ) {
   const { id } = await ctx.params;
   if (!z.uuid().safeParse(id).success) return notFound();
-  const user = await getCurrentUser();
-  if (!user) return new NextResponse("No autorizado", { status: 401 });
+  const { viewer } = await getViewer();
 
   const [linea] = await db
     .select({ driveId: lineas.imagenDriveFileId })
@@ -24,7 +26,7 @@ export async function GET(
     .where(
       and(
         eq(lineas.id, id),
-        user.rol === "admin"
+        viewer.rol === "admin"
           ? undefined
           : and(eq(lineas.activo, true), eq(segmentos.activo, true)),
       ),

@@ -85,6 +85,27 @@
       "when": 1791372620882,
       "tag": "0011_busquedas_usuario",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791475723421,
+      "tag": "0012_publicos_productos_inactividad",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791475730568,
+      "tag": "0013_quitar_visibilidad",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791475735062,
+      "tag": "0014_busqueda_productos",
+      "breakpoints": true
     }
   ]
 }

@@ -1,15 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getViewer } from "@/lib/auth/session";
 import { contentDisposition } from "@/lib/content-disposition";
 import { getArchivoVisible, registrarAcceso } from "@/lib/documentos/queries";
 import { DriveNotFoundError, DriveRangeError, getDrive } from "@/lib/drive";
 import { canDisplayInline } from "@/lib/drive/mime";
+import { hit, rateLimits } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request";
 
 /**
  * Sirve archivos privados de Drive (modo servidor) — CLAUDE.md, regla 3.
- * 1. sesión, 2. permiso sobre el documento (documentVisibilityFilter),
- * 3. registro en `accesos`, 4. streaming desde Drive sin guardar en disco.
+ * 1. quién mira (sin sesión = cliente final), 2. permiso sobre el documento
+ * (documentVisibilityFilter), 3. registro en `accesos`, 4. streaming desde Drive
+ * sin guardar en disco.
  */
 export async function GET(
   request: NextRequest,
@@ -18,26 +21,32 @@ export async function GET(
   const { id } = await ctx.params;
   if (!z.uuid().safeParse(id).success) return notFound();
 
-  const user = await getCurrentUser();
-  if (!user) {
-    // Desde el navegador (abrir el PDF en otra pestaña) se vuelve al login.
-    if (request.headers.get("accept")?.includes("text/html")) {
-      const url = new URL("/login", request.url);
-      url.searchParams.set(
-        "next",
-        request.nextUrl.pathname + request.nextUrl.search,
-      );
-      return NextResponse.redirect(url);
-    }
-    return new NextResponse("No autorizado", { status: 401 });
-  }
+  const { user, viewer } = await getViewer();
 
   // Sin permiso responde igual que si no existiera: no revela qué IDs hay.
-  const archivo = await getArchivoVisible(id, user);
+  const archivo = await getArchivoVisible(id, viewer);
   if (!archivo || !archivo.disponible) return notFound();
 
   const descargar = request.nextUrl.searchParams.get("descargar") === "1";
   const range = request.headers.get("range");
+  // Un visor de PDF pide muchos rangos: se cuenta (y registra) solo el primer pedido.
+  const primerPedido = !range || /^bytes=0-/.test(range);
+
+  if (!user && primerPedido) {
+    const limit = await hit(
+      `archivos:ip:${await getClientIp()}`,
+      rateLimits.archivosClienteIp,
+    );
+    if (!limit.allowed) {
+      return new NextResponse(
+        "Demasiados pedidos. Probá de nuevo en un rato.",
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  }
 
   let download;
   try {
@@ -53,10 +62,9 @@ export async function GET(
     throw error;
   }
 
-  // Un visor de PDF pide muchos rangos: se registra solo el primer pedido.
-  if (!range || /^bytes=0-/.test(range)) {
+  if (primerPedido) {
     await registrarAcceso({
-      usuarioId: user.id,
+      usuarioId: user?.id ?? null,
       documentoId: archivo.documentoId,
       archivoId: archivo.id,
       accion: descargar ? "descargar" : "ver",

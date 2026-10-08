@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ResultCard } from "@/components/search/result-card";
 import { SearchForm } from "@/components/search/search-form";
 import { TipoIcon } from "@/components/tipo-icon";
-import type { CurrentUser } from "@/lib/auth/session";
+import type { Viewer } from "@/lib/documentos/visibility";
 import type { MaquinaOpcion } from "@/lib/search/options";
 import { searchDocuments, type SearchResult } from "@/lib/search/search";
 import { cn } from "@/lib/utils";
@@ -15,19 +15,19 @@ type Linea = MaquinaOpcion["lineas"][number];
  * buscador acotado y documentos agrupados por tipo.
  */
 export async function MaquinaView({
-  user,
+  viewer,
   linea,
   modelo,
   tieneFoto,
 }: {
-  user: CurrentUser;
+  viewer: Viewer;
   linea: Linea;
   modelo?: { nombre: string; slug: string };
   tieneFoto: boolean;
 }) {
   const { results } = await searchDocuments(
     modelo ? { modelo: modelo.slug } : { linea: linea.slug },
-    user,
+    viewer,
     500,
   );
   const nombre = modelo?.nombre ?? linea.nombre;

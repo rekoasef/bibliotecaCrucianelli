@@ -10,10 +10,11 @@ import {
   segmentos,
   tipos,
   type EstadoDoc,
-  type RolUsuario,
-  type VisibilidadDoc,
 } from "@/db/schema";
-import { documentVisibilityFilter } from "./visibility";
+import { documentVisibilityFilter, type RolLector } from "./visibility";
+
+/** Para quién está marcado el documento (fábrica ve todo siempre). */
+type Publico = "conc" | "fab" | "cli" | "conc+cli";
 
 // Corre contra la base de desarrollo, dentro de una transacción que se deshace al final.
 class Rollback extends Error {}
@@ -88,12 +89,18 @@ async function createFixture(tx: Tx) {
   async function doc(
     key: string,
     estado: EstadoDoc,
-    visibilidad: VisibilidadDoc,
+    publico: Publico,
     maquinas: { lineas?: string[]; modelos?: string[] },
   ) {
     const [d] = await tx
       .insert(documentos)
-      .values({ titulo: key, tipoId: tipo.id, estado, visibilidad })
+      .values({
+        titulo: key,
+        tipoId: tipo.id,
+        estado,
+        visibleConcesionarios: publico.includes("conc"),
+        visibleClientes: publico.includes("cli"),
+      })
       .returning({ id: documentos.id });
     ids[key] = d.id;
     for (const lineaId of maquinas.lineas ?? []) {
@@ -109,32 +116,38 @@ async function createFixture(tx: Tx) {
   }
 
   const activa = { lineas: [lineaActiva.id] };
-  await doc("vigente-conc", "vigente", "concesionarios", activa);
-  await doc("obsoleto-conc", "obsoleto", "concesionarios", activa);
-  await doc("vigente-fab", "vigente", "fabrica", activa);
-  await doc("borrador-conc", "borrador", "concesionarios", activa);
-  await doc("modelo-activo", "vigente", "concesionarios", {
+  await doc("vigente-conc", "vigente", "conc", activa);
+  await doc("obsoleto-conc", "obsoleto", "conc", activa);
+  await doc("vigente-fab", "vigente", "fab", activa);
+  await doc("borrador-conc", "borrador", "conc", activa);
+  await doc("modelo-activo", "vigente", "conc", {
     modelos: [modeloActivo.id],
   });
-  await doc("solo-modelo-inactivo", "vigente", "concesionarios", {
+  await doc("solo-modelo-inactivo", "vigente", "conc", {
     modelos: [modeloInactivo.id],
   });
-  await doc("solo-linea-inactiva", "vigente", "concesionarios", {
+  await doc("solo-linea-inactiva", "vigente", "conc", {
     lineas: [lineaInactiva.id],
   });
-  await doc("solo-segmento-inactivo", "vigente", "concesionarios", {
+  await doc("solo-segmento-inactivo", "vigente", "conc", {
     lineas: [lineaDeSegInactivo.id],
   });
-  await doc("inactiva-y-activa", "vigente", "concesionarios", {
+  await doc("inactiva-y-activa", "vigente", "conc", {
     lineas: [lineaInactiva.id],
     modelos: [modeloActivo.id],
   });
-  await doc("sin-maquinas", "vigente", "concesionarios", {});
+  await doc("sin-maquinas", "vigente", "conc", {});
+  await doc("vigente-cli", "vigente", "cli", activa);
+  await doc("vigente-conc-cli", "vigente", "conc+cli", activa);
+  await doc("borrador-cli", "borrador", "cli", activa);
+  await doc("cli-solo-linea-inactiva", "vigente", "cli", {
+    lineas: [lineaInactiva.id],
+  });
 
   return { ids };
 }
 
-async function visibles(tx: Tx, rol: RolUsuario, ids: Record<string, string>) {
+async function visibles(tx: Tx, rol: RolLector, ids: Record<string, string>) {
   const rows = await tx
     .select({ titulo: documentos.titulo })
     .from(documentos)
@@ -148,47 +161,66 @@ async function visibles(tx: Tx, rol: RolUsuario, ids: Record<string, string>) {
 }
 
 describe("documentVisibilityFilter", () => {
+  it("un documento sin máquinas (solo producto) no depende de máquinas activas", async () => {
+    await withFixture(async (tx, { ids }) => {
+      expect(await visibles(tx, "fabrica", ids)).toContain("sin-maquinas");
+    });
+  });
+
   it("admin ve todo, incluidos borradores y máquinas inactivas", async () => {
     await withFixture(async (tx, { ids }) => {
       expect(await visibles(tx, "admin", ids)).toEqual(Object.keys(ids).sort());
     });
   });
 
-  it("fábrica ve vigentes y obsoletos de ambas visibilidades, no borradores", async () => {
+  it("fábrica ve vigentes y obsoletos de todos los públicos, no borradores", async () => {
     await withFixture(async (tx, { ids }) => {
       expect(await visibles(tx, "fabrica", ids)).toEqual(
         [
           "inactiva-y-activa",
           "modelo-activo",
           "obsoleto-conc",
+          "sin-maquinas",
+          "vigente-cli",
           "vigente-conc",
+          "vigente-conc-cli",
           "vigente-fab",
         ].sort(),
       );
     });
   });
 
-  it("concesionario no ve documentos 'Solo fábrica' ni borradores", async () => {
+  it("concesionario solo ve lo marcado para concesionarios, sin borradores", async () => {
     await withFixture(async (tx, { ids }) => {
       expect(await visibles(tx, "concesionario", ids)).toEqual(
         [
           "inactiva-y-activa",
           "modelo-activo",
           "obsoleto-conc",
+          "sin-maquinas",
           "vigente-conc",
+          "vigente-conc-cli",
         ].sort(),
+      );
+    });
+  });
+
+  it("cliente final solo ve lo marcado para clientes, sin borradores", async () => {
+    await withFixture(async (tx, { ids }) => {
+      expect(await visibles(tx, "cliente", ids)).toEqual(
+        ["vigente-cli", "vigente-conc-cli"].sort(),
       );
     });
   });
 
   it("oculta documentos asociados solo a máquinas inactivas (modelo, línea o segmento)", async () => {
     await withFixture(async (tx, { ids }) => {
-      for (const rol of ["fabrica", "concesionario"] as const) {
+      for (const rol of ["fabrica", "concesionario", "cliente"] as const) {
         const v = await visibles(tx, rol, ids);
         expect(v).not.toContain("solo-modelo-inactivo");
         expect(v).not.toContain("solo-linea-inactiva");
         expect(v).not.toContain("solo-segmento-inactivo");
-        expect(v).not.toContain("sin-maquinas");
+        expect(v).not.toContain("cli-solo-linea-inactiva");
       }
     });
   });

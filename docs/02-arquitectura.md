@@ -66,8 +66,8 @@ Cada archivo tiene un campo `modo_acceso`:
 
 - El archivo queda privado en Drive.
 - Se sirve solo por `GET /api/archivos/[id]`, que:
-  1. verifica la sesión,
-  2. verifica que el usuario pueda ver el documento al que pertenece el archivo (misma función de permisos que el resto de la app),
+  1. determina quién mira: el usuario de la sesión o, sin sesión, un cliente final (acceso libre; con límite de 200 archivos por hora por IP para cuidar el ancho de banda),
+  2. verifica que pueda ver el documento al que pertenece el archivo (misma función de permisos que el resto de la app),
   3. registra el acceso en `accesos`,
   4. hace streaming desde Drive (`files.get?alt=media`) hacia el cliente, sin guardar el archivo en disco.
 - Debe soportar cabeceras `Range` para que los PDFs grandes se puedan ver sin descargar todo.
@@ -79,7 +79,7 @@ Cada archivo tiene un campo `modo_acceso`:
 - El video ya tiene link público en Drive (así funciona hoy).
 - Se embebe con el reproductor de Drive (`https://drive.google.com/file/d/{id}/preview`) **solo dentro de la ficha**, renderizada del lado del servidor para usuarios con permiso.
 - Siempre se muestra un botón "Abrir en Drive" como respaldo, porque el reproductor embebido a veces falla en celulares.
-- Si un video pertenece a un documento "Solo fábrica", el admin debe ponerlo en modo `servidor`. El panel de admin muestra una advertencia si detecta un archivo `publico` en un documento de visibilidad `fabrica`.
+- Si un video pertenece a un documento "Solo fábrica", el admin debe ponerlo en modo `servidor`. El panel de admin muestra una advertencia si detecta un archivo `publico` en un documento que no está marcado ni para concesionarios ni para clientes.
 
 ### Explorador de Drive en el admin
 
@@ -96,7 +96,7 @@ Cada archivo tiene un campo `modo_acceso`:
 - `/api/archivos/[id]` muestra inline solo tipos seguros (PDF, imágenes salvo SVG, texto, video); el resto (HTML, SVG…) se fuerza a descarga para que un archivo de Drive no pueda ejecutar scripts en el dominio de la app. Siempre `X-Content-Type-Options: nosniff`.
 - Un visor de PDF hace muchos pedidos con `Range`: en `accesos` se registra solo el primero (sin rango o `bytes=0-`).
 - Videos públicos: el reproductor de Drive se carga recién al tocar "Reproducir" (ahorra datos con mala señal) y ese toque registra el acceso `video`.
-- El admin tiene "Ver como concesionario" en la ficha para revisar qué ve un concesionario.
+- El admin tiene "Ver como concesionario" y "Ver como cliente" en la ficha para revisar qué ve cada uno.
 
 ### Detección de cambios
 
@@ -115,28 +115,43 @@ Cada archivo tiene un campo `modo_acceso`:
 4. Recuperación de contraseña por mail.
 5. El admin puede desactivar usuarios (y concesionarios enteros): un usuario desactivado o de un concesionario desactivado no puede iniciar sesión y sus sesiones se invalidan.
 
-No hay registro público.
+No hay registro público. Los clientes finales no tienen cuenta: consultan sin login (ver "Acceso libre de clientes").
+
+### Pausa por inactividad
+
+- Una cuenta de fábrica o de concesionario que no usa la app durante `INACTIVIDAD_DIAS` días (90 por defecto; 0 la desactiva) queda **pausada**. No aplica al admin ni a quien nunca ingresó (para eso vence la invitación).
+- Como las sesiones se renuevan solas con el uso, la inactividad se mide con `usuarios.ultima_actividad`, que `getCurrentUser` actualiza como mucho una vez por hora (además de `ultimo_ingreso` al iniciar sesión).
+- Se detecta al iniciar sesión (`session.create.before`) y en cada request (`getCurrentUser`): se guarda `pausado_en`, se cierran sus sesiones y el login muestra "Tu cuenta está pausada… pedile a fábrica que la vuelva a habilitar". No hace falta una tarea programada; el listado del admin calcula el estado con la misma regla (`pausadoSql`).
+- El admin la rehabilita desde la ficha del usuario ("Volver a habilitar"): se borra `pausado_en` y el plazo vuelve a contar desde ese momento. La contraseña no cambia.
+
+### Acceso libre de clientes
+
+- `proxy.ts` solo exige cookie de sesión en `/admin` y `/cuenta`. El inicio, `/buscar`, `/maquinas`, las fichas, `/api/archivos/[id]` y las fotos de líneas se pueden abrir sin sesión.
+- Esas páginas usan `getViewer()`: devuelve el usuario y el `viewer` para la visibilidad, que sin sesión es `CLIENTE` (`{ rol: "cliente" }`). Nunca se arma un viewer a partir de datos del request.
+- Los accesos y búsquedas de clientes se registran con `usuario_id` null. Los clientes no tienen búsquedas recientes propias.
+- Navegación sin sesión: Inicio, Buscar, Máquinas e "Ingresar" (en lugar de "Cuenta").
 
 ### Implementación (fase 1)
 
 - **No se expone el handler HTTP de Better Auth** (`/api/auth/*`). Login, logout, invitaciones y recuperación pasan por Server Actions que llaman a `auth.api.*` del lado del servidor. Menos superficie (no hay endpoint de registro alcanzable) y los formularios funcionan sin JavaScript.
 - **Rate limiting propio en Postgres** (`limites_tasa`), porque el de Better Auth solo aplica a su handler HTTP: login 5 intentos por email y 30 por IP cada 15 minutos; recuperación 3 por email y 10 por IP por hora; reenvío de invitación 5 por usuario por hora. La IP se toma de `X-Forwarded-For`, que debe setear el proxy.
 - **Invitación** = token de restablecimiento de Better Auth con vencimiento de 7 días, de un solo uso; reenviarla invalida el anterior. Al definir la contraseña, el usuario entra directo.
-- **Bloqueo:** el hook `session.create.before` impide iniciar sesión a usuarios o concesionarios inactivos; además `getCurrentUser` lo verifica en cada request, y al desactivar se borran las sesiones.
-- **Permisos:** `proxy.ts` solo hace un chequeo optimista (hay cookie de sesión). La verificación real es `requireUser()` / `requireAdmin()` en cada página **y en cada Server Action**. A los no admin, `/admin` les responde 404.
+- **Bloqueo:** el hook `session.create.before` impide iniciar sesión a usuarios o concesionarios inactivos y a cuentas pausadas por inactividad; además `getCurrentUser` lo verifica en cada request, y al desactivar o pausar se borran las sesiones.
+- **Permisos:** `proxy.ts` solo hace un chequeo optimista (hay cookie de sesión) en `/admin` y `/cuenta`. La verificación real es `requireUser()` / `requireAdmin()` en cada página **y en cada Server Action** (las páginas de consulta usan `getViewer()`). A los no admin, `/admin` les responde 404.
 - Sesiones de 30 días, renovadas con el uso (los mecánicos no deberían tener que volver a loguearse en el campo).
 
 ### Reglas de visibilidad
 
-Implementadas en **una única función** del servidor (por ejemplo `documentVisibilityFilter(user)`), usada por la búsqueda, la navegación, la ficha y `/api/archivos/[id]`:
+Implementadas en **una única función** del servidor (`documentVisibilityFilter(viewer)`), usada por la búsqueda, la navegación, la ficha y `/api/archivos/[id]`. Cada documento se marca para uno o más públicos además de fábrica (`visible_concesionarios`, `visible_clientes`):
 
-| Rol | Ve |
+| Lector | Ve |
 |---|---|
 | admin | Todo, incluidos borradores |
 | fabrica | `estado IN ('vigente', 'obsoleto')` |
-| concesionario | `estado IN ('vigente', 'obsoleto')` **y** `visibilidad = 'concesionarios'` |
+| concesionario | `estado IN ('vigente', 'obsoleto')` **y** `visible_concesionarios` |
+| cliente (sin sesión) | `estado IN ('vigente', 'obsoleto')` **y** `visible_clientes` |
 
-Además, nadie fuera del admin ve documentos asociados únicamente a máquinas de un segmento o línea desactivados (por ejemplo, fertilizadoras mientras estén ocultas).
+Además, nadie fuera del admin ve documentos asociados únicamente a máquinas de un segmento o línea desactivados (por ejemplo, fertilizadoras mientras estén ocultas). Un documento sin máquinas (por ejemplo, de Tecnología o Accesorios, asociado solo a un producto) no depende de esta regla.
 
 ## Búsqueda
 
@@ -147,7 +162,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 - Configuración de texto propia, por ejemplo `es_unaccent`, basada en `spanish` con `unaccent` para que "regulacion" encuentre "regulación".
 - Columna `documentos.busqueda` (`tsvector`) con pesos:
   - **A:** título
-  - **B:** etiquetas, nombres de máquinas (línea y modelo), tipo, sistemas, temas
+  - **B:** etiquetas, nombres de máquinas (línea y modelo), tipo, sistemas, temas, productos
   - **C:** descripción
   - **D:** texto extraído de los archivos
 - Índice GIN sobre `busqueda`.
@@ -159,7 +174,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 `busqueda` depende de varias tablas, así que no puede ser una columna generada. Se recalcula con una función `rebuildDocumentSearch(documentoId)` llamada al:
 
 - guardar o publicar un documento,
-- cambiar sus etiquetas, máquinas, sistemas o temas,
+- cambiar sus etiquetas, máquinas, sistemas, temas o productos,
 - terminar la extracción de texto de uno de sus archivos,
 - renombrar una entrada de taxonomía (recalcular los documentos afectados).
 
@@ -168,7 +183,7 @@ Toda la búsqueda se resuelve en Postgres, sin servicios externos.
 1. Se arma la consulta con `websearch_to_tsquery('es_unaccent', q)` (soporta comillas y `-excluir`).
 2. Si no hay resultados, cada palabra que no está en `vocabulario` se reemplaza por la más parecida que sí está y se repite la búsqueda; la pantalla muestra "Buscamos «X» porque «Y» no aparece en la biblioteca".
 3. Si hay pocos resultados, se complementa con coincidencias por similitud trigram sobre título y etiquetas.
-4. Se aplican los filtros (máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
+4. Se aplican los filtros (producto, máquina, tipo, sistema, tema, etiqueta) y el filtro de visibilidad.
 5. Orden: `ts_rank_cd` → documentos `vigente` antes que `obsoleto` → documentos específicos (un solo sistema/tema, asociados a modelo) antes que generales → más recientes.
 6. Se devuelve un fragmento resaltado con `ts_headline` sobre título/descripción.
 7. Si no hay resultados, se registra en `busquedas` con `cantidad_resultados = 0`.

@@ -7,6 +7,7 @@ import {
   etiquetas,
   lineas,
   modelos,
+  productos,
   segmentos,
   sistemas,
   temas,
@@ -26,48 +27,59 @@ export type MaquinaOpcion = {
 /** Opciones de los filtros de búsqueda: solo lo activo (el admin ve todo). */
 export const getSearchOptions = cache(async (viewer: Viewer) => {
   const soloActivos = viewer.rol !== "admin";
-  const catalogo = (t: typeof tipos | typeof sistemas | typeof temas) =>
+  const catalogo = (
+    t: typeof tipos | typeof sistemas | typeof temas | typeof productos,
+  ) =>
     db
       .select({ nombre: t.nombre, slug: t.slug })
       .from(t)
       .where(soloActivos ? eq(t.activo, true) : undefined)
       .orderBy(asc(t.orden), asc(t.nombre));
 
-  const [segs, lins, mods, tiposOps, sistemasOps, temasOps, etiquetasOps] =
-    await Promise.all([
-      db
-        .select()
-        .from(segmentos)
-        .where(soloActivos ? eq(segmentos.activo, true) : undefined)
-        .orderBy(asc(segmentos.orden)),
-      db
-        .select()
-        .from(lineas)
-        .where(soloActivos ? eq(lineas.activo, true) : undefined)
-        .orderBy(asc(lineas.orden), asc(lineas.nombre)),
-      db
-        .select()
-        .from(modelos)
-        .where(soloActivos ? eq(modelos.activo, true) : undefined)
-        .orderBy(asc(modelos.orden), asc(modelos.nombre)),
-      catalogo(tipos),
-      catalogo(sistemas),
-      catalogo(temas),
-      // Solo etiquetas de documentos que el usuario puede ver.
-      db
-        .selectDistinct({
-          nombre: etiquetas.nombre,
-          slug: etiquetas.nombreNormalizado,
-        })
-        .from(etiquetas)
-        .innerJoin(
-          sql`documento_etiquetas de`,
-          sql`de.etiqueta_id = ${etiquetas.id}`,
-        )
-        .innerJoin(documentos, sql`${documentos.id} = de.documento_id`)
-        .where(and(documentVisibilityFilter(viewer)))
-        .orderBy(asc(etiquetas.nombreNormalizado)),
-    ]);
+  const [
+    segs,
+    lins,
+    mods,
+    tiposOps,
+    sistemasOps,
+    temasOps,
+    productosOps,
+    etiquetasOps,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(segmentos)
+      .where(soloActivos ? eq(segmentos.activo, true) : undefined)
+      .orderBy(asc(segmentos.orden)),
+    db
+      .select()
+      .from(lineas)
+      .where(soloActivos ? eq(lineas.activo, true) : undefined)
+      .orderBy(asc(lineas.orden), asc(lineas.nombre)),
+    db
+      .select()
+      .from(modelos)
+      .where(soloActivos ? eq(modelos.activo, true) : undefined)
+      .orderBy(asc(modelos.orden), asc(modelos.nombre)),
+    catalogo(tipos),
+    catalogo(sistemas),
+    catalogo(temas),
+    catalogo(productos),
+    // Solo etiquetas de documentos que el usuario puede ver.
+    db
+      .selectDistinct({
+        nombre: etiquetas.nombre,
+        slug: etiquetas.nombreNormalizado,
+      })
+      .from(etiquetas)
+      .innerJoin(
+        sql`documento_etiquetas de`,
+        sql`de.etiqueta_id = ${etiquetas.id}`,
+      )
+      .innerJoin(documentos, sql`${documentos.id} = de.documento_id`)
+      .where(and(documentVisibilityFilter(viewer)))
+      .orderBy(asc(etiquetas.nombreNormalizado)),
+  ]);
 
   const maquinas: MaquinaOpcion[] = segs
     .map((s) => ({
@@ -90,6 +102,7 @@ export const getSearchOptions = cache(async (viewer: Viewer) => {
     tipos: tiposOps,
     sistemas: sistemasOps,
     temas: temasOps,
+    productos: productosOps,
     etiquetas: etiquetasOps,
   };
 });

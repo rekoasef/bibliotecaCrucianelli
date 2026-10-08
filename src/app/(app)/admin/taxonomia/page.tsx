@@ -33,6 +33,12 @@ const TABS = [
   },
   { id: "temas", label: "Temas", ayuda: "Cero, uno o varios por documento." },
   {
+    id: "productos",
+    label: "Productos",
+    ayuda:
+      "Familia de producto, con su propio filtro en la búsqueda. Cero, uno o varios por documento.",
+  },
+  {
     id: "etiquetas",
     label: "Etiquetas",
     ayuda: "Texto libre; se normalizan para evitar duplicados.",

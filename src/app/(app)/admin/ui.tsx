@@ -72,6 +72,10 @@ const ESTADO: Record<EstadoUsuario, { label: string; className: string }> = {
     label: "Invitación pendiente",
     className: "border-amber-700/30 bg-amber-50 text-amber-900",
   },
+  pausado: {
+    label: "Pausado por inactividad",
+    className: "border-sky-700/30 bg-sky-50 text-sky-950",
+  },
   inactivo: {
     label: "Inactivo",
     className: "border-border bg-muted text-muted-foreground",

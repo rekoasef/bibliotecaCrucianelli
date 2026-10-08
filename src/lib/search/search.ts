@@ -20,6 +20,7 @@ const TYPO_THRESHOLD = 0.5;
 
 export type SearchFilters = {
   q?: string;
+  producto?: string; // slug
   linea?: string; // slug
   modelo?: string; // slug
   tipo?: string; // slug
@@ -87,6 +88,10 @@ function filterConditions(f: SearchFilters): SQL[] {
     c.push(
       sql`documentos.tipo_id = (SELECT id FROM tipos WHERE slug = ${f.tipo})`,
     );
+  }
+  if (f.producto) {
+    c.push(sql`EXISTS (SELECT 1 FROM documento_productos dp JOIN productos p ON p.id = dp.producto_id
+                       WHERE dp.documento_id = documentos.id AND p.slug = ${f.producto})`);
   }
   if (f.sistema) {
     c.push(sql`EXISTS (SELECT 1 FROM documento_sistemas ds JOIN sistemas s ON s.id = ds.sistema_id
@@ -313,7 +318,8 @@ export async function searchDocuments(
 
 /** Registra la búsqueda (docs/03). Las sin resultados alimentan el panel del admin. */
 export async function registrarBusqueda(input: {
-  usuarioId: string;
+  /** null = cliente final sin cuenta. */
+  usuarioId: string | null;
   filters: SearchFilters;
   cantidad: number;
 }) {
