@@ -1,3 +1,9 @@
+/**
+ * Tests del parseo de links de Drive.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { parseDriveLink, parseDriveLinks } from "./links";
 

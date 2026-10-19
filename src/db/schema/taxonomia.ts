@@ -1,3 +1,9 @@
+/**
+ * Catálogos de clasificación y etiquetas libres (docs/04-taxonomia.md).
+ *
+ * @module
+ */
+
 import {
   boolean,
   index,
@@ -8,8 +14,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 
-// Tipos, sistemas, temas, productos y tecnologías comparten estructura (docs/03-modelo-de-datos.md).
-// Inactivo = no se ofrece al cargar, pero los documentos existentes lo conservan.
+/**
+ * Tipos, sistemas, temas, productos y tecnologías comparten estructura
+ * (docs/03-modelo-de-datos.md). Inactivo = no se ofrece al cargar, pero los
+ * documentos existentes lo conservan.
+ *
+ * @param nombreTabla - Nombre de la tabla.
+ */
 function catalogo(nombreTabla: string) {
   return pgTable(nombreTabla, {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -21,16 +32,31 @@ function catalogo(nombreTabla: string) {
   });
 }
 
+/** Tipo de documento (manual, despiece, boletín técnico…). */
 export const tipos = catalogo("tipos");
+
+/** Sistema de la máquina (dosificación, hidráulica…). */
 export const sistemas = catalogo("sistemas");
+
+/** Tema transversal (regulación, calibración…). */
 export const temas = catalogo("temas");
-// Familia de producto: Sembradoras, Fertilizadoras, Tecnología, Accesorios siembra.
+
+/**
+ * Familia de producto: Sembradoras, Fertilizadoras, Tecnología, Accesorios
+ * siembra.
+ */
 export const productos = catalogo("productos");
-// Tecnologías de los documentos de Tecnología: Precision Planting, Leaf…
+
+/** Tecnologías de los documentos de Tecnología: Precision Planting, Leaf… */
 export const tecnologias = catalogo("tecnologias");
 
+/** Fila de cualquier catálogo. */
 export type ItemCatalogo = typeof tipos.$inferSelect;
 
+/**
+ * Etiquetas libres. `nombre_normalizado` (minúsculas, sin acentos, espacios
+ * simples; ver `normalizeTag`) es único.
+ */
 export const etiquetas = pgTable(
   "etiquetas",
   {
@@ -49,4 +75,5 @@ export const etiquetas = pgTable(
   ],
 );
 
+/** Fila de `etiquetas`. */
 export type Etiqueta = typeof etiquetas.$inferSelect;

@@ -1,3 +1,9 @@
+/**
+ * Tests de la pausa por inactividad.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { superaInactividad } from "./inactividad";
 

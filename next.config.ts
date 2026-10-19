@@ -1,8 +1,17 @@
+/**
+ * Configuración de Next: salida standalone para Docker y cabeceras de
+ * seguridad.
+ *
+ * @module
+ */
+
 import type { NextConfig } from "next";
 
-// Cabeceras de seguridad para todas las respuestas. La CSP no restringe scripts
-// (Next necesitaría nonces), pero sí lo que más importa acá: nadie puede embeber
-// la app (clickjacking) y solo se embebe el reproductor de Drive.
+/**
+ * Cabeceras de seguridad para todas las respuestas. La CSP no restringe scripts
+ * (Next necesitaría nonces), pero sí lo que más importa acá: nadie puede
+ * embeber la app (clickjacking) y solo se embebe el reproductor de Drive.
+ */
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -23,6 +32,7 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000" },
 ];
 
+/** Configuración de Next. */
 const nextConfig: NextConfig = {
   // Imagen Docker liviana: .next/standalone trae solo lo necesario (Dockerfile).
   output: "standalone",

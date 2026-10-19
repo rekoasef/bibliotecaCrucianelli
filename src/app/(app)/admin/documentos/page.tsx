@@ -1,3 +1,9 @@
+/**
+ * `/admin/documentos`: listado de documentos del admin.
+ *
+ * @module
+ */
+
 import { FolderInput } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -28,17 +34,24 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Documentos" };
 
+/** Opciones del filtro de públicos. */
 const PUBLICO = {
   concesionarios: "Para concesionarios",
   clientes: "Para clientes",
   "solo-fabrica": "Solo fábrica",
 } as const;
+
+/** Opciones del filtro de estado. */
 const ESTADO = {
   borrador: "Borrador",
   vigente: "Vigente",
   obsoleto: "Obsoleto",
 } as const;
 
+/**
+ * Documentos con filtros por texto, estado, tipo, público, línea, revisión y
+ * problemas (todo en la URL). Muestra avisos de lo recién creado o eliminado.
+ */
 export default async function DocumentosPage({
   searchParams,
 }: PageProps<"/admin/documentos">) {
@@ -239,6 +252,7 @@ export default async function DocumentosPage({
   );
 }
 
+/** Selector de filtro con su etiqueta (formulario GET). */
 function Filter({
   id,
   name,

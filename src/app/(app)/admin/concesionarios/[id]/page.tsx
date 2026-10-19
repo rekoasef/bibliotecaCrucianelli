@@ -1,3 +1,9 @@
+/**
+ * `/admin/concesionarios/[id]`: ficha de un concesionario.
+ *
+ * @module
+ */
+
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -17,6 +23,10 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Concesionario" };
 
+/**
+ * Edición del concesionario, sus usuarios y el panel para desactivarlo.
+ * `?creado=1` muestra el aviso de alta.
+ */
 export default async function ConcesionarioPage({
   params,
   searchParams,

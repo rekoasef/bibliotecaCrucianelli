@@ -1,3 +1,9 @@
+/**
+ * `/documentos/[id]`: ficha de un documento (acceso libre según visibilidad).
+ *
+ * @module
+ */
+
 import { AlertTriangle, Download, Eye, FileWarning } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -26,6 +32,9 @@ import { VideoPlayer } from "./video-player";
 
 export const metadata: Metadata = { title: "Documento" };
 
+/**
+ * Vistas previas del admin: con qué lector se arma la ficha y cómo se nombra.
+ */
 const PREVIEW = {
   concesionario: {
     viewer: { rol: "concesionario" },
@@ -35,11 +44,21 @@ const PREVIEW = {
   cliente: { viewer: CLIENTE, quien: "Un cliente", publico: "clientes" },
 } as const;
 
+/** Fecha del documento en formato largo (es una fecha sin hora: UTC). */
 const fechaLarga = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "long",
   timeZone: "UTC",
 });
 
+/**
+ * Ficha: título, estado, versión, archivos (abrir, descargar o video),
+ * clasificación como chips que llevan a la búsqueda e historial de versiones.
+ * Registra la apertura en `accesos`.
+ *
+ * @remarks El admin puede ver `?como=concesionario` o `?como=cliente`: la ficha
+ *   se arma con ese lector y no se registra el acceso. Sin permiso responde
+ *   404.
+ */
 export default async function DocumentoPage({
   params,
   searchParams,
@@ -274,6 +293,13 @@ export default async function DocumentoPage({
   );
 }
 
+/**
+ * Archivo de la ficha: modo servidor → abrir o descargar por
+ * `/api/archivos/[id]`; modo público → reproductor de Drive. Los no disponibles
+ * se marcan.
+ *
+ * @param props - `archivo` ya filtrado para el cliente.
+ */
 function ArchivoCard({ archivo: a }: { archivo: ArchivoPublico }) {
   const url = `/api/archivos/${a.id}`;
   const meta = [fileKindLabel(a.mimeType), formatBytes(a.tamanoBytes)]
@@ -358,6 +384,10 @@ function ArchivoCard({ archivo: a }: { archivo: ArchivoPublico }) {
   );
 }
 
+/**
+ * Chips de una clasificación (máquinas, sistemas, temas…) que llevan a la
+ * búsqueda filtrada.
+ */
 function Chips({
   grupos,
 }: {
@@ -389,6 +419,7 @@ function Chips({
   );
 }
 
+/** Aviso de vista previa del admin con el link para volver a editar. */
 function PreviewBanner({
   id,
   children,

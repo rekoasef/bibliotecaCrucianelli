@@ -1,3 +1,9 @@
+/**
+ * `/admin/documentos/[id]`: ficha de edición de un documento.
+ *
+ * @module
+ */
+
 import { AlertTriangle, ExternalLink, Plus, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -41,11 +47,20 @@ import { DocumentoForm } from "./documento-form";
 
 export const metadata: Metadata = { title: "Editar documento" };
 
+/**
+ * Mensaje para cada `?error=` con que vuelven las acciones de estado y de
+ * archivos.
+ */
 const ESTADO_ERRORES: Record<string, string> = {
   estado: "No se pudo cambiar el estado del documento.",
   "ultimo-archivo": "Un documento publicado necesita al menos un archivo.",
 };
 
+/**
+ * Clasificación, archivos (orden, modo de acceso, extracción), estado y
+ * versiones de un documento, con advertencias, vista previa por público y
+ * avisos según la URL (`creado`, `publicado`, `agregados`, `error`…).
+ */
 export default async function EditarDocumentoPage({
   params,
   searchParams,
@@ -383,6 +398,10 @@ export default async function EditarDocumentoPage({
   );
 }
 
+/**
+ * Botón que envía una acción de estado (obsoleto, restaurar, nueva versión…)
+ * con el `id` del documento.
+ */
 function EstadoButton({
   action,
   id,

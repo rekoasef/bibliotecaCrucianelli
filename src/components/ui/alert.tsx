@@ -1,7 +1,14 @@
+/**
+ * Alerta (shadcn/ui).
+ *
+ * @module
+ */
+
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
+/** Variantes de estilo: `default` y `destructive`. */
 const alertVariants = cva(
   "group/alert relative grid w-full gap-0.5 rounded-lg border px-2.5 py-2 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
   {
@@ -18,6 +25,7 @@ const alertVariants = cva(
   },
 );
 
+/** Contenedor de la alerta (`role="alert"`). */
 function Alert({
   className,
   variant,
@@ -33,6 +41,7 @@ function Alert({
   );
 }
 
+/** Título de la alerta. */
 function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -46,6 +55,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/** Texto de la alerta. */
 function AlertDescription({
   className,
   ...props
@@ -62,6 +72,7 @@ function AlertDescription({
   );
 }
 
+/** Acción alineada a la derecha de la alerta. */
 function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

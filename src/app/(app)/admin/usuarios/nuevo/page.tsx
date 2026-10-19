@@ -1,3 +1,9 @@
+/**
+ * `/admin/usuarios/nuevo`: alta de usuario.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import { listConcesionarios } from "@/db/queries/usuarios";
 import { PageHeader, Panel } from "../../ui";
@@ -6,6 +12,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Nuevo usuario" };
 
+/** Formulario de usuario; `?concesionario=` lo preselecciona. */
 export default async function NuevoUsuarioPage({
   searchParams,
 }: PageProps<"/admin/usuarios/nuevo">) {

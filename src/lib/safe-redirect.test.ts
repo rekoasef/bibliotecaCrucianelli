@@ -1,3 +1,9 @@
+/**
+ * Tests de la validación de redirecciones.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { safeRedirectPath } from "./safe-redirect";
 

@@ -1,3 +1,9 @@
+/**
+ * Panel inferior de filtros en celular.
+ *
+ * @module
+ */
+
 "use client";
 
 import { SlidersHorizontal, X } from "lucide-react";
@@ -5,9 +11,10 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Panel inferior (bottom sheet) con los filtros, solo en celular (docs/05).
- * Se cierra solo al aplicar porque la página lo monta con un `key` que cambia con
- * los filtros (cerrarlo en el submit sacaría el form del DOM antes de enviarlo).
+ * Panel inferior (bottom sheet) con los filtros, solo en celular (docs/05). Se
+ * cierra solo al aplicar porque la página lo monta con un `key` que cambia con
+ * los filtros (cerrarlo en el submit sacaría el form del DOM antes de
+ * enviarlo).
  */
 export function FiltersSheet({
   activeCount,

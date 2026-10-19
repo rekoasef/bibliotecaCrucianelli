@@ -1,3 +1,11 @@
+/**
+ * Búsqueda de documentos (docs/02, "Consulta"): texto completo en español,
+ * corrección de errores de tipeo y complemento por similitud. Siempre aplica la
+ * visibilidad del lector.
+ *
+ * @module
+ */
+
 import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
@@ -8,16 +16,19 @@ import {
 } from "@/lib/documentos/visibility";
 import { normalizeTag } from "@/lib/text";
 
+/** Base o transacción (los tests corren dentro de una que se deshace). */
 type Executor = Pick<typeof db, "execute">;
 
 import { MARK_END, MARK_START } from "./markers";
 
+/** Resultados por página ("Cargar más" suma otra página). */
 export const PAGE_SIZE = 20;
 /** Con menos resultados que esto se complementa con similitud trigram. */
 const FEW_RESULTS = 5;
 /** Umbral de word_similarity para tolerar errores de tipeo ("sensr" → "sensor"). */
 const TYPO_THRESHOLD = 0.5;
 
+/** Texto y filtros de la búsqueda, tal como vienen de la URL. */
 export type SearchFilters = {
   q?: string;
   producto?: string; // slug
@@ -31,6 +42,7 @@ export type SearchFilters = {
   obsoletos?: boolean;
 };
 
+/** Tarjeta de resultado. */
 export type SearchResult = {
   id: string;
   titulo: string | null;
@@ -46,6 +58,7 @@ export type SearchResult = {
   paginas?: PaginasArchivo[] | null;
 };
 
+/** Páginas de un PDF donde aparece lo buscado. */
 export type PaginasArchivo = {
   nombre: string;
   /** Primeras MAX_PAGINAS páginas, en orden. */
@@ -57,6 +70,7 @@ export type PaginasArchivo = {
 /** Páginas que se listan por archivo en el resultado. */
 const MAX_PAGINAS = 5;
 
+/** Resultado de {@link searchDocuments}. */
 export type SearchResponse = {
   total: number;
   results: SearchResult[];
@@ -64,7 +78,13 @@ export type SearchResponse = {
   correccion?: string;
 };
 
-/** Condiciones de filtro (máquina en dos niveles: docs/02, "Filtro por máquina"). */
+/**
+ * Condiciones SQL de los filtros. El de máquina es en dos niveles (docs/02,
+ * "Filtro por máquina"): la línea incluye lo de sus modelos y el modelo, lo de
+ * su línea completa. Sin `obsoletos`, los excluye.
+ *
+ * @param f - Filtros.
+ */
 function filterConditions(f: SearchFilters): SQL[] {
   const c: SQL[] = [];
   if (f.linea) {
@@ -114,12 +134,16 @@ function filterConditions(f: SearchFilters): SQL[] {
   return c;
 }
 
+/** Une condiciones con `AND` (ignora las `undefined`); sin ninguna, `TRUE`. */
 function joinAnd(conditions: (SQL | undefined)[]) {
   const defined = conditions.filter((c): c is SQL => c !== undefined);
   return defined.length ? sql.join(defined, sql` AND `) : sql`TRUE`;
 }
 
-// Columnas comunes de la tarjeta de resultado.
+/**
+ * Columnas comunes de la tarjeta de resultado (tipo, máquinas y tipos de
+ * archivo).
+ */
 const cardColumns = sql`
   documentos.id,
   documentos.titulo,
@@ -139,14 +163,28 @@ const cardColumns = sql`
             WHERE a.documento_id = documentos.id), '{}') AS "mimeTypes"
 `;
 
-// Más específico = asociado a un modelo puntual, con un solo sistema / tema (docs/02).
+/**
+ * Más específico = asociado a un modelo puntual, con un solo sistema o tema
+ * (docs/02). Desempata el orden.
+ */
 const especificidad = sql`(
   (CASE WHEN EXISTS (SELECT 1 FROM documento_modelos dm WHERE dm.documento_id = documentos.id) THEN 1 ELSE 0 END)
   + (CASE WHEN (SELECT count(*) FROM documento_sistemas ds WHERE ds.documento_id = documentos.id) = 1 THEN 1 ELSE 0 END)
   + (CASE WHEN (SELECT count(*) FROM documento_temas dt WHERE dt.documento_id = documentos.id) = 1 THEN 1 ELSE 0 END)
 )`;
 
-/** Texto completo sobre `documentos.busqueda`, ordenado por relevancia. */
+/**
+ * Texto completo sobre `documentos.busqueda` (`websearch_to_tsquery` en español
+ * sin acentos), ordenado por vigencia, relevancia, especificidad y fecha.
+ * Incluye el fragmento resaltado y las páginas de cada PDF donde aparece lo
+ * buscado.
+ *
+ * @param q - Consulta.
+ * @param where - Visibilidad y filtros.
+ * @param limit - Máximo de resultados.
+ * @param tx - Base o transacción.
+ * @returns El total y los resultados.
+ */
 async function fullTextSearch(
   q: string,
   where: SQL,
@@ -191,19 +229,29 @@ async function fullTextSearch(
   return { total: rows[0]?.total ?? 0, results: [...rows] };
 }
 
-/** Palabras de la consulta, normalizadas como en `vocabulario` (migración 0008). */
+/**
+ * Palabras de la consulta normalizadas como en `vocabulario` (migración 0008):
+ * solo letras, de 4 a 30, sin repetir.
+ *
+ * @param q - Consulta.
+ */
 export function queryWords(q: string): string[] {
   const words = normalizeTag(q).match(/[a-z]+/g) ?? [];
   return [...new Set(words)].filter((w) => w.length >= 4 && w.length <= 30);
 }
 
 /**
- * Corrige las palabras de la consulta que no existen en la biblioteca por la más
- * parecida del vocabulario ("dosificacin" → "dosificacion"): hasta 1 letra de
- * diferencia en palabras de 4 o 5 letras, hasta 2 en las más largas. Solo propone
- * palabras que aparecen en algún documento que el usuario puede ver, así la
- * corrección no revela el contenido de documentos ocultos. Devuelve la consulta
- * corregida, o null si no hay nada que corregir.
+ * Corrige las palabras de la consulta que no existen en la biblioteca por la
+ * más parecida del vocabulario ("dosificacin" → "dosificacion"): hasta 1 letra
+ * de diferencia en palabras de 4 o 5 letras, hasta 2 en las más largas.
+ *
+ * Solo propone palabras que aparecen en algún documento que el lector puede
+ * ver, así la corrección no revela el contenido de documentos ocultos.
+ *
+ * @param q - Consulta original.
+ * @param viewer - Quién busca.
+ * @param tx - Base o transacción.
+ * @returns La consulta corregida, o `null` si no hay nada que corregir.
  */
 async function correctQuery(
   q: string,
@@ -243,8 +291,19 @@ async function correctQuery(
 }
 
 /**
- * Búsqueda de documentos (docs/02, "Consulta"). Siempre aplica la visibilidad del
- * usuario. `limit` crece con "Cargar más" (página × PAGE_SIZE).
+ * Búsqueda de documentos (docs/02, "Consulta").
+ *
+ * - Sin texto: solo filtros (navegación), más recientes primero.
+ * - Con texto: texto completo; si no hay resultados, prueba corrigiendo errores
+ *   de tipeo; si hay pocos, complementa por similitud trigram sobre título y
+ *   etiquetas (marcados como `aproximado`).
+ *
+ * @param filters - Texto (se recorta a 200 caracteres) y filtros.
+ * @param viewer - Quién busca: siempre se aplica su visibilidad.
+ * @param limit - Máximo de resultados; crece con "Cargar más" (página × {@link
+ *   PAGE_SIZE}).
+ * @param tx - Base o transacción.
+ * @returns Total, resultados y, si se usó, la consulta corregida.
  */
 export async function searchDocuments(
   filters: SearchFilters,
@@ -321,7 +380,13 @@ export async function searchDocuments(
   return { total, results, correccion };
 }
 
-/** Registra la búsqueda (docs/03). Las sin resultados alimentan el panel del admin. */
+/**
+ * Registra la búsqueda en `busquedas` (docs/03). Las sin resultados alimentan
+ * el panel del admin.
+ *
+ * @param input - Quién (`null` = cliente sin cuenta), filtros usados y cantidad
+ *   de resultados.
+ */
 export async function registrarBusqueda(input: {
   /** null = cliente final sin cuenta. */
   usuarioId: string | null;
@@ -344,9 +409,14 @@ export async function registrarBusqueda(input: {
 }
 
 /**
- * Últimas búsquedas con texto del usuario, sin repetir (sin distinguir acentos ni
- * mayúsculas), para volver a lanzarlas con un toque. Se omiten las que no dieron
- * resultados. Mira solo las 100 más recientes.
+ * Últimas búsquedas con texto del usuario, sin repetir (sin distinguir acentos
+ * ni mayúsculas), para volver a lanzarlas con un toque. Se omiten las que no
+ * dieron resultados. Mira solo las 100 más recientes.
+ *
+ * @param usuarioId - Usuario.
+ * @param limit - Cuántas devolver.
+ * @param tx - Base o transacción.
+ * @returns Los textos, de la más reciente a la más vieja.
  */
 export async function recentSearches(
   usuarioId: string,
@@ -371,7 +441,12 @@ export async function recentSearches(
   return rows.map((r) => r.texto);
 }
 
-/** Últimos documentos publicados que el usuario puede ver (inicio). */
+/**
+ * Últimos documentos vigentes publicados que el lector puede ver (inicio).
+ *
+ * @param viewer - Quién mira.
+ * @param limit - Cuántos devolver.
+ */
 export async function latestDocuments(
   viewer: Viewer,
   limit = 6,

@@ -1,3 +1,10 @@
+/**
+ * `GET /api/archivos/[id]`: sirve los archivos de modo servidor (CLAUDE.md,
+ * regla 3).
+ *
+ * @module
+ */
+
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getViewer } from "@/lib/auth/session";
@@ -9,10 +16,20 @@ import { hit, rateLimits } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 
 /**
- * Sirve archivos privados de Drive (modo servidor) — CLAUDE.md, regla 3.
- * 1. quién mira (sin sesión = cliente final), 2. permiso sobre el documento
- * (documentVisibilityFilter), 3. registro en `accesos`, 4. streaming desde Drive
- * sin guardar en disco.
+ * Sirve un archivo privado de Drive:
+ *
+ * 1. quién mira (sin sesión = cliente final, con límite por IP);
+ * 2. permiso sobre el documento (`documentVisibilityFilter`);
+ * 3. registro en `accesos` (solo el primer pedido: un visor de PDF pide
+ *    muchos rangos);
+ * 4. streaming desde Drive sin guardar en disco, con soporte de `Range`.
+ *
+ * Sin permiso responde 404, igual que si no existiera: no revela qué IDs hay.
+ * Los tipos que no son seguros de mostrar se fuerzan a descarga.
+ *
+ * @param request - Request; `?descargar=1` pide `attachment`.
+ * @param ctx - Parámetros de la ruta (`id`: UUID del archivo).
+ * @returns El archivo (200 o 206), 404, 416 o 429.
  */
 export async function GET(
   request: NextRequest,
@@ -98,6 +115,7 @@ export async function GET(
   return new NextResponse(download.body, { status: download.status, headers });
 }
 
+/** Respuesta 404 en texto plano. */
 function notFound() {
   return new NextResponse("No encontrado", { status: 404 });
 }

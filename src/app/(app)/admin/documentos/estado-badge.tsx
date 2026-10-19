@@ -1,7 +1,14 @@
+/**
+ * Insignia del estado de un documento.
+ *
+ * @module
+ */
+
 import { Badge } from "@/components/ui/badge";
 import type { EstadoDoc } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
+/** Texto y colores de cada estado. */
 const ESTADOS: Record<EstadoDoc, { label: string; className: string }> = {
   borrador: {
     label: "Borrador",
@@ -17,6 +24,11 @@ const ESTADOS: Record<EstadoDoc, { label: string; className: string }> = {
   },
 };
 
+/**
+ * Insignia de borrador, vigente u obsoleto.
+ *
+ * @param props - `estado` del documento.
+ */
 export function EstadoDocBadge({ estado }: { estado: EstadoDoc }) {
   const { label, className } = ESTADOS[estado];
   return (

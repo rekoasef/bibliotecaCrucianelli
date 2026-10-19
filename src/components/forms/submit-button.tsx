@@ -1,9 +1,22 @@
+/**
+ * Botón de envío con estado de carga.
+ *
+ * @module
+ */
+
 "use client";
 
 import { LoaderCircle } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Botón de envío que se deshabilita y muestra un spinner mientras el formulario
+ * se envía (`useFormStatus`).
+ *
+ * @param props - Props de `Button`; `pendingLabel` reemplaza al texto mientras
+ *   envía.
+ */
 export function SubmitButton({
   children,
   pendingLabel,

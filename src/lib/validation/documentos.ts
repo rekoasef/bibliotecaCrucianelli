@@ -1,5 +1,17 @@
+/**
+ * Validación del formulario de clasificación de documentos.
+ *
+ * @module
+ */
+
 import { z } from "zod";
 
+/**
+ * Texto opcional recortado; vacío → `null`.
+ *
+ * @param max - Largo máximo.
+ * @param campo - Nombre del campo para el mensaje.
+ */
 const textoOpcional = (max: number, campo: string) =>
   z
     .string()
@@ -8,8 +20,13 @@ const textoOpcional = (max: number, campo: string) =>
     .optional()
     .transform((v) => v || null);
 
+/** Lista de UUIDs (vacía por defecto). */
 const ids = z.array(z.uuid()).default([]);
 
+/**
+ * Título, datos, públicos y clasificación de un documento. Un borrador puede
+ * guardarse incompleto; los requisitos para publicar están en `rules.ts`.
+ */
 export const clasificacionSchema = z.object({
   titulo: textoOpcional(200, "El título"),
   descripcion: textoOpcional(2000, "La descripción"),
@@ -36,7 +53,12 @@ export const clasificacionSchema = z.object({
   etiquetas: z.string().max(1000).default(""),
 });
 
-/** FormData → objeto para `clasificacionSchema` (los checkboxes llegan repetidos). */
+/**
+ * FormData → objeto para {@link clasificacionSchema} (los checkboxes llegan
+ * repetidos).
+ *
+ * @param formData - Formulario de clasificación.
+ */
 export function clasificacionFromForm(formData: FormData) {
   const all = (name: string) =>
     formData.getAll(name).filter((v): v is string => typeof v === "string");

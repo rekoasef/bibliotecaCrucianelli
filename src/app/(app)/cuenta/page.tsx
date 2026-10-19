@@ -1,3 +1,9 @@
+/**
+ * `/cuenta`: datos y contraseña del usuario. Exige sesión.
+ *
+ * @module
+ */
+
 import { LogOut } from "lucide-react";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
@@ -8,6 +14,10 @@ import { NombreForm, PasswordForm } from "./account-forms";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
+/**
+ * Datos de la cuenta (email, rol, concesionario), cambio de nombre y de
+ * contraseña, y cerrar sesión.
+ */
 export default async function AccountPage() {
   const user = await requireUser();
 
@@ -49,6 +59,7 @@ export default async function AccountPage() {
   );
 }
 
+/** Sección con título de la página de cuenta. */
 function AccountSection({
   title,
   children,

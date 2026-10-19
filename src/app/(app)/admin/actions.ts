@@ -1,3 +1,10 @@
+/**
+ * Server Actions del admin de concesionarios y usuarios. Cada una empieza con
+ * `requireAdmin()`.
+ *
+ * @module
+ */
+
 "use server";
 
 import { eq } from "drizzle-orm";
@@ -12,7 +19,7 @@ import {
   revokeSesionesUsuario,
 } from "@/db/queries/usuarios";
 import { concesionarios, usuarios } from "@/db/schema";
-import type { FormState } from "@/components/forms/form-state";
+import { formValues, type FormState } from "@/components/forms/form-state";
 import { sendInvitation } from "@/lib/auth/invitations";
 import { requireAdmin } from "@/lib/auth/session";
 import { formatRetryAfter, hit, rateLimits } from "@/lib/rate-limit";
@@ -20,16 +27,19 @@ import { concesionarioSchema, usuarioSchema } from "@/lib/validation/admin";
 
 // Cada acción verifica el rol por su cuenta: proteger el layout no protege las Server Actions.
 
+/** IDs de la base (UUID). */
 const idSchema = z.uuid();
-
-function formValues(formData: FormData) {
-  return Object.fromEntries(
-    [...formData.entries()].filter(([, v]) => typeof v === "string"),
-  ) as Record<string, string>;
-}
 
 // ── Concesionarios ──────────────────────────────────────────────────────────
 
+/**
+ * Crea o edita un concesionario (`id` presente = edición).
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - Campos del formulario.
+ * @returns Errores por campo o el mensaje de éxito; al crear, redirige a la
+ *   ficha.
+ */
 export async function saveConcesionario(
   _prev: FormState,
   formData: FormData,
@@ -72,6 +82,12 @@ export async function saveConcesionario(
   return { success: "Cambios guardados.", values };
 }
 
+/**
+ * Activa o desactiva un concesionario. Desactivar bloquea el ingreso de todos
+ * sus usuarios y cierra sus sesiones.
+ *
+ * @param formData - `id` y `activo` (`"true"`/`"false"`).
+ */
 export async function setConcesionarioActivo(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -90,6 +106,15 @@ export async function setConcesionarioActivo(formData: FormData) {
 
 // ── Usuarios ────────────────────────────────────────────────────────────────
 
+/**
+ * Crea un usuario y le manda la invitación. Si falla el mail, el usuario igual
+ * queda creado y se puede reenviar desde su ficha.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - Campos del formulario.
+ * @returns Errores por campo; si sale bien, redirige a la ficha del usuario
+ *   (`?invitado=1` o `?invitado=error`).
+ */
 export async function createUsuario(
   _prev: FormState,
   formData: FormData,
@@ -130,6 +155,14 @@ export async function createUsuario(
   redirect(`/admin/usuarios/${usuario.id}?invitado=${invitado}`);
 }
 
+/**
+ * Edita un usuario. Si cambia el rol o el concesionario (lo que puede ver),
+ * cierra sus sesiones. El admin no puede quitarse su propio rol.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - Campos del formulario, con `id`.
+ * @returns Errores por campo o el mensaje de éxito.
+ */
 export async function updateUsuario(
   _prev: FormState,
   formData: FormData,
@@ -177,6 +210,12 @@ export async function updateUsuario(
   return { success: "Cambios guardados.", values };
 }
 
+/**
+ * Activa o desactiva un usuario (desactivar cierra sus sesiones). El admin no
+ * puede desactivarse a sí mismo.
+ *
+ * @param formData - `id` y `activo` (`"true"`/`"false"`).
+ */
 export async function setUsuarioActivo(formData: FormData) {
   const admin = await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -190,7 +229,11 @@ export async function setUsuarioActivo(formData: FormData) {
   revalidatePath(`/admin/usuarios/${id}`);
 }
 
-/** Levanta la pausa por inactividad: el plazo vuelve a contar desde hoy. */
+/**
+ * Levanta la pausa por inactividad: el plazo vuelve a contar desde hoy.
+ *
+ * @param formData - `id` del usuario.
+ */
 export async function reactivarPausado(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -201,6 +244,14 @@ export async function reactivarPausado(formData: FormData) {
   revalidatePath("/admin", "layout");
 }
 
+/**
+ * Reenvía la invitación a un usuario activo que todavía no definió su
+ * contraseña (con límite de reenvíos por hora).
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `id` del usuario.
+ * @returns Error o mensaje de éxito.
+ */
 export async function resendInvitation(
   _prev: FormState,
   formData: FormData,

@@ -1,32 +1,48 @@
+/**
+ * Única definición de qué documentos puede ver cada lector
+ * (CLAUDE.md, regla 2).
+ *
+ * @module
+ */
+
 import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { documentos } from "@/db/schema";
 import type { RolUsuario } from "@/db/schema";
 
 /**
  * Quién mira: un usuario con sesión (su rol) o un cliente final sin cuenta
- * ("cliente": el acceso de clientes es libre, docs/01).
+ * (`"cliente"`: el acceso de clientes es libre, docs/01).
  */
 export type RolLector = RolUsuario | "cliente";
+
+/**
+ * Lector al que se le aplica la visibilidad. Un `CurrentUser` también lo
+ * cumple.
+ */
 export type Viewer = { rol: RolLector };
 
 /** Lector sin sesión: cliente final. */
 export const CLIENTE: Viewer = { rol: "cliente" };
 
 /**
- * ÚNICA definición de qué documentos puede ver cada rol (CLAUDE.md, regla 2).
- * La usan la búsqueda, la navegación, la ficha y /api/archivos/[id]: no reescribir
- * estas condiciones en otras consultas.
+ * Condición SQL sobre `documentos` con lo que `viewer` puede ver. La usan la
+ * búsqueda, la navegación, la ficha y `/api/archivos/[id]`: no reescribir estas
+ * condiciones en otras consultas.
  *
  * - admin: todo, incluidos borradores.
  * - fabrica: vigentes y obsoletos.
  * - concesionario: vigentes y obsoletos marcados para concesionarios.
  * - cliente: vigentes y obsoletos marcados para clientes.
- * - Fuera del admin, además, si el documento está asociado a máquinas, al menos una
- *   tiene que estar visible (modelo, línea y segmento activos): un documento asociado
- *   solo a máquinas desactivadas queda oculto (docs/02, "Reglas de visibilidad").
- *   Uno sin máquinas (por ejemplo, de Tecnología o Accesorios) no depende de esto.
  *
- * Devuelve `undefined` para el admin (sin restricción), listo para `.where(...)`.
+ * Fuera del admin, además, si el documento está asociado a máquinas, al menos
+ * una tiene que estar visible (modelo, línea y segmento activos): un documento
+ * asociado solo a máquinas desactivadas queda oculto (docs/02, "Reglas de
+ * visibilidad"). Uno sin máquinas (por ejemplo, de Tecnología o Accesorios) no
+ * depende de esto.
+ *
+ * @param viewer - Quién mira (de `getViewer` o el usuario).
+ * @returns La condición, o `undefined` para el admin (sin restricción), lista
+ *   para `.where(...)` o `and(...)`.
  */
 export function documentVisibilityFilter(viewer: Viewer): SQL | undefined {
   if (viewer.rol === "admin") return undefined;

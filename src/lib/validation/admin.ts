@@ -1,6 +1,18 @@
+/**
+ * Validación de los formularios de concesionarios y usuarios.
+ *
+ * @module
+ */
+
 import { z } from "zod";
 import { rolUsuario } from "@/db/schema/usuarios";
 
+/**
+ * Texto obligatorio recortado, con mensajes en español.
+ *
+ * @param campo - Nombre del campo para los mensajes ("el nombre").
+ * @param max - Largo máximo.
+ */
 const texto = (campo: string, max = 120) =>
   z
     .string()
@@ -8,12 +20,17 @@ const texto = (campo: string, max = 120) =>
     .min(1, `Completá ${campo}.`)
     .max(max, `${campo} es demasiado largo.`);
 
+/** Nombre, localidad y provincia del concesionario. */
 export const concesionarioSchema = z.object({
   nombre: texto("el nombre"),
   localidad: texto("la localidad"),
   provincia: texto("la provincia"),
 });
 
+/**
+ * Datos del usuario. El concesionario es obligatorio para el rol concesionario
+ * y se descarta para los demás (CHECK en la base).
+ */
 export const usuarioSchema = z
   .object({
     nombre: texto("el nombre"),
@@ -44,4 +61,5 @@ export const usuarioSchema = z
     concesionarioId: data.rol === "concesionario" ? data.concesionarioId : null,
   }));
 
+/** Usuario validado. */
 export type UsuarioInput = z.infer<typeof usuarioSchema>;

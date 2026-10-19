@@ -1,9 +1,15 @@
+/**
+ * Tablas que maneja Better Auth. Las columnas siguen sus nombres (en inglés,
+ * snake_case) porque son internas de la librería y no conceptos del dominio. La
+ * de usuarios es `usuarios` (ver `usuarios.ts`).
+ *
+ * @module
+ */
+
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { usuarios } from "./usuarios";
 
-// Tablas que maneja Better Auth. Las columnas siguen sus nombres (en inglés,
-// snake_case) porque son internas de la librería y no conceptos del dominio.
-
+/** Sesiones activas (cookie `session_token` con prefijo `biblioteca`). */
 export const sesiones = pgTable(
   "sesiones",
   {
@@ -25,6 +31,10 @@ export const sesiones = pgTable(
   (t) => [index("sesiones_user_idx").on(t.userId)],
 );
 
+/**
+ * Credenciales: una fila con `password` (hash) cuando el usuario define su
+ * contraseña.
+ */
 export const cuentas = pgTable(
   "cuentas",
   {
@@ -55,7 +65,10 @@ export const cuentas = pgTable(
   (t) => [index("cuentas_user_idx").on(t.userId)],
 );
 
-// Tokens de invitación y de recuperación de contraseña (guardados hasheados).
+/**
+ * Tokens de invitación y de recuperación de contraseña (el identificador se
+ * guarda hasheado).
+ */
 export const verificaciones = pgTable(
   "verificaciones",
   {

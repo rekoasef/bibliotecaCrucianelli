@@ -1,3 +1,9 @@
+/**
+ * Reproductor de videos de Drive.
+ *
+ * @module
+ */
+
 "use client";
 
 import { ExternalLink, Play } from "lucide-react";
@@ -7,8 +13,9 @@ import { registrarVideo } from "./actions";
 
 /**
  * Video con link público de Drive. El reproductor se carga recién al tocar
- * "Reproducir" (ahorra datos con mala señal) y siempre está "Abrir en Drive"
- * porque el embebido a veces falla en celulares (docs/02).
+ * "Reproducir" (ahorra datos con mala señal) y registra la reproducción;
+ * siempre está "Abrir en Drive" porque el embebido a veces falla en celulares
+ * (docs/02).
  */
 export function VideoPlayer({
   archivoId,

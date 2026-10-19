@@ -1,7 +1,18 @@
+/**
+ * Mensaje general de un formulario.
+ *
+ * @module
+ */
+
 import { CircleAlert, CircleCheck } from "lucide-react";
 import type { FormState } from "./form-state";
 
-/** Mensaje general del formulario (error o éxito), anunciado a lectores de pantalla. */
+/**
+ * Mensaje general del formulario (error o éxito), anunciado a lectores de
+ * pantalla (`role="alert"` o `role="status"`). Sin mensaje no renderiza nada.
+ *
+ * @param props - `state` de la Server Action.
+ */
 export function FormMessage({ state }: { state: FormState }) {
   if (state.error) {
     return (

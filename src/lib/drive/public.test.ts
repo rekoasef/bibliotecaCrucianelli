@@ -1,3 +1,9 @@
+/**
+ * Tests de `PublicLinkDriveClient` contra el servidor falso de Drive.
+ *
+ * @module
+ */
+
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";

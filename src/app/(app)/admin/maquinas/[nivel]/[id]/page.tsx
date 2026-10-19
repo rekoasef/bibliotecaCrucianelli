@@ -1,3 +1,10 @@
+/**
+ * `/admin/maquinas/[nivel]/[id]`: alta o edición de un segmento, línea o modelo
+ * (`id` = `nuevo` para altas).
+ *
+ * @module
+ */
+
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,12 +30,14 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Máquinas" };
 
+/** Nombre de cada nivel para los títulos. */
 const NOMBRE: Record<Nivel, { singular: string; nuevo: string }> = {
   segmentos: { singular: "segmento", nuevo: "Nuevo segmento" },
   lineas: { singular: "línea", nuevo: "Nueva línea" },
   modelos: { singular: "modelo", nuevo: "Nuevo modelo" },
 };
 
+/** Qué pasa al desactivar cada nivel (texto del panel). */
 const DESACTIVAR: Record<Nivel, string> = {
   segmentos:
     "Fábrica y concesionarios dejan de ver el segmento, sus líneas y modelos, y los documentos asociados solo a ellos.",
@@ -38,8 +47,13 @@ const DESACTIVAR: Record<Nivel, string> = {
     "Fábrica y concesionarios dejan de ver el modelo y los documentos asociados solo a él.",
 };
 
+/** Link de volver al árbol. */
 const back = { href: "/admin/maquinas", label: "Máquinas" };
 
+/**
+ * Formulario del nivel, panel de activar o desactivar y, para líneas, la foto y
+ * sus modelos.
+ */
 export default async function MaquinaPage({
   params,
   searchParams,

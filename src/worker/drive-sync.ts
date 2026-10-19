@@ -1,3 +1,10 @@
+/**
+ * Detección de cambios en Drive (docs/02): corre cada noche en el worker o a
+ * mano con `npm run sync:drive`.
+ *
+ * @module
+ */
+
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { archivos, documentos, tareas } from "@/db/schema";
@@ -7,8 +14,11 @@ import { initialEstadoExtraccion } from "@/lib/drive/mime";
 import { SYNC_TASK } from "@/lib/tareas";
 
 export { SYNC_TASK };
+
+/** Archivos consultados en paralelo. */
 const CONCURRENCY = 5;
 
+/** Resumen de una corrida (se guarda en `tareas.resultado`). */
 export type SyncResult = {
   revisados: number;
   cambiados: number;
@@ -17,6 +27,7 @@ export type SyncResult = {
   errores: number;
 };
 
+/** Datos de un archivo incorporado que se comparan con Drive. */
 type ArchivoSync = {
   id: string;
   documentoId: string;
@@ -26,7 +37,15 @@ type ArchivoSync = {
   disponible: boolean;
 };
 
-/** Qué hacer con un archivo según lo que devuelve Drive (puro, para testear). */
+/**
+ * Qué hacer con un archivo según lo que devuelve Drive (puro, para testear).
+ * Con links públicos no siempre hay fecha de modificación: un tamaño distinto
+ * también cuenta como cambio.
+ *
+ * @param archivo - Lo guardado en la base.
+ * @param item - Lo que devuelve Drive, o `null` si no es accesible.
+ * @returns `no-disponible`, `recuperado`, `cambiado` o `igual`.
+ */
 export function decideSync(
   archivo: Pick<
     ArchivoSync,
@@ -58,9 +77,16 @@ export function decideSync(
 
 /**
  * Detección de cambios (docs/02): consulta cada archivo incorporado en Drive.
- * - Cambió: actualiza metadatos, vuelve a extraer el texto y marca el documento para revisión.
+ *
+ * - Cambió: actualiza metadatos, vuelve a extraer el texto y marca el documento
+ *   para revisión.
  * - Borrado o sin acceso: lo marca no disponible (aviso en el panel).
- * Nunca incorpora archivos nuevos.
+ * - Volvió a estar accesible: lo marca disponible.
+ *
+ * Nunca incorpora archivos nuevos. Un error de red en un archivo no frena el
+ * resto ni lo marca como borrado. Guarda el resumen en `tareas`.
+ *
+ * @returns El resumen de la corrida.
  */
 export async function syncDriveChanges(): Promise<SyncResult> {
   const drive = getDrive();
@@ -148,16 +174,26 @@ export async function syncDriveChanges(): Promise<SyncResult> {
   return result;
 }
 
+/** Fecha `YYYY-MM-DD` en hora de Argentina. */
 const AR_DATE = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Argentina/Buenos_Aires",
 });
+
+/** Hora (0–23) en hora de Argentina. */
 const AR_HOUR = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Argentina/Buenos_Aires",
   hour: "numeric",
   hourCycle: "h23",
 });
 
-/** ¿Toca correr la tarea nocturna? (a partir de `hour`, una vez por día, hora de Argentina) */
+/**
+ * Si toca correr la tarea nocturna: a partir de `hour`, una vez por día, en
+ * hora de Argentina.
+ *
+ * @param now - Momento actual.
+ * @param lastRun - Última corrida, o `null`.
+ * @param hour - Hora desde la que corre.
+ */
 export function shouldRunNightly(
   now: Date,
   lastRun: Date | null,
@@ -167,6 +203,7 @@ export function shouldRunNightly(
   return !lastRun || AR_DATE.format(lastRun) !== AR_DATE.format(now);
 }
 
+/** Última corrida de la detección de cambios, o `null`. */
 export async function lastSyncRun() {
   const [row] = await db
     .select()

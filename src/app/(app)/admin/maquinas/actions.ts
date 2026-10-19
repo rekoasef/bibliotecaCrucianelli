@@ -1,3 +1,10 @@
+/**
+ * Server Actions del admin de máquinas (segmentos, líneas y modelos). Cada una
+ * empieza con `requireAdmin()`.
+ *
+ * @module
+ */
+
 "use server";
 
 import { eq } from "drizzle-orm";
@@ -13,7 +20,7 @@ import {
   nextOrden,
 } from "@/db/queries/taxonomia";
 import { lineas, modelos, segmentos } from "@/db/schema";
-import type { FormState } from "@/components/forms/form-state";
+import { formValues, type FormState } from "@/components/forms/form-state";
 import { requireAdmin } from "@/lib/auth/session";
 import { rebuildSearchForTaxonomia } from "@/lib/search/reindex";
 import {
@@ -23,15 +30,13 @@ import {
   segmentoSchema,
 } from "@/lib/validation/taxonomia";
 
+/** Nivel de la jerarquía: `segmentos`, `lineas` o `modelos`. */
 const nivelSchema = z.enum(NIVELES);
+
+/** IDs de la base (UUID). */
 const idSchema = z.uuid();
 
-function formValues(formData: FormData) {
-  return Object.fromEntries(
-    [...formData.entries()].filter(([, v]) => typeof v === "string"),
-  ) as Record<string, string>;
-}
-
+/** Mensaje por restricción única violada: `[campo, mensaje]`. */
 const CONSTRAINT_ERRORS: Record<string, [field: string, message: string]> = {
   segmentos_nombre_unique: ["nombre", "Ya existe un segmento con ese nombre."],
   segmentos_slug_unique: ["slug", "Ese slug ya lo usa otro segmento."],
@@ -47,6 +52,16 @@ const CONSTRAINT_ERRORS: Record<string, [field: string, message: string]> = {
   modelos_slug_unique: ["slug", "Ese slug ya lo usa otro modelo."],
 };
 
+/**
+ * Crea o edita un segmento, línea o modelo. Si una línea o modelo cambia de
+ * padre, va al final de la lista del nuevo. Renombrar líneas y modelos
+ * recalcula el índice de búsqueda (están indexados cruzados).
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `nivel`, `id` (si es edición) y los campos del nivel.
+ * @returns Errores por campo o el mensaje de éxito; al crear, redirige a la
+ *   ficha.
+ */
 export async function saveMaquina(
   _prev: FormState,
   formData: FormData,
@@ -161,6 +176,11 @@ export async function saveMaquina(
   return { success: "Cambios guardados.", values };
 }
 
+/**
+ * Mueve una máquina un lugar arriba o abajo entre sus hermanas.
+ *
+ * @param formData - `nivel`, `id` y `direction`.
+ */
 export async function moveMaquina(formData: FormData) {
   await requireAdmin();
   const nivel = nivelSchema.parse(formData.get("nivel"));
@@ -171,6 +191,12 @@ export async function moveMaquina(formData: FormData) {
   revalidatePath("/admin/maquinas", "layout");
 }
 
+/**
+ * Activa o desactiva una máquina. Los documentos asociados solo a máquinas
+ * inactivas dejan de verse fuera del admin (`documentVisibilityFilter`).
+ *
+ * @param formData - `nivel`, `id` y `activo` (`"true"`/`"false"`).
+ */
 export async function setMaquinaActivo(formData: FormData) {
   await requireAdmin();
   const nivel = nivelSchema.parse(formData.get("nivel"));
@@ -182,6 +208,11 @@ export async function setMaquinaActivo(formData: FormData) {
   revalidatePath("/admin/maquinas", "layout");
 }
 
+/**
+ * Quita la foto de una línea.
+ *
+ * @param formData - `id` de la línea.
+ */
 export async function quitarFotoLinea(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));

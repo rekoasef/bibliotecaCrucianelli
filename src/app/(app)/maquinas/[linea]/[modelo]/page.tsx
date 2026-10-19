@@ -1,3 +1,9 @@
+/**
+ * `/maquinas/[linea]/[modelo]`: documentos de un modelo.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -7,6 +13,7 @@ import { getViewer } from "@/lib/auth/session";
 import { getSearchOptions } from "@/lib/search/options";
 import { MaquinaView } from "../../maquina-view";
 
+/** Título con el nombre del modelo. */
 export async function generateMetadata({
   params,
 }: PageProps<"/maquinas/[linea]/[modelo]">): Promise<Metadata> {
@@ -18,6 +25,10 @@ export async function generateMetadata({
   return { title: row?.nombre ?? "Máquina" };
 }
 
+/**
+ * Página del modelo ({@link MaquinaView}); 404 si no existe o no es visible
+ * para el lector.
+ */
 export default async function ModeloPage({
   params,
 }: PageProps<"/maquinas/[linea]/[modelo]">) {

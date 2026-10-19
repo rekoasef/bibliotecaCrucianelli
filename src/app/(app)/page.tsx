@@ -1,3 +1,9 @@
+/**
+ * `/`: inicio.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Franja } from "@/components/layout/franja";
@@ -13,6 +19,11 @@ import {
   listTiposActivos,
 } from "@/db/queries/taxonomia";
 
+/**
+ * Inicio (docs/05): buscador, búsquedas recientes (con sesión), accesos por
+ * máquina y por tipo de documento y últimos documentos publicados que el lector
+ * puede ver.
+ */
 export default async function HomePage() {
   const { user, viewer } = await getViewer();
   const [segmentos, tipos, recientes, busquedas] = await Promise.all([
@@ -132,6 +143,7 @@ export default async function HomePage() {
   );
 }
 
+/** Título de sección del inicio con un link opcional. */
 function SectionTitle({
   id,
   children,

@@ -1,3 +1,11 @@
+/**
+ * Configuración de Vitest: los `*.test.ts` de `src`, alias `@/` y
+ * `server-only` reemplazado por un módulo vacío. Los tests de base usan el
+ * Postgres de desarrollo (ver `src/test/require-db.ts`).
+ *
+ * @module
+ */
+
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 

@@ -1,5 +1,13 @@
+/**
+ * Plantillas de los mails de invitación y restablecimiento de contraseña.
+ *
+ * @module
+ */
+
+/** Nombre que firma los mails. */
 const BRAND = "Biblioteca Técnica Crucianelli";
 
+/** Escapa texto para insertarlo en HTML. */
 function escapeHtml(text: string) {
   return text
     .replaceAll("&", "&amp;")
@@ -8,7 +16,14 @@ function escapeHtml(text: string) {
     .replaceAll('"', "&quot;");
 }
 
-// HTML simple con estilos en línea: es lo que mejor se ve en todos los clientes de mail.
+/**
+ * HTML simple con estilos en línea (es lo que mejor se ve en todos los clientes
+ * de mail): título, párrafos y un botón con el link.
+ *
+ * @param title - Título del mail.
+ * @param paragraphs - Párrafos de texto (se escapan).
+ * @param cta - Texto y URL del botón.
+ */
 function layout(
   title: string,
   paragraphs: string[],
@@ -32,6 +47,11 @@ ${body}
 </td></tr></table></td></tr></table></body></html>`;
 }
 
+/**
+ * Mail de invitación con el link para definir la contraseña (vence en 7 días).
+ *
+ * @returns Asunto, HTML y texto plano.
+ */
 export function invitationEmail({
   nombre,
   url,
@@ -53,6 +73,11 @@ export function invitationEmail({
   };
 }
 
+/**
+ * Mail de restablecimiento de contraseña (el link vence en 1 hora).
+ *
+ * @returns Asunto, HTML y texto plano.
+ */
 export function passwordResetEmail({
   nombre,
   url,

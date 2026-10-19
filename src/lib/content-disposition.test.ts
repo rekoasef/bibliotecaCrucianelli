@@ -1,3 +1,9 @@
+/**
+ * Tests de `Content-Disposition`.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { contentDisposition } from "./content-disposition";
 

@@ -1,3 +1,9 @@
+/**
+ * Ícono de cada tipo de documento.
+ *
+ * @module
+ */
+
 import { createElement } from "react";
 import {
   BookOpen,
@@ -13,7 +19,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-// Ícono por slug de tipo de documento. Los tipos nuevos usan el genérico.
+/**
+ * Ícono por slug de tipo de documento (los de docs/04). Los tipos nuevos usan
+ * el genérico.
+ */
 const ICONOS: Record<string, LucideIcon> = {
   manual: BookOpen,
   instructivo: ClipboardList,
@@ -26,11 +35,22 @@ const ICONOS: Record<string, LucideIcon> = {
   "solucion-de-problemas": Wrench,
 };
 
+/**
+ * Ícono de un tipo de documento.
+ *
+ * @param slug - Slug del tipo.
+ * @returns El ícono de Lucide, o uno genérico.
+ */
 export function tipoIcon(slug: string): LucideIcon {
   return ICONOS[slug] ?? FileText;
 }
 
-/** Ícono del tipo de documento como componente (evita crear componentes durante el render). */
+/**
+ * Ícono del tipo de documento como componente (evita crear componentes durante
+ * el render). Decorativo (`aria-hidden`).
+ *
+ * @param props - `slug` del tipo y `className`.
+ */
 export function TipoIcon({
   slug,
   className,

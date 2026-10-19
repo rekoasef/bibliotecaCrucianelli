@@ -1,3 +1,9 @@
+/**
+ * Tests de la limpieza de texto y la decisión de OCR.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { cleanText, MAX_TEXT_CHARS, mergePages, needsOcr } from "./text";
 

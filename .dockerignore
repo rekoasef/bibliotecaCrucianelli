@@ -2,5 +2,9 @@ node_modules
 .next
 .git
 .drive-local
-.env
+# Ningún .env entra a la imagen: `next build` copiaría .env.production a
+# .next/standalone y los secretos quedarían en la imagen de la app. En runtime
+# las variables llegan por `env_file` (docker-compose.prod.yml).
+.env*
+backups
 *.log

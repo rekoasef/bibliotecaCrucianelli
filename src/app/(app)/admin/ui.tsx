@@ -1,9 +1,21 @@
+/**
+ * Componentes de presentación comunes a las páginas del admin.
+ *
+ * @module
+ */
+
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import type { EstadoUsuario } from "@/db/queries/usuarios";
 import { cn } from "@/lib/utils";
 
+/**
+ * Encabezado de página del admin: link de volver, título, descripción y
+ * acciones.
+ *
+ * @param props - `title`, `description`, `back` (destino y texto) y `actions`.
+ */
 export function PageHeader({
   title,
   description,
@@ -41,6 +53,7 @@ export function PageHeader({
   );
 }
 
+/** Panel con título opcional para agrupar contenido de una página del admin. */
 export function Panel({
   title,
   children,
@@ -63,6 +76,7 @@ export function Panel({
   );
 }
 
+/** Texto y colores de cada estado de usuario. */
 const ESTADO: Record<EstadoUsuario, { label: string; className: string }> = {
   activo: {
     label: "Activo",
@@ -82,6 +96,11 @@ const ESTADO: Record<EstadoUsuario, { label: string; className: string }> = {
   },
 };
 
+/**
+ * Insignia del estado de un usuario (activo, pendiente, pausado, inactivo).
+ *
+ * @param props - `estado` de `estadoUsuario`.
+ */
 export function EstadoBadge({ estado }: { estado: EstadoUsuario }) {
   const { label, className } = ESTADO[estado];
   return (
@@ -106,16 +125,23 @@ export function InactivoBadge({ className }: { className?: string }) {
   );
 }
 
+/** Insignia de activo o inactivo (variante de {@link EstadoBadge}). */
 export function ActivoBadge({ activo }: { activo: boolean }) {
   return <EstadoBadge estado={activo ? "activo" : "inactivo"} />;
 }
 
+/** Fecha y hora cortas en es-AR. */
 const dateFormat = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "short",
   timeStyle: "short",
   timeZone: "America/Argentina/Buenos_Aires",
 });
 
+/**
+ * Fecha y hora (Argentina) para las tablas del admin; "Nunca" si no hay.
+ *
+ * @param date - Fecha, o `null`.
+ */
 export function formatFecha(date: Date | null) {
   return date ? dateFormat.format(date) : "Nunca";
 }

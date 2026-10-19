@@ -1,3 +1,9 @@
+/**
+ * Consultas de máquinas, catálogos y etiquetas, y orden manual de las listas.
+ *
+ * @module
+ */
+
 import "server-only";
 import { and, asc, eq, ilike, max, sql, type SQL } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
@@ -14,8 +20,9 @@ import {
   tipos,
 } from "@/db/schema";
 import type { Catalogo, Nivel } from "@/lib/validation/taxonomia";
-import { normalizeTag } from "@/lib/text";
+import { containsPattern, normalizeTag } from "@/lib/text";
 
+/** Tabla de cada catálogo, por nombre. */
 export const catalogoTables = {
   tipos,
   sistemas,
@@ -26,7 +33,10 @@ export const catalogoTables = {
 
 // ── Máquinas ────────────────────────────────────────────────────────────────
 
-/** Árbol completo para el admin (incluye inactivos). */
+/**
+ * Árbol completo Segmento → Línea → Modelo para el admin (incluye inactivos),
+ * en el orden manual.
+ */
 export async function getArbolMaquinas() {
   const [segs, lins, cantidades] = await Promise.all([
     db
@@ -89,6 +99,7 @@ export async function getSegmentosActivosConLineas() {
   return result;
 }
 
+/** Todos los segmentos, en el orden manual. */
 export async function listSegmentos() {
   return db
     .select()
@@ -96,6 +107,7 @@ export async function listSegmentos() {
     .orderBy(asc(segmentos.orden), asc(segmentos.nombre));
 }
 
+/** Todas las líneas con el nombre de su segmento (selectores del admin). */
 export async function listLineasConSegmento() {
   return db
     .select({
@@ -108,21 +120,41 @@ export async function listLineasConSegmento() {
     .orderBy(asc(segmentos.orden), asc(lineas.orden), asc(lineas.nombre));
 }
 
+/**
+ * Un segmento, o `null`.
+ *
+ * @param id - ID del segmento.
+ */
 export async function getSegmento(id: string) {
   const [row] = await db.select().from(segmentos).where(eq(segmentos.id, id));
   return row ?? null;
 }
 
+/**
+ * Una línea, o `null`.
+ *
+ * @param id - ID de la línea.
+ */
 export async function getLinea(id: string) {
   const [row] = await db.select().from(lineas).where(eq(lineas.id, id));
   return row ?? null;
 }
 
+/**
+ * Un modelo, o `null`.
+ *
+ * @param id - ID del modelo.
+ */
 export async function getModelo(id: string) {
   const [row] = await db.select().from(modelos).where(eq(modelos.id, id));
   return row ?? null;
 }
 
+/**
+ * Modelos de una línea, en el orden manual.
+ *
+ * @param lineaId - Línea.
+ */
 export async function listModelosDeLinea(lineaId: string) {
   return db
     .select()
@@ -133,13 +165,17 @@ export async function listModelosDeLinea(lineaId: string) {
 
 // ── Orden ───────────────────────────────────────────────────────────────────
 
+/** Tabla con columnas `id` y `orden`. */
 type Ordenable = PgTable & {
   id: PgColumn;
   orden: PgColumn;
   nombre: PgColumn;
 };
 
-/** Configuración de cada tabla ordenable: con qué columna se agrupan los hermanos. */
+/**
+ * Configuración de cada tabla ordenable: con qué columna se agrupan los
+ * hermanos.
+ */
 const ORDENABLES: Record<
   Nivel | Catalogo,
   { table: Ordenable; parent?: PgColumn }
@@ -154,7 +190,13 @@ const ORDENABLES: Record<
   tecnologias: { table: tecnologias },
 };
 
-/** Próximo valor de `orden` al final de la lista (dentro del padre si corresponde). */
+/**
+ * Próximo valor de `orden` al final de la lista (dentro del padre si
+ * corresponde).
+ *
+ * @param kind - Nivel de máquina o catálogo.
+ * @param parentId - Segmento (para líneas) o línea (para modelos).
+ */
 export async function nextOrden(kind: Nivel | Catalogo, parentId?: string) {
   const { table, parent } = ORDENABLES[kind];
   const [row] = await db
@@ -165,8 +207,12 @@ export async function nextOrden(kind: Nivel | Catalogo, parentId?: string) {
 }
 
 /**
- * Sube o baja un ítem un lugar entre sus hermanos y renumera la lista (0, 1, 2…)
- * para que el orden quede siempre consistente.
+ * Sube o baja un ítem un lugar entre sus hermanos y renumera la lista (0, 1,
+ * 2…) para que el orden quede siempre consistente.
+ *
+ * @param kind - Nivel de máquina o catálogo.
+ * @param id - Ítem a mover.
+ * @param direction - `up` o `down`.
  */
 export async function moveItem(
   kind: Nivel | Catalogo,
@@ -209,6 +255,11 @@ export async function moveItem(
 
 // ── Tipos, sistemas, temas, productos ──────────────────────────────────────────────────
 
+/**
+ * Entradas de un catálogo (incluye inactivas), en el orden manual.
+ *
+ * @param kind - Catálogo.
+ */
 export async function listCatalogo(kind: Catalogo) {
   const table = catalogoTables[kind];
   return db.select().from(table).orderBy(asc(table.orden), asc(table.nombre));
@@ -225,6 +276,12 @@ export async function listTiposActivos() {
 
 // ── Etiquetas ───────────────────────────────────────────────────────────────
 
+/**
+ * Etiquetas con su cantidad de usos, alfabéticas (hasta 300).
+ *
+ * @param q - Filtro opcional: contiene el texto, sin distinguir acentos ni
+ *   mayúsculas.
+ */
 export async function listEtiquetas(q?: string) {
   const filtro = q ? normalizeTag(q) : "";
   return db
@@ -236,12 +293,15 @@ export async function listEtiquetas(q?: string) {
     })
     .from(etiquetas)
     .where(
-      filtro ? ilike(etiquetas.nombreNormalizado, `%${filtro}%`) : undefined,
+      filtro
+        ? ilike(etiquetas.nombreNormalizado, containsPattern(filtro))
+        : undefined,
     )
     .orderBy(asc(etiquetas.nombreNormalizado))
     .limit(300);
 }
 
+/** Cantidad total de etiquetas. */
 export async function countEtiquetas() {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -250,11 +310,19 @@ export async function countEtiquetas() {
 }
 
 /**
- * Si el nombre ya existe como tipo, sistema, tema, producto, tecnología, línea o modelo, lo devuelve
- * (docs/04: no repetir como etiqueta algo que ya es otra clasificación).
+ * Si el nombre ya existe como tipo, sistema, tema, producto, tecnología, línea
+ * o modelo (docs/04: no repetir como etiqueta algo que ya es otra
+ * clasificación).
+ *
+ * @param nombreNormalizado - Nombre en forma normalizada (`normalizeTag`).
+ * @param tx - Base o transacción.
+ * @returns Dónde existe y con qué nombre, o `null`.
  */
-export async function findClasificacionExistente(nombreNormalizado: string) {
-  const rows = await db.execute<{ donde: string; nombre: string }>(sql`
+export async function findClasificacionExistente(
+  nombreNormalizado: string,
+  tx: Pick<typeof db, "execute"> = db,
+) {
+  const rows = await tx.execute<{ donde: string; nombre: string }>(sql`
     SELECT 'tipo' AS donde, nombre FROM tipos WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'sistema', nombre FROM sistemas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}
     UNION ALL SELECT 'tema', nombre FROM temas WHERE f_unaccent_lower(nombre) = ${nombreNormalizado}

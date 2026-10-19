@@ -1,3 +1,9 @@
+/**
+ * Formulario de usuario.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState, useState } from "react";
@@ -11,6 +17,10 @@ import type { RolUsuario } from "@/db/schema";
 import { ROL_LABEL } from "@/lib/labels";
 import { createUsuario, updateUsuario } from "../actions";
 
+/**
+ * Props de {@link UsuarioForm}: concesionarios, usuario a editar (o ninguno
+ * para un alta) y concesionario preseleccionado.
+ */
 type Props = {
   concesionarios: { id: string; nombre: string; activo: boolean }[];
   usuario?: {
@@ -23,6 +33,12 @@ type Props = {
   defaultConcesionarioId?: string;
 };
 
+/**
+ * Nombre, email, rol y concesionario (solo para el rol concesionario). Crea con
+ * `createUsuario` o edita con `updateUsuario`.
+ *
+ * @param props - Ver `Props`.
+ */
 export function UsuarioForm({
   concesionarios,
   usuario,

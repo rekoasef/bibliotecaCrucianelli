@@ -1,3 +1,9 @@
+/**
+ * `GET /api/lineas/[id]/foto`: foto de una línea.
+ *
+ * @module
+ */
+
 import { and, eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
@@ -8,8 +14,11 @@ import { DriveNotFoundError, getDrive } from "@/lib/drive";
 import { canDisplayInline } from "@/lib/drive/mime";
 
 /**
- * Foto de una línea para la navegación por máquina. Solo líneas visibles para quien
- * mira (sin sesión, como cliente final: acceso libre).
+ * Foto de una línea para la navegación por máquina. Solo líneas visibles para
+ * quien mira (sin sesión, como cliente final: acceso libre); fuera del admin,
+ * línea y segmento activos.
+ *
+ * @returns La imagen (solo tipos seguros de mostrar), o 404.
  */
 export async function GET(
   _request: NextRequest,
@@ -50,6 +59,7 @@ export async function GET(
   }
 }
 
+/** Respuesta 404 en texto plano. */
 function notFound() {
   return new NextResponse("No encontrado", { status: 404 });
 }

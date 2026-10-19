@@ -1,3 +1,11 @@
+/**
+ * Configuración de Better Auth: email y contraseña sin registro público,
+ * sesiones largas renovadas con el uso y bloqueo de cuentas inactivas o
+ * pausadas al iniciar sesión.
+ *
+ * @module
+ */
+
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -17,13 +25,19 @@ import { sendMail } from "@/lib/mail/mailer";
 import { passwordResetEmail } from "@/lib/mail/templates";
 import { superaInactividad } from "./inactividad";
 
+/** Código de error de login: usuario o concesionario desactivado. */
 export const USUARIO_INACTIVO = "USUARIO_INACTIVO";
+/** Código de error de login: cuenta pausada por inactividad. */
 export const USUARIO_PAUSADO = "USUARIO_PAUSADO";
 
 /**
- * Si el usuario puede usar la app: activo, con el concesionario activo (si es de
- * concesionario) y sin pausa por inactividad. Si recién superó el plazo de
- * inactividad, guarda la pausa (queda así hasta que el admin la levante).
+ * Si el usuario puede usar la app: activo, con el concesionario activo (si es
+ * de concesionario) y sin pausa por inactividad.
+ *
+ * @param usuarioId - ID del usuario.
+ * @returns `"ok"`, {@link USUARIO_INACTIVO} o {@link USUARIO_PAUSADO}.
+ * @remarks Si recién superó el plazo de inactividad, guarda la pausa (queda así
+ *   hasta que el admin la levante).
  */
 export async function estadoAcceso(
   usuarioId: string,
@@ -50,7 +64,12 @@ export async function estadoAcceso(
   return "ok";
 }
 
-/** Marca la pausa por inactividad y cierra sus sesiones. */
+/**
+ * Marca la pausa por inactividad (si no estaba marcada) y cierra todas sus
+ * sesiones.
+ *
+ * @param usuarioId - ID del usuario a pausar.
+ */
 export async function pausarUsuario(usuarioId: string) {
   await db
     .update(usuarios)
@@ -59,12 +78,23 @@ export async function pausarUsuario(usuarioId: string) {
   await db.delete(sesiones).where(eq(sesiones.userId, usuarioId));
 }
 
+/**
+ * Atajo de {@link estadoAcceso}: `true` si el usuario puede usar la app.
+ *
+ * @param usuarioId - ID del usuario.
+ */
 export async function isUsuarioHabilitado(usuarioId: string) {
   return (await estadoAcceso(usuarioId)) === "ok";
 }
 
-// La app no expone el handler HTTP de Better Auth (/api/auth/*): todo pasa por
-// Server Actions que llaman a `auth.api.*` y aplican nuestro rate limiting.
+/**
+ * Instancia de Better Auth.
+ *
+ * @remarks La app no expone el handler HTTP de Better Auth (`/api/auth/*`):
+ *   todo pasa por Server Actions que llaman a `auth.api.*` y aplican el rate
+ *   limiting propio. Los usuarios los crea el admin (`disableSignUp`); el mail
+ *   de restablecimiento solo sale si el usuario está habilitado.
+ */
 export const auth = betterAuth({
   baseURL: env().APP_URL,
   secret: env().BETTER_AUTH_SECRET,

@@ -1,18 +1,31 @@
+/**
+ * Proxy de Next (antes "middleware"): corre antes de cada request de página.
+ *
+ * @module
+ */
+
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { PATHNAME_HEADER } from "@/lib/auth/constants";
 
-// Rutas que exigen sesión. El resto (inicio, búsqueda, máquinas, fichas y
-// archivos) es de acceso libre para clientes finales: sin sesión, el servidor
-// muestra solo lo marcado para clientes (documentVisibilityFilter).
+/**
+ * Rutas que exigen sesión. El resto (inicio, búsqueda, máquinas, fichas y
+ * archivos) es de acceso libre para clientes finales: sin sesión, el servidor
+ * muestra solo lo marcado para clientes (`documentVisibilityFilter`).
+ */
 const PRIVATE_PATHS = ["/admin", "/cuenta"];
 
 /**
  * Chequeo optimista: en rutas privadas, si no hay cookie de sesión, manda al
- * login sin renderizar. La verificación real (sesión válida, usuario activo,
- * rol) se hace en el servidor con `requireUser` / `requireAdmin` en cada página
- * y Server Action.
+ * login sin renderizar. Además agrega {@link PATHNAME_HEADER} para que
+ * `requireUser` pueda volver a la página pedida.
+ *
+ * @param request - Request entrante.
+ * @returns Redirección al login o el request con el header agregado.
+ * @remarks No es seguridad: la verificación real (sesión válida, usuario
+ *   activo, rol) se hace en el servidor con `requireUser` / `requireAdmin` en
+ *   cada página y Server Action.
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -32,6 +45,7 @@ export function proxy(request: NextRequest) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+/** Todo menos assets estáticos de Next y archivos públicos. */
 export const config = {
   // Todo menos assets estáticos de Next y archivos públicos.
   matcher: [

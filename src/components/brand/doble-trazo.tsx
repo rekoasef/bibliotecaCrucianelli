@@ -1,8 +1,17 @@
+/**
+ * Elemento gráfico de la marca.
+ *
+ * @module
+ */
+
 import { cn } from "@/lib/utils";
 
 /**
  * Doble trazo del isotipo de Crucianelli: dos barras paralelas inclinadas.
  * Marca los nombres de máquina (como las calcos) y lo activo en la navegación.
+ * Decorativo (`aria-hidden`).
+ *
+ * @param props - `className` para ajustar tamaño o color.
  */
 export function DobleTrazo({ className }: { className?: string }) {
   return (

@@ -1,3 +1,11 @@
+/**
+ * Tests de `documentVisibilityFilter` contra Postgres (dentro de una
+ * transacción que se deshace).
+ *
+ * @module
+ */
+
+import "@/test/require-db";
 import { and, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";

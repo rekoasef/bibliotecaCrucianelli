@@ -1,3 +1,9 @@
+/**
+ * Navegación inferior en celular.
+ *
+ * @module
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -5,7 +11,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getNavItems, isActive, type NavMode } from "./nav-items";
 
-// Navegación principal en celular: al alcance del pulgar, con ícono y texto.
+/**
+ * Navegación principal en celular: al alcance del pulgar, con ícono y texto. Se
+ * oculta desde `md` (ahí está `DesktopNav`).
+ *
+ * @param props - `mode`: qué ítems mostrar según quién mira.
+ */
 export function BottomNav({ mode }: { mode: NavMode }) {
   const pathname = usePathname();
   const navItems = getNavItems(mode);

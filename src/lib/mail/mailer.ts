@@ -1,7 +1,14 @@
+/**
+ * Envío de mails por SMTP (nodemailer).
+ *
+ * @module
+ */
+
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "@/lib/env";
 
+/** Mail a enviar, en texto y HTML. */
 export type Mail = {
   to: string;
   subject: string;
@@ -9,8 +16,10 @@ export type Mail = {
   html: string;
 };
 
+/** Transporte SMTP, creado en el primer envío. */
 let transporter: Transporter | undefined;
 
+/** Transporte SMTP según `SMTP_*`, o `undefined` si no hay `SMTP_HOST`. */
 function getTransporter() {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD } = env();
   if (!SMTP_HOST) return undefined;
@@ -23,6 +32,14 @@ function getTransporter() {
   return transporter;
 }
 
+/**
+ * Envía un mail desde `SMTP_FROM`. Sin SMTP configurado, en desarrollo (o con
+ * `MAIL_TO_CONSOLE`) lo muestra en la consola.
+ *
+ * @param mail - Destinatario, asunto y contenido.
+ * @throws Error en producción si no hay SMTP ni `MAIL_TO_CONSOLE`, o si falla
+ *   el envío.
+ */
 export async function sendMail(mail: Mail) {
   const smtp = getTransporter();
 

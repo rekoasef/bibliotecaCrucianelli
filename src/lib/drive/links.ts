@@ -1,13 +1,26 @@
+/**
+ * Interpretación de links de Drive pegados por el admin.
+ *
+ * @module
+ */
+
+/** Link reconocido: archivo, carpeta o Google Doc nativo, con su ID. */
 export type DriveLink = { kind: "file" | "folder" | "native"; id: string };
 
-// Los IDs de Drive tienen entre 25 y 44 caracteres; 20 deja margen sin confundir palabras.
+/**
+ * Los IDs de Drive tienen entre 25 y 44 caracteres; 20 deja margen sin
+ * confundir palabras.
+ */
 const ID = "[A-Za-z0-9_-]{20,}";
 
 /**
  * Saca el ID de un link de Drive (o acepta el ID solo). Formatos:
- * drive.google.com/file/d/ID/…, …/open?id=ID, …/uc?id=ID, …/drive/folders/ID,
- * docs.google.com/{document,spreadsheets,presentation,drawings}/d/ID/…
- * Devuelve null si no se reconoce.
+ * `drive.google.com/file/d/ID/…`, `…/open?id=ID`, `…/uc?id=ID`,
+ * `…/drive/folders/ID`,
+ * `docs.google.com/{document,spreadsheets,presentation,drawings}/d/ID/…`.
+ *
+ * @param input - Link o ID pegado.
+ * @returns El link reconocido, o `null`.
  */
 export function parseDriveLink(input: string): DriveLink | null {
   const text = input.trim();
@@ -42,7 +55,12 @@ export function parseDriveLink(input: string): DriveLink | null {
   return null;
 }
 
-/** Varios links (uno por línea, o separados por espacios/comas). */
+/**
+ * Varios links (uno por línea, o separados por espacios o comas).
+ *
+ * @param input - Texto pegado.
+ * @returns Los reconocidos (`ok`) y los que no (`invalidos`).
+ */
 export function parseDriveLinks(input: string) {
   const ok: DriveLink[] = [];
   const invalidos: string[] = [];

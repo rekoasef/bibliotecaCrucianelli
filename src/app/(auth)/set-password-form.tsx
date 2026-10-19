@@ -1,3 +1,9 @@
+/**
+ * Formulario para definir contraseña.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -8,6 +14,12 @@ import { PasswordInput } from "@/components/forms/password-input";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { setPassword } from "./actions";
 
+/**
+ * Contraseña y confirmación con el token del link (`setPassword`). Lo usan la
+ * invitación y el restablecimiento.
+ *
+ * @param props - `token` y texto del botón.
+ */
 export function SetPasswordForm({
   token,
   submitLabel,

@@ -1,3 +1,9 @@
+/**
+ * `/olvide-contrasena`: pedir el link de restablecimiento.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthCard } from "../auth-card";
@@ -5,6 +11,7 @@ import { ForgotForm } from "./forgot-form";
 
 export const metadata: Metadata = { title: "Olvidé mi contraseña" };
 
+/** Formulario de email para recibir el link. */
 export default function ForgotPasswordPage() {
   return (
     <>
@@ -19,6 +26,7 @@ export default function ForgotPasswordPage() {
   );
 }
 
+/** Link de vuelta al ingreso. */
 function BackToLogin() {
   return (
     <Link

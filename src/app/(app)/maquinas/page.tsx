@@ -1,3 +1,9 @@
+/**
+ * `/maquinas`: navegación por máquina.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import { Franja } from "@/components/layout/franja";
 import { LineaList, LineaRow } from "@/components/maquinas/linea-row";
@@ -9,6 +15,7 @@ import { isNotNull } from "drizzle-orm";
 
 export const metadata: Metadata = { title: "Máquinas" };
 
+/** Segmentos con sus líneas visibles para el lector, con foto si tienen. */
 export default async function MaquinasPage() {
   const { viewer } = await getViewer();
   const [{ maquinas }, conFoto] = await Promise.all([

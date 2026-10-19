@@ -46,6 +46,7 @@ Leer antes de empezar cualquier tarea:
 - Tablas, columnas y conceptos del dominio en español, tal como están en `docs/03-modelo-de-datos.md` (documento, linea, modelo, concesionario…). El resto del código (helpers, utilidades, componentes genéricos) en inglés.
 - Migraciones versionadas; nunca modificar la base a mano.
 - Secretos solo en variables de entorno (`.env`, nunca commiteado). Mantener `.env.example` actualizado.
+- Comentarios de documentación en TSDoc (`/** */`, en español): encabezado `@module` en cada archivo y `@param` / `@returns` / `@throws` / `@remarks` en lo exportado. `{@link}` solo a símbolos exportados; en `@throws` no va entre llaves al principio (`@throws Lanza {@link X} si…`). `npm run docs` tiene que terminar sin warnings.
 
 ## Forma de trabajo
 
@@ -69,6 +70,7 @@ Drive: por defecto la app usa **links públicos** (no hace falta configurar nada
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Genera los tipos de rutas de Next y corre `tsc` |
 | `npm run format` / `format:check` | Prettier (ordena clases de Tailwind) |
+| `npm run docs` | Documentación de la API con TypeDoc en `api-docs/` (no se commitea) |
 | `npm test` | Vitest (`src/**/*.test.ts`) |
 | `npm run db:up` | Levanta Postgres 16 en Docker (puerto **5433** del host) |
 | `npm run db:generate` | Genera una migración a partir de `src/db/schema` |

@@ -1,3 +1,11 @@
+/**
+ * Server Actions de autenticación: login, logout, restablecimiento de
+ * contraseña e invitaciones. Son públicas (no hay sesión que exigir) y aplican
+ * rate limiting propio.
+ *
+ * @module
+ */
+
 "use server";
 
 import { APIError } from "better-auth/api";
@@ -14,21 +22,37 @@ import { formatRetryAfter, hit, rateLimits, reset } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
+/** Mensaje para usuarios o concesionarios desactivados. */
 const MSG_INACTIVO =
   "Tu usuario está desactivado. Consultá con el responsable de la biblioteca.";
 
+/** Mensaje para cuentas pausadas por inactividad. */
 const MSG_PAUSADO =
   "Tu cuenta está pausada porque no la usaste por un tiempo. Pedile a fábrica que la vuelva a habilitar.";
 
+/**
+ * Si el error de Better Auth es el código propio `code` (lo lanza el hook de
+ * sesión).
+ */
 function isApiError(error: APIError, code: string) {
   return error.message === code || error.body?.message === code;
 }
 
+/** Email (normalizado a minúsculas) y contraseña. */
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
   password: z.string().min(1),
 });
 
+/**
+ * Inicia sesión con email y contraseña, con límite de intentos por email y por
+ * IP. Un login correcto reinicia el contador del email.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `email`, `password` y `next` (ruta a la que volver).
+ * @returns Error para mostrar; si sale bien, redirige a `next` (solo rutas
+ *   internas).
+ */
 export async function login(
   _prev: FormState,
   formData: FormData,
@@ -76,11 +100,21 @@ export async function login(
   redirect(safeRedirectPath(formData.get("next")));
 }
 
+/** Cierra la sesión y va al login. */
 export async function logout() {
   await auth.api.signOut({ headers: await headers() });
   redirect("/login");
 }
 
+/**
+ * Pide el mail de restablecimiento de contraseña, con límite por email y por
+ * IP. Responde lo mismo exista o no el email, para no revelar quién tiene
+ * usuario.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `email`.
+ * @returns Error de validación o el mensaje genérico de éxito.
+ */
 export async function requestPasswordReset(
   _prev: FormState,
   formData: FormData,
@@ -124,6 +158,7 @@ export async function requestPasswordReset(
   };
 }
 
+/** Contraseña nueva (8 a 128 caracteres) y su confirmación. */
 const passwordSchema = z
   .object({
     password: z
@@ -137,7 +172,16 @@ const passwordSchema = z
     message: "Las contraseñas no coinciden.",
   });
 
-/** Define la contraseña con un token de invitación o de restablecimiento, e inicia sesión. */
+/**
+ * Define la contraseña con un token de invitación o de restablecimiento e
+ * inicia sesión. Usar el link del mail prueba que el email es suyo: lo marca
+ * como verificado.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `token`, `password` y `confirmacion`.
+ * @returns Error si el link venció o la cuenta no puede ingresar; si sale bien,
+ *   redirige al inicio.
+ */
 export async function setPassword(
   _prev: FormState,
   formData: FormData,

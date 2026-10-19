@@ -1,3 +1,9 @@
+/**
+ * `/admin/drive`: incorporar archivos de Drive (explorador o links).
+ *
+ * @module
+ */
+
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -17,6 +23,12 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Incorporar desde Drive" };
 
+/**
+ * Explorador de Drive dentro de las carpetas raíz (si hay explorador) o
+ * formulario de links (links públicos). Modos según la URL: `agregarA` (agregar
+ * a un documento), `fotoLinea` (elegir la foto de una línea) o incorporar como
+ * borradores. Marca lo ya incorporado.
+ */
 export default async function DrivePage({
   searchParams,
 }: PageProps<"/admin/drive">) {
@@ -308,7 +320,9 @@ export default async function DrivePage({
   );
 }
 
-/** Formulario según el modo: incorporar archivos o elegir la foto de una línea. */
+/**
+ * Formulario según el modo: incorporar archivos o elegir la foto de una línea.
+ */
 function SelectionForm({
   fotoLinea,
   agregarA,

@@ -1,3 +1,9 @@
+/**
+ * `/admin`: panel del administrador.
+ *
+ * @module
+ */
+
 import {
   AlertTriangle,
   Building2,
@@ -22,6 +28,12 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Administración" };
 
+/**
+ * Panel del admin (docs/05): pendientes de documentos (borradores, cambios en
+ * Drive, archivos no disponibles, errores de extracción), videos públicos en
+ * documentos de solo fábrica, usuarios, búsquedas sin resultados y última
+ * detección de cambios en Drive.
+ */
 export default async function AdminPage() {
   // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
   await requireAdmin();

@@ -1,3 +1,10 @@
+/**
+ * Invitaciones: el admin crea el usuario y este define su contraseña con un
+ * link por mail.
+ *
+ * @module
+ */
+
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
@@ -8,10 +15,19 @@ import { sendMail } from "@/lib/mail/mailer";
 import { invitationEmail } from "@/lib/mail/templates";
 import { auth } from "./auth";
 
+/** Validez del link de invitación. */
 const INVITATION_DAYS = 7;
 
-// La invitación es un token de restablecimiento de Better Auth con vencimiento
-// de 7 días: al usarlo, `resetPassword` crea la credencial del usuario.
+/**
+ * Genera un link de invitación y lo manda por mail. Reenviar invalida los links
+ * anteriores (uno vigente por usuario).
+ *
+ * @param usuario - Destinatario.
+ * @throws Si falla el envío del mail (el usuario igual queda creado).
+ * @remarks La invitación es un token de restablecimiento de Better Auth con
+ *   vencimiento de 7 días: al usarlo, `resetPassword` crea la credencial del
+ *   usuario.
+ */
 export async function sendInvitation(usuario: {
   id: string;
   email: string;
@@ -35,7 +51,12 @@ export async function sendInvitation(usuario: {
   });
 }
 
-/** Usuario dueño de un token de invitación o restablecimiento vigente, o null. */
+/**
+ * Usuario dueño de un token de invitación o restablecimiento vigente.
+ *
+ * @param token - Token del link.
+ * @returns El ID del usuario, o `null` si no existe o venció.
+ */
 export async function findUsuarioIdByToken(token: string) {
   const ctx = await auth.$context;
   const verification = await ctx.internalAdapter.findVerificationValue(
@@ -45,6 +66,11 @@ export async function findUsuarioIdByToken(token: string) {
   return verification.value;
 }
 
+/**
+ * Si el usuario ya definió su contraseña (tiene credencial).
+ *
+ * @param usuarioId - Usuario.
+ */
 export async function hasPassword(usuarioId: string) {
   const [cuenta] = await db
     .select({ id: cuentas.id })

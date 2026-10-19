@@ -1,3 +1,10 @@
+/**
+ * Server Actions de la ficha de documento del admin. Cada una empieza con
+ * `requireAdmin()` (directamente o por `runEstado`).
+ *
+ * @module
+ */
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -25,14 +32,28 @@ import {
   clasificacionSchema,
 } from "@/lib/validation/documentos";
 
+/** IDs de la base (UUID). */
 const idSchema = z.uuid();
 
+/**
+ * Revalida el admin y, si se indica, la ficha pública del documento.
+ *
+ * @param id - Documento cuya ficha cambió.
+ */
 function revalidate(id?: string) {
   revalidatePath("/admin", "layout");
   if (id) revalidatePath(`/documentos/${id}`);
 }
 
-/** Guardar, publicar o "guardar y siguiente", según el botón que se apretó. */
+/**
+ * Guardar, publicar o "guardar y siguiente", según el botón que se apretó
+ * (`intent`).
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - Clasificación del documento, `id` e `intent`.
+ * @returns Errores o el mensaje de éxito; al publicar o pasar al siguiente,
+ *   redirige. Si publicar falla, lo guardado queda guardado.
+ */
 export async function saveDocumento(
   _prev: FormState,
   formData: FormData,
@@ -81,6 +102,14 @@ export async function saveDocumento(
   return { success: "Cambios guardados." };
 }
 
+/**
+ * Verifica el rol, valida el `id` y aplica un cambio de estado. Si la regla de
+ * negocio no lo permite, vuelve a la ficha con `?error=estado`.
+ *
+ * @param formData - Formulario con `id`.
+ * @param fn - Operación de `service.ts` a aplicar.
+ * @returns El ID del documento.
+ */
 async function runEstado(
   formData: FormData,
   fn: (id: string, adminId: string) => Promise<unknown>,
@@ -98,16 +127,32 @@ async function runEstado(
   return id;
 }
 
+/**
+ * Marca el documento como obsoleto.
+ *
+ * @param formData - `id`.
+ */
 export async function marcarObsoletoAction(formData: FormData) {
   const id = await runEstado(formData, marcarObsoleto);
   redirect(`/admin/documentos/${id}`);
 }
 
+/**
+ * Vuelve a vigente un obsoleto.
+ *
+ * @param formData - `id`.
+ */
 export async function restaurarVigenteAction(formData: FormData) {
   const id = await runEstado(formData, restaurarVigente);
   redirect(`/admin/documentos/${id}`);
 }
 
+/**
+ * Crea (o retoma) el borrador de una nueva versión y lleva al explorador de
+ * Drive para elegir el archivo nuevo (docs/05).
+ *
+ * @param formData - `id` del documento vigente.
+ */
 export async function nuevaVersionAction(formData: FormData) {
   const admin = await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -117,6 +162,11 @@ export async function nuevaVersionAction(formData: FormData) {
   redirect(`/admin/drive?agregarA=${nuevoId}`);
 }
 
+/**
+ * Elimina un borrador y vuelve al listado.
+ *
+ * @param formData - `id`.
+ */
 export async function eliminarBorradorAction(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -127,6 +177,11 @@ export async function eliminarBorradorAction(formData: FormData) {
 
 // ── Archivos ────────────────────────────────────────────────────────────────
 
+/**
+ * Cambia el modo de acceso de un archivo (servidor o link público).
+ *
+ * @param formData - `id` del documento, `archivoId` y `modo`.
+ */
 export async function setModoAccesoAction(formData: FormData) {
   await requireAdmin();
   const archivoId = idSchema.parse(formData.get("archivoId"));
@@ -135,6 +190,11 @@ export async function setModoAccesoAction(formData: FormData) {
   revalidate(idSchema.parse(formData.get("id")));
 }
 
+/**
+ * Mueve un archivo un lugar arriba o abajo.
+ *
+ * @param formData - `id` del documento, `archivoId` y `direction`.
+ */
 export async function moverArchivoAction(formData: FormData) {
   await requireAdmin();
   await moverArchivo(
@@ -144,6 +204,12 @@ export async function moverArchivoAction(formData: FormData) {
   revalidate(idSchema.parse(formData.get("id")));
 }
 
+/**
+ * Quita un archivo del documento (no el último de uno publicado: vuelve con
+ * `?error=ultimo-archivo`).
+ *
+ * @param formData - `id` del documento y `archivoId`.
+ */
 export async function quitarArchivoAction(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -157,7 +223,12 @@ export async function quitarArchivoAction(formData: FormData) {
   revalidate(id);
 }
 
-/** Vuelve a encolar la extracción de texto de un archivo (tras un error o sin texto). */
+/**
+ * Vuelve a encolar la extracción de texto de un archivo (tras un error o sin
+ * texto).
+ *
+ * @param formData - `id` del documento y `archivoId`.
+ */
 export async function reintentarExtraccionAction(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));
@@ -165,6 +236,11 @@ export async function reintentarExtraccionAction(formData: FormData) {
   revalidate(id);
 }
 
+/**
+ * Marca como revisado un documento cuyo archivo cambió en Drive.
+ *
+ * @param formData - `id` del documento.
+ */
 export async function marcarRevisadoAction(formData: FormData) {
   const admin = await requireAdmin();
   const id = idSchema.parse(formData.get("id"));

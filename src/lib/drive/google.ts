@@ -1,3 +1,13 @@
+/**
+ * Cliente de Drive con cuenta de servicio (API de Drive v3, solo lectura): el
+ * diseño original de docs/02.
+ *
+ * Sigue disponible si se configuran `GOOGLE_SERVICE_ACCOUNT_*`; por defecto la
+ * app usa links públicos (`public.ts`).
+ *
+ * @module
+ */
+
 import "server-only";
 import { JWT } from "google-auth-library";
 import { FOLDER_MIME, isGoogleNative } from "./mime";
@@ -9,12 +19,16 @@ import {
   type DriveItem,
 } from "./types";
 
+/** Base de la API de Drive v3. */
 const API = "https://www.googleapis.com/drive/v3";
+
+/** Campos que se piden de cada archivo. */
 const FIELDS = "id,name,mimeType,size,modifiedTime,parents,trashed";
-// Parámetros para que funcione también con unidades compartidas (docs/02).
+
+/** Parámetro para que funcione también con unidades compartidas (docs/02). */
 const SHARED = "supportsAllDrives=true";
 
-// Los Google Docs nativos no tienen bytes: se exportan a PDF.
+/** Google Docs nativos que se exportan a PDF (no tienen bytes propios). */
 const EXPORT_AS_PDF = new Set([
   "application/vnd.google-apps.document",
   "application/vnd.google-apps.spreadsheet",
@@ -22,6 +36,7 @@ const EXPORT_AS_PDF = new Set([
   "application/vnd.google-apps.drawing",
 ]);
 
+/** Archivo tal como lo devuelve la API. */
 type RawFile = {
   id: string;
   name: string;
@@ -32,6 +47,7 @@ type RawFile = {
   trashed?: boolean;
 };
 
+/** Convierte un archivo de la API en {@link DriveItem}. */
 function toItem(f: RawFile): DriveItem {
   return {
     id: f.id,
@@ -50,6 +66,12 @@ export class GoogleDriveClient implements DriveClient {
   readonly browsable = true;
   private auth: JWT;
 
+  /**
+   * @param email - Email de la cuenta de servicio.
+   * @param privateKey - Clave privada (en `.env` suele venir con `\n`
+   *   escapados).
+   * @param roots - IDs de las carpetas raíz permitidas.
+   */
   constructor(
     email: string,
     privateKey: string,
@@ -63,6 +85,7 @@ export class GoogleDriveClient implements DriveClient {
     });
   }
 
+  /** GET autenticado a la API, sin caché. */
   private async request(path: string, headers: Record<string, string> = {}) {
     const { token } = await this.auth.getAccessToken();
     return fetch(`${API}${path}`, {
@@ -71,10 +94,17 @@ export class GoogleDriveClient implements DriveClient {
     });
   }
 
+  /** Las carpetas de `DRIVE_ROOT_FOLDER_IDS`. */
   async rootIds() {
     return this.roots;
   }
 
+  /**
+   * Metadatos de un archivo o carpeta.
+   *
+   * @returns El ítem, o `null` si no existe o la cuenta no tiene acceso.
+   * @throws Error ante otras respuestas de la API.
+   */
   async getItem(id: string) {
     const res = await this.request(
       `/files/${encodeURIComponent(id)}?fields=${FIELDS}&${SHARED}`,
@@ -85,6 +115,7 @@ export class GoogleDriveClient implements DriveClient {
     return toItem((await res.json()) as RawFile);
   }
 
+  /** Contenido de una carpeta (sin papelera), paginando hasta el final. */
   async listChildren(folderId: string) {
     const items: DriveItem[] = [];
     let pageToken: string | undefined;
@@ -111,6 +142,12 @@ export class GoogleDriveClient implements DriveClient {
     return items;
   }
 
+  /**
+   * Texto plano de un Google Doc nativo, para la extracción.
+   *
+   * @returns El texto, o `null` si el tipo no se exporta como texto.
+   * @throws Lanza {@link DriveNotFoundError} si no existe o no hay acceso.
+   */
   async exportText(id: string) {
     const res = await this.request(
       `/files/${encodeURIComponent(id)}/export?mimeType=text/plain`,
@@ -122,6 +159,13 @@ export class GoogleDriveClient implements DriveClient {
     return res.text();
   }
 
+  /**
+   * Descarga en streaming. Los Google Docs nativos se exportan a PDF (sin
+   * rangos).
+   *
+   * @throws Lanza {@link DriveNotFoundError} si no existe o no hay acceso.
+   * @throws Lanza {@link DriveRangeError} si el rango no se puede satisfacer.
+   */
   async download(
     id: string,
     options: { range?: string | null } = {},

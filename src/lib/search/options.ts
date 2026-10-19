@@ -1,3 +1,9 @@
+/**
+ * Opciones de los filtros de búsqueda.
+ *
+ * @module
+ */
+
 import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { cache } from "react";
@@ -19,13 +25,22 @@ import {
   type Viewer,
 } from "@/lib/documentos/visibility";
 
+/** Opción de un filtro: nombre visible y slug de la URL. */
 export type Opcion = { nombre: string; slug: string };
+
+/** Segmento con sus líneas y modelos, para el filtro de máquina. */
 export type MaquinaOpcion = {
   segmento: string;
   lineas: (Opcion & { id: string; modelos: Opcion[] })[];
 };
 
-/** Opciones de los filtros de búsqueda: solo lo activo (el admin ve todo). */
+/**
+ * Opciones de los filtros de búsqueda: solo lo activo (el admin ve todo). Las
+ * etiquetas, solo las de documentos que el lector puede ver. Memoizado por
+ * request.
+ *
+ * @param viewer - Quién busca.
+ */
 export const getSearchOptions = cache(async (viewer: Viewer) => {
   const soloActivos = viewer.rol !== "admin";
   const catalogo = (
@@ -116,4 +131,5 @@ export const getSearchOptions = cache(async (viewer: Viewer) => {
   };
 });
 
+/** Opciones que devuelve {@link getSearchOptions}. */
 export type SearchOptions = Awaited<ReturnType<typeof getSearchOptions>>;

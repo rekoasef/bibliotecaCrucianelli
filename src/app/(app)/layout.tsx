@@ -1,10 +1,22 @@
+/**
+ * Layout de las páginas de la app (consulta, cuenta y admin).
+ *
+ * @module
+ */
+
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
 import type { NavMode } from "@/components/layout/nav-items";
 import { getCurrentUser } from "@/lib/auth/session";
 
-// Sin sesión se navega como cliente final (acceso libre). Cada página decide qué
-// exige: /cuenta y /admin piden sesión con requireUser / requireAdmin.
+/**
+ * Barra superior, contenido y navegación inferior en celular; los ítems de
+ * navegación dependen de quién mira.
+ *
+ * @remarks Sin sesión se navega como cliente final (acceso libre). Cada página
+ *   decide qué exige: `/cuenta` y `/admin` piden sesión con `requireUser` /
+ *   `requireAdmin`.
+ */
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
   const mode: NavMode = !user

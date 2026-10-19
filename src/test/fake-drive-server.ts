@@ -1,12 +1,22 @@
-// Servidor que imita drive.usercontent.google.com/download para pruebas
-// (tests de PublicLinkDriveClient y e2e). Sirve los archivos de una carpeta;
-// el ID es "pub_" + la ruta relativa en base64url. Lo que esté bajo "Privado/"
-// responde como un archivo no compartido (404 con HTML, como Google).
+/**
+ * Servidor que imita `drive.usercontent.google.com/download` para pruebas
+ * (tests de `PublicLinkDriveClient` y e2e).
+ *
+ * Sirve los archivos de una carpeta; el ID es `pub_` + la ruta relativa en
+ * base64url. Lo que esté bajo `Privado/` responde como un archivo no compartido
+ * (404 con HTML, como Google).
+ *
+ * Uso directo (e2e): `tsx src/test/fake-drive-server.ts <carpeta> <puerto>`.
+ *
+ * @module
+ */
+
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import path from "node:path";
 
+/** Tipos que informa el servidor falso, por extensión. */
 const MIME: Record<string, string> = {
   ".pdf": "application/pdf",
   ".png": "image/png",
@@ -15,10 +25,22 @@ const MIME: Record<string, string> = {
   ".html": "text/html",
 };
 
+/**
+ * ID falso de Drive para un archivo de la carpeta servida.
+ *
+ * @param relPath - Ruta relativa a la carpeta.
+ */
 export function fakeDriveId(relPath: string) {
   return `pub_${Buffer.from(relPath).toString("base64url")}`;
 }
 
+/**
+ * Levanta el servidor falso.
+ *
+ * @param dir - Carpeta a servir.
+ * @param port - Puerto (0 = uno libre).
+ * @returns El servidor y su URL base.
+ */
 export function startFakeDrive(
   dir: string,
   port = 0,

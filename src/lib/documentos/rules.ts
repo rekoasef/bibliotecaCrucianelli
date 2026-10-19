@@ -1,5 +1,13 @@
+/**
+ * Reglas puras de documentos (sin base de datos, testeables): requisitos para
+ * publicar, advertencias y normalización de la clasificación.
+ *
+ * @module
+ */
+
 import type { ModoAcceso } from "@/db/schema";
 
+/** Lo que se mira para decidir si un documento se puede publicar. */
 type Publicable = {
   titulo: string | null;
   tipoId: string | null;
@@ -8,13 +16,20 @@ type Publicable = {
   cantidadProductos: number;
 };
 
-/** Públicos de un documento además de fábrica, que ve todo (docs/04, "Visibilidad"). */
+/**
+ * Públicos de un documento además de fábrica, que ve todo (docs/04,
+ * "Visibilidad").
+ */
 export type Publicos = {
   visibleConcesionarios: boolean;
   visibleClientes: boolean;
 };
 
-/** "Concesionarios y clientes", "Solo fábrica"… para mostrar en el admin. */
+/**
+ * "Concesionarios y clientes", "Solo fábrica"… para mostrar en el admin.
+ *
+ * @param p - Públicos marcados.
+ */
 export function publicosLabel(p: Publicos) {
   if (p.visibleConcesionarios && p.visibleClientes)
     return "Concesionarios y clientes";
@@ -23,7 +38,13 @@ export function publicosLabel(p: Publicos) {
   return "Solo fábrica";
 }
 
-/** Requisitos para publicar (docs/03): devuelve lo que falta, vacío si está listo. */
+/**
+ * Requisitos para publicar (docs/03): título, tipo, al menos un archivo y al
+ * menos una máquina o producto.
+ *
+ * @param doc - Datos y conteos del documento.
+ * @returns Mensajes de lo que falta; vacío si está listo.
+ */
 export function faltantesParaPublicar(doc: Publicable): string[] {
   const faltan: string[] = [];
   if (!doc.titulo?.trim()) faltan.push("Falta el título.");
@@ -36,8 +57,13 @@ export function faltantesParaPublicar(doc: Publicable): string[] {
 }
 
 /**
- * Advertencias para el admin. Un video con link público en un documento "Solo fábrica"
- * lo podría abrir cualquiera que tenga el link (docs/02): debería ir en modo servidor.
+ * Advertencias para el admin. Un video con link público en un documento "Solo
+ * fábrica" lo podría abrir cualquiera que tenga el link (docs/02): debería ir
+ * en modo servidor. También avisa de archivos no disponibles en Drive.
+ *
+ * @param publicos - Públicos del documento.
+ * @param archivos - Archivos del documento.
+ * @returns Mensajes para mostrar.
  */
 export function advertenciasArchivos(
   publicos: Publicos,
@@ -60,8 +86,12 @@ export function advertenciasArchivos(
 }
 
 /**
- * Máquinas en dos niveles (docs/03): si está asociada la línea completa, sus modelos
- * sobran. Devuelve los modelos a guardar.
+ * Máquinas en dos niveles (docs/03): si está asociada la línea completa, sus
+ * modelos sobran.
+ *
+ * @param lineaIds - Líneas elegidas.
+ * @param modelos - Modelos elegidos con su línea.
+ * @returns Los IDs de modelos a guardar.
  */
 export function modelosSinLineaCubierta(
   lineaIds: string[],
@@ -71,7 +101,13 @@ export function modelosSinLineaCubierta(
   return modelos.filter((m) => !lineas.has(m.lineaId)).map((m) => m.id);
 }
 
-/** "dosificador, Sensor ,, cardán" → nombres limpios y sin repetidos (por forma normalizada). */
+/**
+ * "dosificador, Sensor ,, cardán" → nombres limpios y sin repetidos (por forma
+ * normalizada).
+ *
+ * @param input - Etiquetas separadas por coma.
+ * @param normalize - Función de normalización (`normalizeTag`).
+ */
 export function parseEtiquetas(
   input: string,
   normalize: (s: string) => string,

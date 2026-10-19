@@ -1,10 +1,22 @@
+/**
+ * Botón de compartir la ficha.
+ *
+ * @module
+ */
+
 "use client";
 
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-/** Comparte el link de la ficha: quien lo abra igual necesita sesión y permiso. */
+/**
+ * Comparte el link de la ficha (menú del sistema o, si no hay, copia al
+ * portapapeles). Quien lo abra solo ve el documento si su rol lo permite (sin
+ * sesión, si está marcado para clientes).
+ *
+ * @param props - `title` del documento.
+ */
 export function ShareButton({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
 

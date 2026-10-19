@@ -1,3 +1,11 @@
+/**
+ * Tipos comunes a los clientes de Drive (links públicos, cuenta de servicio,
+ * carpeta local).
+ *
+ * @module
+ */
+
+/** Archivo o carpeta de Drive, normalizado. */
 export type DriveItem = {
   id: string;
   name: string;
@@ -10,6 +18,7 @@ export type DriveItem = {
   trashed: boolean;
 };
 
+/** Descarga en streaming, lista para reenviar como respuesta HTTP. */
 export type DriveDownload = {
   /** 200 o 206 (si se pidió un rango) */
   status: number;
@@ -19,6 +28,10 @@ export type DriveDownload = {
   contentRange: string | null;
 };
 
+/**
+ * Operaciones de Drive que usan la app y el worker. Ver `getDrive` para cómo se
+ * elige la implementación.
+ */
 export interface DriveClient {
   /**
    * true si se pueden recorrer carpetas (cuenta de servicio, carpeta local).
@@ -40,5 +53,8 @@ export interface DriveClient {
   rootIds(): Promise<string[]>;
 }
 
+/** El archivo no existe, se borró o no es accesible. */
 export class DriveNotFoundError extends Error {}
+
+/** El rango pedido no se puede satisfacer (HTTP 416). */
 export class DriveRangeError extends Error {}

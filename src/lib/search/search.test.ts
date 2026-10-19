@@ -1,3 +1,11 @@
+/**
+ * Tests de la búsqueda contra Postgres (configuración `es_unaccent`,
+ * `pg_trgm`), dentro de una transacción que se deshace.
+ *
+ * @module
+ */
+
+import "@/test/require-db";
 import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";

@@ -1,12 +1,20 @@
+/**
+ * Validación de los formularios de máquinas, catálogos y etiquetas.
+ *
+ * @module
+ */
+
 import { z } from "zod";
 import { slugify } from "@/lib/text";
 
+/** Nombre obligatorio (hasta 80 caracteres). */
 const nombre = z
   .string()
   .trim()
   .min(1, "Completá el nombre.")
   .max(80, "El nombre es demasiado largo.");
 
+/** Descripción opcional; vacía → `null`. */
 const descripcion = z
   .string()
   .trim()
@@ -19,6 +27,7 @@ function withSlug<T extends { nombre: string; slug?: string }>(data: T) {
   return { ...data, slug: data.slug ? data.slug : slugify(data.nombre) };
 }
 
+/** Slug escrito a mano: minúsculas, números y guiones; vacío → se genera. */
 const slug = z
   .string()
   .trim()
@@ -31,8 +40,10 @@ const slug = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+/** Segmento. */
 export const segmentoSchema = z.object({ nombre, slug }).transform(withSlug);
 
+/** Línea, con su segmento. */
 export const lineaSchema = z
   .object({
     nombre,
@@ -42,12 +53,15 @@ export const lineaSchema = z
   })
   .transform(withSlug);
 
+/** Modelo, con su línea. */
 export const modeloSchema = z
   .object({ nombre, slug, descripcion, lineaId: z.uuid("Elegí una línea.") })
   .transform(withSlug);
 
+/** Entrada de un catálogo (tipo, sistema, tema, producto, tecnología). */
 export const catalogoSchema = z.object({ nombre, slug }).transform(withSlug);
 
+/** Etiqueta libre (hasta 60 caracteres). */
 export const etiquetaSchema = z.object({
   nombre: z
     .string()
@@ -56,9 +70,15 @@ export const etiquetaSchema = z.object({
     .max(60, "La etiqueta es demasiado larga."),
 });
 
+/**
+ * Niveles de la jerarquía de máquinas (también son nombres de tabla y de ruta).
+ */
 export const NIVELES = ["segmentos", "lineas", "modelos"] as const;
+
+/** Nivel de la jerarquía de máquinas. */
 export type Nivel = (typeof NIVELES)[number];
 
+/** Catálogos de clasificación (también son nombres de tabla). */
 export const CATALOGOS = [
   "tipos",
   "sistemas",
@@ -66,4 +86,6 @@ export const CATALOGOS = [
   "productos",
   "tecnologias",
 ] as const;
+
+/** Catálogo de clasificación. */
 export type Catalogo = (typeof CATALOGOS)[number];

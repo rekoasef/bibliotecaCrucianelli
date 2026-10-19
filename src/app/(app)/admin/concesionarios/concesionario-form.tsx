@@ -1,3 +1,9 @@
+/**
+ * Formulario de concesionario.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -9,6 +15,11 @@ import { Input } from "@/components/ui/input";
 import type { Concesionario } from "@/db/schema";
 import { saveConcesionario } from "../actions";
 
+/**
+ * Alta o edición de un concesionario (`saveConcesionario`).
+ *
+ * @param props - `concesionario` a editar; sin él, es un alta.
+ */
 export function ConcesionarioForm({
   concesionario,
 }: {

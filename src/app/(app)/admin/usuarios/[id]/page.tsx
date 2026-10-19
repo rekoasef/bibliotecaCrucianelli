@@ -1,3 +1,9 @@
+/**
+ * `/admin/usuarios/[id]`: ficha de un usuario.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -17,6 +23,11 @@ import { ResendInvitation } from "./resend-invitation";
 
 export const metadata: Metadata = { title: "Usuario" };
 
+/**
+ * Edición del usuario, estado de la invitación (con reenvío), reactivación si
+ * está pausado por inactividad y panel para desactivarlo. `?invitado=` muestra
+ * el resultado del envío.
+ */
 export default async function UsuarioPage({
   params,
   searchParams,

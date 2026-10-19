@@ -1,3 +1,9 @@
+/**
+ * Formularios de taxonomía.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -9,8 +15,14 @@ import { Input } from "@/components/ui/input";
 import type { Catalogo } from "@/lib/validation/taxonomia";
 import { mergeEtiqueta, saveCatalogo, saveEtiqueta } from "./actions";
 
+/** Entrada a editar. */
 type Item = { id: string; nombre: string; slug?: string };
 
+/**
+ * Alta o edición de una entrada de catálogo (`saveCatalogo`).
+ *
+ * @param props - `kind` y el `item` a editar (sin él, es un alta).
+ */
 export function CatalogoForm({ kind, item }: { kind: Catalogo; item?: Item }) {
   const [state, action] = useActionState(saveCatalogo, initialFormState);
   const prefix = item ? `edit-${item.id}` : `nuevo-${kind}`;
@@ -73,6 +85,7 @@ export function CatalogoForm({ kind, item }: { kind: Catalogo; item?: Item }) {
   );
 }
 
+/** Alta o renombre de una etiqueta (`saveEtiqueta`). */
 export function EtiquetaForm({ item }: { item?: Item }) {
   const [state, action] = useActionState(saveEtiqueta, initialFormState);
   const id = item ? `etq-${item.id}-nombre` : "etq-nueva";
@@ -116,6 +129,7 @@ export function EtiquetaForm({ item }: { item?: Item }) {
   );
 }
 
+/** Fusiona una etiqueta en otra elegida por nombre (`mergeEtiqueta`). */
 export function MergeEtiquetaForm({ item }: { item: Item }) {
   const [state, action] = useActionState(mergeEtiqueta, initialFormState);
   const id = `merge-${item.id}`;

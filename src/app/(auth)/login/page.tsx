@@ -1,3 +1,9 @@
+/**
+ * `/login`: ingreso.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -8,6 +14,10 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Ingresar" };
 
+/**
+ * Formulario de ingreso. Con sesión válida redirige a `next` (solo rutas
+ * internas) o al inicio.
+ */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { next } = await searchParams;
   const target = safeRedirectPath(next);

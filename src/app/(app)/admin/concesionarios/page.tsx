@@ -1,3 +1,9 @@
+/**
+ * `/admin/concesionarios`: listado de concesionarios.
+ *
+ * @module
+ */
+
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,6 +22,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Concesionarios" };
 
+/** Concesionarios con localidad, estado y cantidad de usuarios. */
 export default async function ConcesionariosPage() {
   // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
   await requireAdmin();

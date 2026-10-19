@@ -1,3 +1,9 @@
+/**
+ * Vista común de línea y modelo.
+ *
+ * @module
+ */
+
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Franja } from "@/components/layout/franja";
@@ -9,11 +15,16 @@ import type { MaquinaOpcion } from "@/lib/search/options";
 import { searchDocuments, type SearchResult } from "@/lib/search/search";
 import { cn } from "@/lib/utils";
 
+/** Línea con sus modelos (de `getSearchOptions`). */
 type Linea = MaquinaOpcion["lineas"][number];
 
 /**
  * Página de una línea o de un modelo (docs/05): encabezado, selector de modelo,
- * buscador acotado y documentos agrupados por tipo.
+ * buscador acotado y documentos agrupados por tipo. Los documentos salen de
+ * `searchDocuments`, con la visibilidad del lector.
+ *
+ * @param props - Lector, línea, modelo (si es la página de un modelo) y si la
+ *   línea tiene foto.
  */
 export async function MaquinaView({
   viewer,
@@ -169,6 +180,7 @@ export async function MaquinaView({
   );
 }
 
+/** Chip para elegir un modelo (o la línea completa). */
 function ModeloChip({
   href,
   active,

@@ -1,3 +1,9 @@
+/**
+ * Tests de validación de concesionarios y usuarios.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { usuarioSchema } from "./admin";
 

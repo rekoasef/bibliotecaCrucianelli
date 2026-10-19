@@ -1,3 +1,10 @@
+/**
+ * Consultas de los registros del admin (docs/05): accesos, búsquedas sin
+ * resultados y recurrencia.
+ *
+ * @module
+ */
+
 import "server-only";
 import {
   and,
@@ -18,7 +25,9 @@ import {
   documentos,
   usuarios,
 } from "@/db/schema";
+import { containsPattern } from "@/lib/text";
 
+/** Filtros del registro de accesos. */
 export type AccesosFilters = {
   usuarioId?: string;
   /** Solo clientes finales sin cuenta (usuario_id null). */
@@ -29,20 +38,33 @@ export type AccesosFilters = {
   hasta?: string; // YYYY-MM-DD inclusive
 };
 
+/** Máximo de filas del registro de accesos. */
 const LIMIT = 300;
 
-/** Fecha local de Argentina (00:00) como Date, para filtrar por día. */
+/**
+ * Fecha local de Argentina (00:00) como `Date`, para filtrar por día.
+ *
+ * @param fecha - Día en formato `YYYY-MM-DD`.
+ */
 function inicioDelDia(fecha: string) {
   return new Date(`${fecha}T00:00:00-03:00`);
 }
 
+/**
+ * Accesos más recientes primero (hasta {@link ACCESOS_LIMIT}), con usuario,
+ * concesionario, documento y archivo. Sin usuario = cliente final sin cuenta.
+ *
+ * @param f - Filtros; `desde` y `hasta` son días inclusive en hora de
+ *   Argentina.
+ */
 export async function listAccesos(f: AccesosFilters) {
   const where: SQL[] = [];
   if (f.usuarioId) where.push(eq(accesos.usuarioId, f.usuarioId));
   if (f.soloClientes) where.push(isNull(accesos.usuarioId));
   if (f.concesionarioId)
     where.push(eq(usuarios.concesionarioId, f.concesionarioId));
-  if (f.documento) where.push(ilike(documentos.titulo, `%${f.documento}%`));
+  if (f.documento)
+    where.push(ilike(documentos.titulo, containsPattern(f.documento)));
   if (f.desde) where.push(gte(accesos.creadoEn, inicioDelDia(f.desde)));
   if (f.hasta) {
     const fin = inicioDelDia(f.hasta);
@@ -75,11 +97,18 @@ export async function listAccesos(f: AccesosFilters) {
   );
 }
 
+/** Máximo de filas de {@link listAccesos} (para avisar que hay más). */
 export const ACCESOS_LIMIT = LIMIT;
 
 /**
- * Búsquedas sin resultados de los últimos `dias`, agrupadas por texto normalizado
- * (minúsculas, sin acentos): qué se busca y no se encuentra (docs/05).
+ * Búsquedas sin resultados de los últimos `dias`, agrupadas por texto
+ * normalizado (minúsculas, sin acentos): qué se busca y no se encuentra
+ * (docs/05).
+ *
+ * @param dias - Días hacia atrás.
+ * @param limit - Máximo de grupos.
+ * @returns Texto más reciente de cada grupo, cantidad de veces y última fecha,
+ *   más frecuentes primero.
  */
 export async function busquedasSinResultados(dias = 30, limit = 100) {
   return db.execute<{ texto: string; veces: number; ultima: Date }>(sql`
@@ -99,6 +128,7 @@ export async function busquedasSinResultados(dias = 30, limit = 100) {
 
 // ── Recurrencia ─────────────────────────────────────────────────────────────
 
+/** Período, quién y orden de los listados de recurrencia. */
 export type Recurrencia = {
   /** Últimos N días; 0 = desde el principio. */
   dias: number;
@@ -107,9 +137,13 @@ export type Recurrencia = {
   orden: "veces" | "az" | "za";
 };
 
+/** Máximo de filas de los listados de recurrencia. */
 const RECURRENCIA_LIMIT = 300;
 
-// Columnas de `busquedas` o `accesos` (las dos tienen creado_en y usuario_id).
+/**
+ * Columnas de `busquedas` o `accesos` (las dos tienen `creado_en` y
+ * `usuario_id`).
+ */
 const COLUMNAS = {
   busquedas: {
     creadoEn: sql`busquedas.creado_en`,
@@ -121,6 +155,13 @@ const COLUMNAS = {
   },
 };
 
+/**
+ * Condición de período y de quién (con cuenta o clientes) sobre `busquedas` o
+ * `accesos`.
+ *
+ * @param tabla - Tabla consultada.
+ * @param r - Período y quién.
+ */
 function recurrenciaWhere(tabla: keyof typeof COLUMNAS, r: Recurrencia) {
   const { creadoEn, usuarioId } = COLUMNAS[tabla];
   const c: SQL[] = [];
@@ -131,7 +172,12 @@ function recurrenciaWhere(tabla: keyof typeof COLUMNAS, r: Recurrencia) {
   return c.length ? sql.join(c, sql` AND `) : sql`TRUE`;
 }
 
-/** A→Z / Z→A sin distinguir acentos ni mayúsculas, o más frecuentes primero. */
+/**
+ * A→Z / Z→A sin distinguir acentos ni mayúsculas, o más frecuentes primero.
+ *
+ * @param texto - Expresión por la que se ordena alfabéticamente.
+ * @param r - Orden elegido.
+ */
 function recurrenciaOrden(texto: SQL, r: Recurrencia) {
   if (r.orden === "az") return sql`f_unaccent_lower(${texto}) ASC`;
   if (r.orden === "za") return sql`f_unaccent_lower(${texto}) DESC`;
@@ -141,6 +187,8 @@ function recurrenciaOrden(texto: SQL, r: Recurrencia) {
 /**
  * Textos buscados y cuántas veces, agrupados sin distinguir acentos ni
  * mayúsculas ("Dosificador" y "dosificador" son la misma búsqueda).
+ *
+ * @param r - Período, quién y orden.
  */
 export async function busquedasFrecuentes(r: Recurrencia) {
   return db.execute<{
@@ -164,7 +212,11 @@ export async function busquedasFrecuentes(r: Recurrencia) {
   `);
 }
 
-/** Documentos y cuántas veces se consultaron (ficha, archivo o video). */
+/**
+ * Documentos y cuántas veces se consultaron (ficha, archivo o video).
+ *
+ * @param r - Período, quién y orden.
+ */
 export async function documentosConsultados(r: Recurrencia) {
   return db.execute<{
     id: string;

@@ -51,3 +51,6 @@ next-env.d.ts
 # Capturas y estado de trabajo de la skill de diseño
 .impeccable/review/
 .impeccable/build/
+
+# Documentación de la API generada por TypeDoc (npm run docs)
+/api-docs/
