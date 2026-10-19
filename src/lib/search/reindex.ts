@@ -1,10 +1,25 @@
+/**
+ * Recalculo del índice de búsqueda (`documentos.busqueda`). Ver CLAUDE.md:
+ * llamar después de cambiar algo que lo compone.
+ *
+ * @module
+ */
+
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
+/** Base o transacción. */
 type Executor = Pick<typeof db, "execute">;
 
-/** Recalcula `documentos.busqueda` (función SQL en la migración 0005). */
+/**
+ * Recalcula `documentos.busqueda` de un documento (función SQL
+ * `rebuild_document_search`, última versión en la migración 0016) y agrega sus
+ * palabras al vocabulario.
+ *
+ * @param documentoId - Documento.
+ * @param tx - Base o transacción (para que vea los cambios aún no confirmados).
+ */
 export async function rebuildDocumentSearch(
   documentoId: string,
   tx: Executor = db,
@@ -12,6 +27,7 @@ export async function rebuildDocumentSearch(
   await tx.execute(sql`SELECT rebuild_document_search(${documentoId})`);
 }
 
+/** Entradas de taxonomía cuyo nombre forma parte del índice. */
 export type TaxonomiaKind =
   | "lineas"
   | "modelos"
@@ -24,8 +40,11 @@ export type TaxonomiaKind =
 
 /**
  * Al renombrar una entrada de taxonomía, recalcula los documentos que la usan
- * (docs/02). Línea y modelo se indexan cruzados: renombrar una línea afecta a los
- * documentos de sus modelos y viceversa.
+ * (docs/02). Línea y modelo se indexan cruzados: renombrar una línea afecta a
+ * los documentos de sus modelos y viceversa.
+ *
+ * @param kind - Tipo de entrada.
+ * @param id - ID de la entrada renombrada.
  */
 export async function rebuildSearchForTaxonomia(
   kind: TaxonomiaKind,

@@ -1,3 +1,9 @@
+/**
+ * Campo de etiquetas del formulario de documento.
+ *
+ * @module
+ */
+
 "use client";
 
 import { X } from "lucide-react";
@@ -5,8 +11,8 @@ import { useId, useMemo, useState } from "react";
 import { normalizeTag } from "@/lib/text";
 
 /**
- * Etiquetas como chips, con autocompletado sobre las existentes y creación al vuelo
- * (docs/05). Se envían como texto separado por comas en un input oculto.
+ * Etiquetas como chips, con autocompletado sobre las existentes y creación al
+ * vuelo (docs/05). Se envían como texto separado por comas en un input oculto.
  */
 export function TagInput({
   id,

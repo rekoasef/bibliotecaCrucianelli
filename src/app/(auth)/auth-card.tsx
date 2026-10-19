@@ -1,3 +1,14 @@
+/**
+ * Tarjeta de las páginas de autenticación.
+ *
+ * @module
+ */
+
+/**
+ * Franja roja con título y descripción, y el contenido (formulario) debajo.
+ *
+ * @param props - `title`, `description` y el contenido.
+ */
 export function AuthCard({
   title,
   description,

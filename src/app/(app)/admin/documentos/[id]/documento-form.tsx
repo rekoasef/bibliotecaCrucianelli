@@ -1,3 +1,9 @@
+/**
+ * Formulario de clasificación de un documento.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -13,8 +19,16 @@ import { saveDocumento } from "../actions";
 import { MaquinasPicker } from "./maquinas-picker";
 import { TagInput } from "./tag-input";
 
+/**
+ * Opción de un catálogo (las inactivas se muestran solo si ya están elegidas).
+ */
 type Opcion = { id: string; nombre: string; activo: boolean };
 
+/**
+ * Props de {@link DocumentoForm}: valores actuales del documento y opciones de
+ * cada catálogo. Solo los campos que usa el formulario (nunca el documento
+ * entero de la base).
+ */
 export type DocumentoFormProps = {
   doc: {
     id: string;
@@ -44,9 +58,17 @@ export type DocumentoFormProps = {
   haySiguienteBorrador: boolean;
 };
 
+/** Estilo de los textarea, igual al de los inputs. */
 const textareaClass =
   "w-full rounded-lg border border-input bg-card px-3 py-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
+/**
+ * Título, datos, públicos, máquinas, producto, tecnologías, sistemas, temas y
+ * etiquetas, con los botones Guardar, Publicar y "Guardar y siguiente"
+ * (`saveDocumento`).
+ *
+ * @param props - Ver {@link DocumentoFormProps}.
+ */
 export function DocumentoForm({
   doc,
   tipos,
@@ -276,6 +298,7 @@ export function DocumentoForm({
   );
 }
 
+/** Sección del formulario con título y descripción. */
 function Section({
   title,
   help,
@@ -296,6 +319,10 @@ function Section({
   );
 }
 
+/**
+ * Grupo de casillas de un catálogo (envía los IDs marcados con el mismo
+ * `name`).
+ */
 function CheckboxGroup({
   legend,
   name,

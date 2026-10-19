@@ -1,9 +1,17 @@
-// Worker de extracción de texto (docs/02, "Extracción de texto").
-// Proceso aparte de la app: toma archivos con estado_extraccion = 'pendiente' de a uno,
-// extrae el texto (pdftotext; OCR con Tesseract si es escaneado; export de Google Docs)
-// y recalcula el índice de búsqueda del documento.
-//
-// Corre con: npm run worker  (necesita poppler-utils y tesseract-ocr-spa; ver Dockerfile.worker)
+/**
+ * Worker de extracción de texto (docs/02, "Extracción de texto").
+ *
+ * Proceso aparte de la app: toma archivos con `estado_extraccion = 'pendiente'`
+ * de a uno, extrae el texto (pdftotext; OCR con Tesseract si es escaneado;
+ * export de Google Docs) y recalcula el índice de búsqueda del documento.
+ * Además corre cada noche la detección de cambios en Drive.
+ *
+ * Corre con `npm run worker` (necesita poppler-utils y tesseract-ocr-spa; ver
+ * Dockerfile.worker).
+ *
+ * @module
+ */
+
 import "dotenv/config";
 import { spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
@@ -20,12 +28,22 @@ import { rebuildDocumentSearch } from "@/lib/search/reindex";
 import { lastSyncRun, shouldRunNightly, syncDriveChanges } from "./drive-sync";
 import { cleanText, mergePages, needsOcr } from "./text";
 
+/** Espera entre consultas cuando no hay trabajo. */
 const POLL_MS = 5_000;
+
+/** Páginas máximas a las que se aplica OCR por archivo (`OCR_MAX_PAGES`). */
 const OCR_MAX_PAGES = Number(process.env.OCR_MAX_PAGES ?? 80);
+
+/** Tiempo máximo de cada comando externo. */
 const COMMAND_TIMEOUT_MS = 5 * 60_000;
-/** Hora (Argentina) a partir de la cual corre la detección de cambios en Drive. */
+
+/**
+ * Hora (Argentina) a partir de la cual corre la detección de cambios en Drive
+ * (`SYNC_HOUR`).
+ */
 const SYNC_HOUR = Number(process.env.SYNC_HOUR ?? 3);
 
+/** Archivo tomado de la cola. */
 type Job = {
   id: string;
   documentoId: string;
@@ -34,13 +52,22 @@ type Job = {
   nombre: string;
 };
 
+/** Se pidió terminar (SIGTERM o SIGINT): sale después del archivo actual. */
 let stopping = false;
 
+/** Log con prefijo y hora. */
 function log(message: string) {
   console.info(`[worker ${new Date().toISOString()}] ${message}`);
 }
 
-/** Ejecuta un comando y devuelve su salida estándar. */
+/**
+ * Ejecuta un comando (sin shell) y devuelve su salida estándar.
+ *
+ * @param command - Programa.
+ * @param args - Argumentos.
+ * @returns La salida estándar en UTF-8.
+ * @throws Error con el código de salida y el principio de stderr.
+ */
 function run(command: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { timeout: COMMAND_TIMEOUT_MS });
@@ -61,12 +88,20 @@ function run(command: string, args: string[]): Promise<string> {
   });
 }
 
+/** Cantidad de páginas del PDF (`pdfinfo`). */
 async function pdfPages(file: string) {
   const info = await run("pdfinfo", [file]);
   return Number(/^Pages:\s+(\d+)/m.exec(info)?.[1] ?? 1);
 }
 
-/** OCR en español, página por página (lento: docs/02 pide procesar de a uno). */
+/**
+ * OCR en español, página por página (lento: docs/02 pide procesar de a uno).
+ *
+ * @param file - PDF.
+ * @param dir - Carpeta temporal para las imágenes.
+ * @param pages - Páginas del PDF (se procesan hasta {@link OCR_MAX_PAGES}).
+ * @returns El texto de cada página, en orden.
+ */
 async function ocr(file: string, dir: string, pages: number) {
   const last = Math.min(pages, OCR_MAX_PAGES);
   const prefix = path.join(dir, "pagina");
@@ -102,6 +137,13 @@ async function ocr(file: string, dir: string, pages: number) {
   return textos;
 }
 
+/**
+ * Descarga el PDF a una carpeta temporal y extrae su texto; si tiene poco texto
+ * para sus páginas, aplica OCR.
+ *
+ * @param job - Archivo a procesar.
+ * @returns El texto, con las páginas separadas por `\f`.
+ */
 async function extractPdf(job: Job) {
   const dir = await mkdtemp(path.join(tmpdir(), "extraccion-"));
   try {
@@ -124,6 +166,12 @@ async function extractPdf(job: Job) {
   }
 }
 
+/**
+ * Toma el archivo pendiente más viejo y lo marca `procesando` (`FOR UPDATE SKIP
+ * LOCKED`: seguro con varios workers).
+ *
+ * @returns El trabajo, o `null` si no hay.
+ */
 async function claimJob(): Promise<Job | null> {
   const rows = await db.execute<Job>(sql`
     UPDATE archivos SET estado_extraccion = 'procesando', actualizado_en = now()
@@ -140,6 +188,12 @@ async function claimJob(): Promise<Job | null> {
   return rows[0] ?? null;
 }
 
+/**
+ * Extrae el texto de un archivo, guarda el resultado (`ok`, `sin_texto`,
+ * `no_aplica` o `error`), recalcula las páginas y el índice del documento.
+ *
+ * @param job - Archivo tomado de la cola.
+ */
 async function processJob(job: Job) {
   const started = Date.now();
   try {
@@ -172,6 +226,10 @@ async function processJob(job: Job) {
   }
 }
 
+/**
+ * Bucle principal: devuelve a la cola los trabajos que quedaron a medias, corre
+ * la tarea nocturna cuando corresponde y procesa archivos de a uno.
+ */
 async function main() {
   // Trabajos que quedaron a medias (el worker se cortó): vuelven a la cola.
   await db.execute(sql`

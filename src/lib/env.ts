@@ -1,6 +1,13 @@
+/**
+ * Variables de entorno del servidor, validadas con zod al primer uso.
+ *
+ * @module
+ */
+
 import "server-only";
 import { z } from "zod";
 
+/** Variables que usa la app (ver `.env.example`). */
 const schema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -20,17 +27,27 @@ const schema = z.object({
   INACTIVIDAD_DIAS: z.coerce.number().int().min(0).default(90),
 });
 
-// Se valida al primer uso. Durante `next build` (imagen Docker) no hay secretos:
-// se usan valores de relleno que nunca llegan a producción, porque en runtime
-// NEXT_PHASE no es "phase-production-build" y se exigen los reales.
+/** Variables ya validadas (se valida al primer uso de {@link env}). */
 let cached: z.infer<typeof schema> | undefined;
 
+/**
+ * Valores de relleno para `next build` (imagen Docker), donde no hay secretos.
+ *
+ * @remarks Nunca llegan a producción: en runtime `NEXT_PHASE` no es
+ *   `phase-production-build` y se exigen los reales.
+ */
 const BUILD_PLACEHOLDERS = {
   DATABASE_URL: "postgres://build:build@localhost:5432/build",
   BETTER_AUTH_SECRET: "build-placeholder-secret-not-used-at-runtime",
   APP_URL: "http://localhost:3000",
 };
 
+/**
+ * Variables de entorno validadas (se validan una vez y se cachean).
+ *
+ * @returns El objeto tipado con las variables.
+ * @throws Error con el detalle si falta alguna o tiene un formato inválido.
+ */
 export function env() {
   if (!cached) {
     const isBuild = process.env.NEXT_PHASE === "phase-production-build";

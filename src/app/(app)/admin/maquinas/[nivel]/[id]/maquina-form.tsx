@@ -1,3 +1,9 @@
+/**
+ * Formulario de segmento, línea o modelo.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -10,8 +16,13 @@ import { Input } from "@/components/ui/input";
 import type { Nivel } from "@/lib/validation/taxonomia";
 import { saveMaquina } from "../../actions";
 
+/** Opción del selector de padre (segmento o línea). */
 type Opcion = { id: string; label: string };
 
+/**
+ * Props de {@link MaquinaForm}: nivel, ítem a editar (o ninguno para un alta),
+ * opciones de padre y padre preseleccionado.
+ */
 type Props = {
   nivel: Nivel;
   item?: {
@@ -25,11 +36,13 @@ type Props = {
   defaultParentId?: string;
 };
 
+/** Campo y etiqueta del padre de cada nivel (los segmentos no tienen). */
 const PARENT: Partial<Record<Nivel, { field: string; label: string }>> = {
   lineas: { field: "segmentoId", label: "Segmento" },
   modelos: { field: "lineaId", label: "Línea" },
 };
 
+/** Ayuda del campo slug, con un ejemplo de la URL de cada nivel. */
 const SLUG_HINT: Record<Nivel, string> = {
   segmentos: "Para la URL. Si lo dejás vacío se genera del nombre.",
   lineas:
@@ -38,6 +51,11 @@ const SLUG_HINT: Record<Nivel, string> = {
     "Para la URL (/maquinas/gringa/gringa-v). Si lo dejás vacío se genera del nombre.",
 };
 
+/**
+ * Nombre, slug, descripción y padre según el nivel (`saveMaquina`).
+ *
+ * @param props - Ver `Props`.
+ */
 export function MaquinaForm({
   nivel,
   item,

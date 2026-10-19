@@ -1,3 +1,12 @@
+/**
+ * Jerarquía de máquinas Segmento → Línea → Modelo (docs/04-taxonomia.md).
+ *
+ * `activo = false` oculta el nivel y todo lo que cuelga de él a usuarios no
+ * admin.
+ *
+ * @module
+ */
+
 import {
   boolean,
   index,
@@ -9,9 +18,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 
-// Jerarquía Segmento → Línea → Modelo (docs/04-taxonomia.md).
-// `activo = false` oculta el nivel y todo lo que cuelga de él a usuarios no admin.
-
+/**
+ * Segmento (por ejemplo, Granos gruesos o Granos finos): primer nivel de la
+ * jerarquía.
+ */
 export const segmentos = pgTable("segmentos", {
   id: uuid("id").primaryKey().defaultRandom(),
   nombre: text("nombre").notNull().unique(),
@@ -21,6 +31,10 @@ export const segmentos = pgTable("segmentos", {
   ...timestamps,
 });
 
+/**
+ * Línea de producto (por ejemplo, Gringa o Pionera), con foto opcional de
+ * Drive.
+ */
 export const lineas = pgTable(
   "lineas",
   {
@@ -42,6 +56,7 @@ export const lineas = pgTable(
   ],
 );
 
+/** Modelo puntual de una línea (por ejemplo, Gringa V). */
 export const modelos = pgTable(
   "modelos",
   {
@@ -62,6 +77,11 @@ export const modelos = pgTable(
   ],
 );
 
+/** Fila de `segmentos`. */
 export type Segmento = typeof segmentos.$inferSelect;
+
+/** Fila de `lineas`. */
 export type Linea = typeof lineas.$inferSelect;
+
+/** Fila de `modelos`. */
 export type Modelo = typeof modelos.$inferSelect;

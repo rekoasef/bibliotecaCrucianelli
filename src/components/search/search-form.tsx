@@ -1,8 +1,15 @@
+/**
+ * Formulario de búsqueda.
+ *
+ * @module
+ */
+
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DesktopAutoFocus } from "./desktop-autofocus";
 
+/** Props de {@link SearchForm}. */
 type SearchFormProps = {
   defaultValue?: string;
   size?: "default" | "lg";
@@ -16,7 +23,12 @@ type SearchFormProps = {
   tone?: "default" | "franja";
 };
 
-// Formulario GET común: funciona sin JavaScript y deja la búsqueda en la URL (docs/05).
+/**
+ * Formulario GET a `/buscar` común a todas las páginas: funciona sin JavaScript
+ * y deja la búsqueda en la URL (docs/05).
+ *
+ * @param props - Ver `SearchFormProps`.
+ */
 export function SearchForm({
   defaultValue,
   size = "default",

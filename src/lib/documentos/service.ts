@@ -1,3 +1,13 @@
+/**
+ * Operaciones del admin sobre documentos: incorporar desde Drive, clasificar,
+ * publicar, versionar y administrar archivos (docs/05).
+ *
+ * Las funciones no verifican el rol: las llaman Server Actions que ya hicieron
+ * `requireAdmin()`.
+ *
+ * @module
+ */
+
 import "server-only";
 import {
   and,
@@ -36,20 +46,27 @@ import {
   titleFromFileName,
 } from "@/lib/drive/mime";
 import { rebuildDocumentSearch } from "@/lib/search/reindex";
-import { normalizeTag } from "@/lib/text";
+import { containsPattern, normalizeTag } from "@/lib/text";
 import {
   faltantesParaPublicar,
   modelosSinLineaCubierta,
   parseEtiquetas,
 } from "./rules";
 
+/** Transacción de Drizzle. */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+/** Error de regla de negocio con un mensaje para mostrar al admin. */
 export class DocumentoError extends Error {}
 
 // ── Incorporar desde Drive ──────────────────────────────────────────────────
 
-/** IDs de Drive (de una lista) que ya están incorporados a la biblioteca. */
+/**
+ * IDs de Drive (de una lista) que ya están incorporados a la biblioteca.
+ *
+ * @param driveIds - IDs a consultar.
+ * @returns El subconjunto ya incorporado.
+ */
 export async function driveIdsIncorporados(driveIds: string[]) {
   if (driveIds.length === 0) return new Set<string>();
   const rows = await db
@@ -60,8 +77,14 @@ export async function driveIdsIncorporados(driveIds: string[]) {
 }
 
 /**
- * Valida que cada archivo exista, no sea carpeta, esté dentro de una raíz permitida
- * y no esté ya incorporado (docs/02: nada entra automáticamente, el admin elige).
+ * Valida que cada archivo exista, no sea carpeta, esté dentro de una raíz
+ * permitida (con explorador) o se pueda abrir con su link (links públicos), y
+ * que no esté ya incorporado (docs/02: nada entra automáticamente, el admin
+ * elige).
+ *
+ * @param driveIds - IDs elegidos (se ignoran repetidos).
+ * @returns Los ítems de Drive validados.
+ * @throws Lanza {@link DocumentoError} con el motivo para el admin.
  */
 async function validarArchivosDrive(driveIds: string[]): Promise<DriveItem[]> {
   const unicos = [...new Set(driveIds)];
@@ -93,6 +116,14 @@ async function validarArchivosDrive(driveIds: string[]): Promise<DriveItem[]> {
   return items;
 }
 
+/**
+ * Fila de `archivos` para un ítem de Drive, con modo de acceso y estado de
+ * extracción iniciales según el tipo.
+ *
+ * @param item - Archivo de Drive.
+ * @param documentoId - Documento al que pertenece.
+ * @param orden - Posición dentro del documento.
+ */
 function archivoDesdeDrive(
   item: DriveItem,
   documentoId: string,
@@ -111,7 +142,16 @@ function archivoDesdeDrive(
   };
 }
 
-/** Crea borradores: uno por archivo, o uno solo con todos. Devuelve los IDs creados. */
+/**
+ * Crea borradores a partir de archivos de Drive: uno por archivo, o uno solo
+ * con todos.
+ *
+ * @param driveIds - Archivos elegidos.
+ * @param modo - `uno-por-archivo` o `uno-con-todos`.
+ * @param usuarioId - Admin que incorpora.
+ * @returns Los IDs de los borradores creados.
+ * @throws Lanza {@link DocumentoError} si algún archivo no es válido.
+ */
 export async function incorporarDesdeDrive(
   driveIds: string[],
   modo: "uno-por-archivo" | "uno-con-todos",
@@ -141,7 +181,16 @@ export async function incorporarDesdeDrive(
   });
 }
 
-/** Agrega archivos de Drive a un documento existente (por ejemplo, para una nueva versión). */
+/**
+ * Agrega archivos de Drive al final de un documento existente (por ejemplo,
+ * para una nueva versión). El índice se recalcula cuando el worker extrae su
+ * texto.
+ *
+ * @param documentoId - Documento destino.
+ * @param driveIds - Archivos elegidos.
+ * @param usuarioId - Admin que los agrega.
+ * @throws Lanza {@link DocumentoError} si algún archivo no es válido.
+ */
 export async function agregarArchivos(
   documentoId: string,
   driveIds: string[],
@@ -169,6 +218,7 @@ export async function agregarArchivos(
 
 // ── Lectura para el admin ───────────────────────────────────────────────────
 
+/** Filtros del listado de documentos del admin. */
 export type DocumentoFilters = {
   q?: string;
   estado?: EstadoDoc;
@@ -181,9 +231,15 @@ export type DocumentoFilters = {
   problemas?: boolean;
 };
 
+/**
+ * Listado de documentos del admin (sin filtro de visibilidad), más recientes
+ * primero, hasta 500.
+ *
+ * @param f - Filtros; `q` busca en el título.
+ */
 export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
   const where: SQL[] = [];
-  if (f.q) where.push(ilike(documentos.titulo, `%${f.q}%`));
+  if (f.q) where.push(ilike(documentos.titulo, containsPattern(f.q)));
   if (f.estado) where.push(eq(documentos.estado, f.estado));
   if (f.tipoId) where.push(eq(documentos.tipoId, f.tipoId));
   if (f.publico === "concesionarios")
@@ -230,6 +286,15 @@ export async function listDocumentosAdmin(f: DocumentoFilters = {}) {
     .limit(500);
 }
 
+/**
+ * Documento completo para el formulario del admin: fila de la base, archivos e
+ * IDs de su clasificación.
+ *
+ * @param id - ID del documento.
+ * @returns El documento, o `null` si no existe.
+ * @remarks Trae `drive_file_id` y el texto extraído: no pasarlo entero a
+ *   componentes cliente.
+ */
 export async function getDocumentoAdmin(id: string) {
   const [doc] = await db.select().from(documentos).where(eq(documentos.id, id));
   if (!doc) return null;
@@ -285,11 +350,18 @@ export async function getDocumentoAdmin(id: string) {
   };
 }
 
+/** Documento que devuelve {@link getDocumentoAdmin}. */
 export type DocumentoAdmin = NonNullable<
   Awaited<ReturnType<typeof getDocumentoAdmin>>
 >;
 
-/** Siguiente borrador para "Guardar y siguiente" (el más viejo, sin contar el actual). */
+/**
+ * Siguiente borrador para "Guardar y siguiente": el más viejo, sin contar el
+ * actual.
+ *
+ * @param actualId - Borrador que se acaba de guardar.
+ * @returns Su ID, o `null` si no quedan.
+ */
 export async function siguienteBorrador(actualId: string) {
   const [row] = await db
     .select({ id: documentos.id })
@@ -302,6 +374,9 @@ export async function siguienteBorrador(actualId: string) {
 
 // ── Guardar clasificación ───────────────────────────────────────────────────
 
+/**
+ * Datos del formulario de clasificación, ya validados (`clasificacionSchema`).
+ */
 export type ClasificacionInput = {
   titulo: string | null;
   descripcion: string | null;
@@ -319,6 +394,14 @@ export type ClasificacionInput = {
   etiquetas: string;
 };
 
+/**
+ * Reemplaza las filas de una tabla de relación documento–ítem.
+ *
+ * @param tx - Transacción.
+ * @param table - Tabla de relación.
+ * @param documentoId - Documento.
+ * @param ids - IDs de los ítems (se ignoran repetidos).
+ */
 async function replaceRelation(
   tx: Tx,
   table:
@@ -340,7 +423,15 @@ async function replaceRelation(
   }
 }
 
-/** Busca o crea las etiquetas. Error si alguna ya es tipo, sistema, tema o máquina. */
+/**
+ * Busca o crea las etiquetas escritas.
+ *
+ * @param tx - Transacción.
+ * @param input - Etiquetas separadas por coma.
+ * @returns Los IDs de las etiquetas.
+ * @throws Lanza {@link DocumentoError} si alguna ya existe como tipo, sistema,
+ *   tema, producto, tecnología o máquina.
+ */
 async function resolverEtiquetas(tx: Tx, input: string) {
   const nombres = parseEtiquetas(input, normalizeTag);
   const ids: string[] = [];
@@ -354,7 +445,7 @@ async function resolverEtiquetas(tx: Tx, input: string) {
       ids.push(existente.id);
       continue;
     }
-    const otra = await findClasificacionExistente(nombreNormalizado);
+    const otra = await findClasificacionExistente(nombreNormalizado, tx);
     if (otra) {
       throw new DocumentoError(
         `"${nombre}" ya existe como ${otra.donde}: elegilo en esa sección en vez de usarlo como etiqueta.`,
@@ -378,6 +469,17 @@ async function resolverEtiquetas(tx: Tx, input: string) {
   return ids;
 }
 
+/**
+ * Guarda título, datos, públicos y clasificación de un documento y recalcula su
+ * índice de búsqueda. Los modelos cuya línea ya está elegida se descartan (la
+ * línea los incluye).
+ *
+ * @param documentoId - Documento.
+ * @param input - Clasificación validada.
+ * @param usuarioId - Admin que guarda.
+ * @throws Lanza {@link DocumentoError} si no existe, si un documento publicado
+ *   deja de cumplir los requisitos o por etiquetas inválidas.
+ */
 export async function guardarClasificacion(
   documentoId: string,
   input: ClasificacionInput,
@@ -456,6 +558,10 @@ export async function guardarClasificacion(
 
 // ── Publicación y versiones ─────────────────────────────────────────────────
 
+/**
+ * Archivos, máquinas y productos del documento, para los requisitos de
+ * publicación.
+ */
 async function contarParaPublicar(tx: Tx, documentoId: string) {
   const [row] = await tx.execute<{
     archivos: number;
@@ -472,8 +578,14 @@ async function contarParaPublicar(tx: Tx, documentoId: string) {
 }
 
 /**
- * Publica un borrador. Si es una nueva versión, en la misma transacción el
- * documento anterior pasa a obsoleto y apunta al nuevo (docs/03, "Versiones").
+ * Publica un borrador (pasa a vigente). Si es una nueva versión, en la misma
+ * transacción el documento anterior pasa a obsoleto y apunta al nuevo (docs/03,
+ * "Versiones").
+ *
+ * @param documentoId - Borrador a publicar.
+ * @param usuarioId - Admin que publica.
+ * @throws Lanza {@link DocumentoError} si no existe, ya está publicado o le
+ *   faltan datos.
  */
 export async function publicar(documentoId: string, usuarioId: string) {
   await db.transaction(async (tx) => {
@@ -523,6 +635,11 @@ export async function publicar(documentoId: string, usuarioId: string) {
   });
 }
 
+/**
+ * Pasa un documento vigente a obsoleto.
+ *
+ * @throws Lanza {@link DocumentoError} si no está vigente.
+ */
 export async function marcarObsoleto(documentoId: string, usuarioId: string) {
   const [row] = await db
     .update(documentos)
@@ -537,7 +654,12 @@ export async function marcarObsoleto(documentoId: string, usuarioId: string) {
     );
 }
 
-/** Vuelve a vigente un obsoleto que no fue reemplazado por otro. */
+/**
+ * Vuelve a vigente un obsoleto que no fue reemplazado por otro.
+ *
+ * @throws Lanza {@link DocumentoError} si fue reemplazado por una versión
+ *   nueva.
+ */
 export async function restaurarVigente(documentoId: string, usuarioId: string) {
   const [row] = await db
     .update(documentos)
@@ -557,8 +679,14 @@ export async function restaurarVigente(documentoId: string, usuarioId: string) {
 }
 
 /**
- * "Nueva versión": borrador que copia la clasificación (no los archivos) y recuerda
- * a qué documento reemplaza. Devuelve el ID del borrador.
+ * "Nueva versión": borrador que copia la clasificación (no los archivos) y
+ * recuerda a qué documento reemplaza. Si ya hay uno en preparación, devuelve
+ * ese.
+ *
+ * @param documentoId - Documento vigente a reemplazar.
+ * @param usuarioId - Admin.
+ * @returns El ID del borrador.
+ * @throws Lanza {@link DocumentoError} si el documento no está vigente.
  */
 export async function nuevaVersion(documentoId: string, usuarioId: string) {
   return db.transaction(async (tx) => {
@@ -622,6 +750,11 @@ export async function nuevaVersion(documentoId: string, usuarioId: string) {
   });
 }
 
+/**
+ * Elimina un borrador (sus archivos y relaciones se borran en cascada).
+ *
+ * @throws Lanza {@link DocumentoError} si el documento no es un borrador.
+ */
 export async function eliminarBorrador(documentoId: string) {
   const [row] = await db
     .delete(documentos)
@@ -634,6 +767,13 @@ export async function eliminarBorrador(documentoId: string) {
 
 // ── Archivos de un documento ────────────────────────────────────────────────
 
+/**
+ * Cambia cómo se sirve un archivo: por el servidor o con el link público de
+ * Drive.
+ *
+ * @param archivoId - Archivo.
+ * @param modo - `servidor` o `publico`.
+ */
 export async function setModoAcceso(archivoId: string, modo: ModoAcceso) {
   await db
     .update(archivos)
@@ -641,6 +781,13 @@ export async function setModoAcceso(archivoId: string, modo: ModoAcceso) {
     .where(eq(archivos.id, archivoId));
 }
 
+/**
+ * Quita un archivo de su documento y recalcula el índice.
+ *
+ * @param archivoId - Archivo.
+ * @throws Lanza {@link DocumentoError} si es el último archivo de un documento
+ *   publicado.
+ */
 export async function quitarArchivo(archivoId: string) {
   await db.transaction(async (tx) => {
     const [arch] = await tx
@@ -666,6 +813,13 @@ export async function quitarArchivo(archivoId: string) {
   });
 }
 
+/**
+ * Mueve un archivo un lugar arriba o abajo dentro de su documento (renumera el
+ * orden).
+ *
+ * @param archivoId - Archivo.
+ * @param direction - `up` o `down`.
+ */
 export async function moverArchivo(
   archivoId: string,
   direction: "up" | "down",
@@ -692,7 +846,10 @@ export async function moverArchivo(
   });
 }
 
-/** Opciones de máquinas para el selector jerárquico del formulario. */
+/**
+ * Opciones de máquinas para el selector jerárquico del formulario: líneas con
+ * sus modelos, incluidas las inactivas.
+ */
 export async function opcionesMaquinas() {
   const [lins, mods] = await Promise.all([
     db
@@ -720,7 +877,12 @@ export async function opcionesMaquinas() {
   }));
 }
 
-/** Pendientes y advertencias para el panel del admin (docs/05). */
+/**
+ * Pendientes y advertencias para el panel del admin (docs/05).
+ *
+ * @returns Conteos (borradores, a revisar, no disponibles, errores de
+ *   extracción) y videos con link público en documentos que solo ve fábrica.
+ */
 export async function resumenPanel() {
   const [[conteos], videosPublicos] = await Promise.all([
     db.execute<{
@@ -755,7 +917,11 @@ export async function resumenPanel() {
   return { ...conteos, videosPublicos };
 }
 
-/** Vuelve a la cola del worker un archivo que falló o no tuvo texto. */
+/**
+ * Vuelve a la cola del worker un archivo que falló o no tuvo texto.
+ *
+ * @param archivoId - Archivo.
+ */
 export async function reintentarExtraccion(archivoId: string) {
   await db
     .update(archivos)
@@ -768,7 +934,13 @@ export async function reintentarExtraccion(archivoId: string) {
     );
 }
 
-/** El admin revisó un documento cuyo archivo cambió en Drive. */
+/**
+ * El admin revisó un documento cuyo archivo cambió en Drive: quita la marca
+ * `requiere_revision`.
+ *
+ * @param documentoId - Documento.
+ * @param usuarioId - Admin.
+ */
 export async function marcarRevisado(documentoId: string, usuarioId: string) {
   await db
     .update(documentos)

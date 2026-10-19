@@ -1,3 +1,10 @@
+/**
+ * Cliente de Drive con links públicos ("Cualquier persona con el vínculo"), sin
+ * Google Cloud: la opción elegida en docs/02.
+ *
+ * @module
+ */
+
 import "server-only";
 import { mimeFromName } from "./mime";
 import {
@@ -9,7 +16,11 @@ import {
 } from "./types";
 
 /**
- * Nombre del archivo desde Content-Disposition (filename* en UTF-8 o filename).
+ * Nombre del archivo desde `Content-Disposition` (`filename*` en UTF-8 o
+ * `filename`).
+ *
+ * @param header - Valor de la cabecera, o `null`.
+ * @returns El nombre, o `null` si la cabecera no lo trae.
  */
 export function filenameFromDisposition(header: string | null): string | null {
   if (!header) return null;
@@ -27,8 +38,12 @@ export function filenameFromDisposition(header: string | null): string | null {
 }
 
 /**
- * Google manda el nombre en UTF-8 dentro de `filename="…"` y fetch lo lee como
- * Latin-1 ("INSTALACIÃ\u0093N"). Si al reinterpretarlo da UTF-8 válido, se corrige.
+ * Google manda el nombre en UTF-8 dentro de `filename="…"` y `fetch` lo lee
+ * como Latin-1 ("INSTALACIÃ\u0093N"). Si al reinterpretarlo da UTF-8 válido, se
+ * corrige.
+ *
+ * @param text - Nombre leído de la cabecera.
+ * @returns El nombre corregido, o el original si no era mojibake.
  */
 function fixLatin1Mojibake(text: string) {
   if (!/[\u0080-\u00ff]/.test(text) || /[^\u0000-\u00ff]/.test(text))
@@ -37,7 +52,12 @@ function fixLatin1Mojibake(text: string) {
   return decoded.includes("\ufffd") ? text : decoded;
 }
 
-/** Tamaño total desde Content-Range ("bytes 0-0/12345"). */
+/**
+ * Tamaño total desde `Content-Range` ("bytes 0-0/12345").
+ *
+ * @param header - Valor de la cabecera, o `null`.
+ * @returns El total en bytes, o `null`.
+ */
 function totalFromContentRange(header: string | null) {
   const total = header ? /\/(\d+)$/.exec(header)?.[1] : undefined;
   return total ? Number(total) : null;
@@ -45,14 +65,27 @@ function totalFromContentRange(header: string | null) {
 
 /**
  * Drive sin API (decisión de docs/02): descarga del lado del servidor archivos
- * compartidos como "Cualquier persona con el vínculo". No lista carpetas.
- * Un archivo privado, borrado o inexistente responde HTML: se trata como no accesible.
+ * compartidos como "Cualquier persona con el vínculo". No lista carpetas
+ * (`browsable = false`).
+ *
+ * @remarks Un archivo privado, borrado o inexistente responde HTML: se trata
+ *   como no accesible.
  */
 export class PublicLinkDriveClient implements DriveClient {
   readonly browsable = false;
 
+  /**
+   * @param base - Servidor de descargas de Google; en pruebas, uno falso.
+   */
   constructor(private base = "https://drive.usercontent.google.com") {}
 
+  /**
+   * Pide el archivo a la URL de descarga directa (`confirm=t` saltea el aviso
+   * de antivirus de archivos grandes).
+   *
+   * @param id - ID del archivo en Drive.
+   * @param range - Cabecera `Range` a reenviar.
+   */
   private request(id: string, range?: string | null) {
     const params = new URLSearchParams({
       id,
@@ -66,6 +99,10 @@ export class PublicLinkDriveClient implements DriveClient {
     });
   }
 
+  /**
+   * `true` si la respuesta es el archivo (y no una página HTML de error o de
+   * login).
+   */
   private static isFile(res: Response) {
     const type = res.headers.get("content-type") ?? "";
     return (
@@ -74,18 +111,27 @@ export class PublicLinkDriveClient implements DriveClient {
     );
   }
 
+  /** Sin explorador no hay carpetas raíz. */
   async rootIds() {
     return [];
   }
 
+  /** Sin explorador no se listan carpetas. */
   async listChildren() {
     return [];
   }
 
+  /** Los Google Docs nativos no se aceptan con links públicos. */
   async exportText() {
     return null; // los Google Docs nativos no se aceptan con links públicos
   }
 
+  /**
+   * Metadatos del archivo leídos de las cabeceras de una descarga de 1 byte.
+   *
+   * @param id - ID del archivo en Drive.
+   * @returns El ítem, o `null` si no se puede abrir con el link.
+   */
   async getItem(id: string): Promise<DriveItem | null> {
     // Pide 1 byte: alcanza para leer nombre, tipo y tamaño de las cabeceras.
     const res = await this.request(id, "bytes=0-0").catch(() => null);
@@ -120,6 +166,14 @@ export class PublicLinkDriveClient implements DriveClient {
     };
   }
 
+  /**
+   * Descarga en streaming, con soporte de rangos.
+   *
+   * @param id - ID del archivo en Drive.
+   * @param options - `range`: cabecera `Range` tal cual vino del navegador.
+   * @throws Lanza {@link DriveRangeError} si el rango no se puede satisfacer.
+   * @throws Lanza {@link DriveNotFoundError} si el archivo no es accesible.
+   */
   async download(
     id: string,
     options: { range?: string | null } = {},

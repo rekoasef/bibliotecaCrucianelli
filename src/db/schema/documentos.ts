@@ -1,3 +1,10 @@
+/**
+ * Documentos, sus archivos, relaciones con la taxonomía y registro de accesos
+ * (docs/03).
+ *
+ * @module
+ */
+
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -28,12 +35,20 @@ import {
 } from "./taxonomia";
 import { usuarios } from "./usuarios";
 
+/** Ciclo de vida: borrador → vigente → obsoleto. */
 export const estadoDoc = pgEnum("estado_doc", [
   "borrador",
   "vigente",
   "obsoleto",
 ]);
+
+/**
+ * Cómo se sirve un archivo: por `/api/archivos/[id]` (`servidor`) o con el link
+ * público de Drive (`publico`, videos).
+ */
 export const modoAcceso = pgEnum("modo_acceso", ["servidor", "publico"]);
+
+/** Estado de la extracción de texto del worker. */
 export const estadoExtraccion = pgEnum("estado_extraccion", [
   "pendiente",
   "procesando",
@@ -42,14 +57,24 @@ export const estadoExtraccion = pgEnum("estado_extraccion", [
   "error",
   "no_aplica",
 ]);
+
+/** Qué hizo el lector con el archivo. */
 export const accionAcceso = pgEnum("accion_acceso", [
   "ver",
   "descargar",
   "video",
 ]);
 
+/** Tipo `tsvector` de Postgres (Drizzle no lo trae). */
 const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
 
+/**
+ * Documento de la biblioteca: unidad que se busca, clasifica y publica. Puede
+ * tener varios archivos.
+ *
+ * @remarks Las restricciones garantizan que solo un obsoleto esté reemplazado y
+ *   que un publicado tenga título y tipo.
+ */
 export const documentos = pgTable(
   "documentos",
   {
@@ -111,6 +136,10 @@ export const documentos = pgTable(
   ],
 );
 
+/**
+ * Archivo de Drive incorporado a un documento, con su texto extraído para la
+ * búsqueda.
+ */
 export const archivos = pgTable(
   "archivos",
   {
@@ -142,9 +171,11 @@ export const archivos = pgTable(
   ],
 );
 
-// Índice por página de los PDFs, para mostrar en qué páginas aparece lo buscado
-// (docs/02, "Páginas"). Sale de `archivos.texto_extraido`, que separa las
-// páginas con \f; lo reescribe el worker al extraer el texto.
+/**
+ * Índice por página de los PDFs, para mostrar en qué páginas aparece lo buscado
+ * (docs/02, "Páginas"). Sale de `archivos.texto_extraido`, que separa las
+ * páginas con `\f`; lo reescribe el worker al extraer el texto.
+ */
 export const archivoPaginas = pgTable(
   "archivo_paginas",
   {
@@ -157,6 +188,15 @@ export const archivoPaginas = pgTable(
   (t) => [primaryKey({ columns: [t.archivoId, t.pagina] })],
 );
 
+/**
+ * Tabla de relación muchos a muchos entre documentos y un ítem de taxonomía
+ * (borrado en cascada de ambos lados).
+ *
+ * @param nombreTabla - Nombre de la tabla.
+ * @param columna - Columna del ítem (por ejemplo `linea_id`); en Drizzle se
+ *   llama siempre `itemId`.
+ * @param destino - Columna referenciada.
+ */
 function relacion<T extends AnyPgColumn>(
   nombreTabla: string,
   columna: string,
@@ -179,42 +219,56 @@ function relacion<T extends AnyPgColumn>(
   );
 }
 
+/** Documentos asociados a una línea completa (todos sus modelos). */
 export const documentoLineas = relacion(
   "documento_lineas",
   "linea_id",
   () => lineas.id,
 );
+
+/** Documentos asociados a modelos puntuales. */
 export const documentoModelos = relacion(
   "documento_modelos",
   "modelo_id",
   () => modelos.id,
 );
+
+/** Sistemas de la máquina que trata el documento. */
 export const documentoSistemas = relacion(
   "documento_sistemas",
   "sistema_id",
   () => sistemas.id,
 );
+
+/** Temas del documento. */
 export const documentoTemas = relacion(
   "documento_temas",
   "tema_id",
   () => temas.id,
 );
+
+/** Familias de producto del documento. */
 export const documentoProductos = relacion(
   "documento_productos",
   "producto_id",
   () => productos.id,
 );
+
+/** Tecnologías del documento. */
 export const documentoTecnologias = relacion(
   "documento_tecnologias",
   "tecnologia_id",
   () => tecnologias.id,
 );
+
+/** Etiquetas libres del documento. */
 export const documentoEtiquetas = relacion(
   "documento_etiquetas",
   "etiqueta_id",
   () => etiquetas.id,
 );
 
+/** Registro de aperturas, descargas y reproducciones (docs/03). */
 export const accesos = pgTable(
   "accesos",
   {
@@ -238,7 +292,16 @@ export const accesos = pgTable(
   ],
 );
 
+/** Fila de `documentos`. */
 export type Documento = typeof documentos.$inferSelect;
+
+/**
+ * Fila de `archivos` (incluye `driveFileId`: no mandarla entera al cliente).
+ */
 export type Archivo = typeof archivos.$inferSelect;
+
+/** Estado de un documento. */
 export type EstadoDoc = (typeof estadoDoc.enumValues)[number];
+
+/** Modo de acceso de un archivo. */
 export type ModoAcceso = (typeof modoAcceso.enumValues)[number];

@@ -1,3 +1,9 @@
+/**
+ * `/restablecer/[token]`: elegir una nueva contraseña.
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import { findUsuarioIdByToken } from "@/lib/auth/invitations";
 import { AuthCard } from "../../auth-card";
@@ -6,6 +12,9 @@ import { SetPasswordForm } from "../../set-password-form";
 
 export const metadata: Metadata = { title: "Restablecer contraseña" };
 
+/**
+ * Formulario para la nueva contraseña, o aviso si el link venció o ya se usó.
+ */
 export default async function ResetPasswordPage({
   params,
 }: PageProps<"/restablecer/[token]">) {

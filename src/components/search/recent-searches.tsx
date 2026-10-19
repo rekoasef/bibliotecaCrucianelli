@@ -1,8 +1,20 @@
+/**
+ * Búsquedas recientes del usuario.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 import { History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Últimas búsquedas del usuario como accesos directos (un toque, sin tipear). */
+/**
+ * Últimas búsquedas del usuario como accesos directos (un toque, sin tipear).
+ * Sin búsquedas no renderiza nada.
+ *
+ * @param props - Textos, `className` y `tone` (`franja` sobre el rojo de la
+ *   cabecera).
+ */
 export function RecentSearches({
   searches,
   className,

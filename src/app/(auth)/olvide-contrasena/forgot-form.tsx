@@ -1,3 +1,9 @@
+/**
+ * Formulario de "Olvidé mi contraseña".
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -8,6 +14,10 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
 import { requestPasswordReset } from "../actions";
 
+/**
+ * Email para recibir el link (`requestPasswordReset`). El mensaje de éxito es
+ * el mismo exista o no el usuario.
+ */
 export function ForgotForm() {
   const [state, action] = useActionState(
     requestPasswordReset,

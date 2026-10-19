@@ -1,3 +1,10 @@
+/**
+ * Drive simulado sobre una carpeta local (`DRIVE_LOCAL_DIR`), para desarrollar
+ * y probar sin credenciales.
+ *
+ * @module
+ */
+
 import "server-only";
 import { createReadStream } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
@@ -14,22 +21,32 @@ import {
 } from "./types";
 
 /**
- * Drive simulado sobre una carpeta local (DRIVE_LOCAL_DIR), para desarrollar y
- * probar sin credenciales. Cada subcarpeta de primer nivel es una carpeta raíz.
- * Los IDs codifican la ruta relativa; nunca se sale de la carpeta base.
+ * Cliente de Drive sobre el sistema de archivos. Cada subcarpeta de primer
+ * nivel es una carpeta raíz. Los IDs codifican la ruta relativa; nunca se sale
+ * de la carpeta base.
  */
 export class LocalDriveClient implements DriveClient {
   readonly browsable = true;
   private base: string;
 
+  /**
+   * @param baseDir - Carpeta que hace de Drive.
+   */
   constructor(baseDir: string) {
     this.base = path.resolve(baseDir);
   }
 
+  /** ID estable para una ruta relativa (`local_` + base64url). */
   private toId(relPath: string) {
     return `local_${Buffer.from(relPath).toString("base64url")}`;
   }
 
+  /**
+   * Ruta absoluta de un ID, verificando que quede dentro de la base (protección
+   * contra `../`).
+   *
+   * @returns La ruta, o `null` si el ID no es válido o apunta afuera.
+   */
   private toPath(id: string): string | null {
     if (!id.startsWith("local_")) return null;
     const rel = Buffer.from(id.slice(6), "base64url").toString();
@@ -40,6 +57,7 @@ export class LocalDriveClient implements DriveClient {
     return abs;
   }
 
+  /** Ítem de Drive para una ruta absoluta, o `null` si no existe. */
   private async describe(abs: string): Promise<DriveItem | null> {
     const info = await stat(abs).catch(() => null);
     if (!info) return null;
@@ -58,16 +76,22 @@ export class LocalDriveClient implements DriveClient {
     };
   }
 
+  /** Subcarpetas de primer nivel de la base. */
   async rootIds() {
     const entries = await readdir(this.base, { withFileTypes: true });
     return entries.filter((e) => e.isDirectory()).map((e) => this.toId(e.name));
   }
 
+  /** Metadatos de un archivo o carpeta, o `null`. */
   async getItem(id: string) {
     const abs = this.toPath(id);
     return abs ? this.describe(abs) : null;
   }
 
+  /**
+   * Contenido de una carpeta: carpetas primero, después por nombre (orden
+   * natural).
+   */
   async listChildren(folderId: string) {
     const abs = this.toPath(folderId);
     if (!abs) return [];
@@ -82,10 +106,17 @@ export class LocalDriveClient implements DriveClient {
     );
   }
 
+  /** En local no hay Google Docs nativos. */
   async exportText() {
     return null; // en local no hay Google Docs nativos
   }
 
+  /**
+   * Lee el archivo del disco en streaming, con soporte de rangos.
+   *
+   * @throws Lanza {@link DriveNotFoundError} si no existe o es una carpeta.
+   * @throws Lanza {@link DriveRangeError} si el rango no se puede satisfacer.
+   */
   async download(
     id: string,
     options: { range?: string | null } = {},

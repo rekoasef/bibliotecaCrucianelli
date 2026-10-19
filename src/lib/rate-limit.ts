@@ -1,9 +1,17 @@
+/**
+ * Rate limiting de ventana fija guardado en Postgres (tabla `limites_tasa`).
+ *
+ * @module
+ */
+
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
+/** Regla: como mucho `max` intentos cada `windowSeconds` segundos. */
 type Rule = { max: number; windowSeconds: number };
 
+/** Reglas de la app, por acción y clave (email, IP o usuario). */
 export const rateLimits = {
   loginEmail: { max: 5, windowSeconds: 15 * 60 },
   loginIp: { max: 30, windowSeconds: 15 * 60 },
@@ -16,13 +24,26 @@ export const rateLimits = {
   // Búsquedas sin cuenta: cada una consulta la base y se registra; frena bots
   // que buscan sin parar (inflan los registros y cargan Postgres).
   busquedasClienteIp: { max: 300, windowSeconds: 60 * 60 },
+  // Reproducciones de video registradas sin cuenta: cada una es una fila en
+  // `accesos`, así nadie puede inflar los registros llamando a la acción en bucle.
+  videosClienteIp: { max: 200, windowSeconds: 60 * 60 },
 } satisfies Record<string, Rule>;
 
+/**
+ * Resultado de {@link hit}: si se permite y cuántos segundos faltan para que se
+ * renueve la ventana.
+ */
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };
 
 /**
  * Cuenta un intento para `key` en una ventana fija. Atómico en Postgres, así
  * funciona aunque haya varias instancias de la app y sobrevive a reinicios.
+ *
+ * @param key - Clave del contador, por ejemplo `login:ip:1.2.3.4`.
+ * @param rule - Regla de {@link rateLimits}.
+ * @returns Si el intento está permitido y el tiempo de espera si no.
+ * @remarks En el 1 % de las llamadas borra las ventanas de más de un día
+ *   (limpieza sin tarea programada).
  */
 export async function hit(key: string, rule: Rule): Promise<RateLimitResult> {
   const window = `${rule.windowSeconds} seconds`;
@@ -52,10 +73,21 @@ export async function hit(key: string, rule: Rule): Promise<RateLimitResult> {
   };
 }
 
+/**
+ * Borra el contador de `key` (por ejemplo, tras un login correcto).
+ *
+ * @param key - Clave usada en {@link hit}.
+ */
 export async function reset(key: string) {
   await db.execute(sql`DELETE FROM limites_tasa WHERE clave = ${key}`);
 }
 
+/**
+ * Tiempo de espera para mostrar al usuario ("1 minuto", "15 minutos").
+ *
+ * @param seconds - Segundos de espera ({@link
+ *   RateLimitResult.retryAfterSeconds}).
+ */
 export function formatRetryAfter(seconds: number) {
   const minutes = Math.ceil(seconds / 60);
   return minutes <= 1 ? "1 minuto" : `${minutes} minutos`;

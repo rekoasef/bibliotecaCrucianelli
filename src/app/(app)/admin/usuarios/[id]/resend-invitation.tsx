@@ -1,3 +1,9 @@
+/**
+ * Reenvío de la invitación.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -6,6 +12,11 @@ import { initialFormState } from "@/components/forms/form-state";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { resendInvitation } from "../../actions";
 
+/**
+ * Botón para reenviar la invitación (`resendInvitation`).
+ *
+ * @param props - `id` del usuario.
+ */
 export function ResendInvitation({ id }: { id: string }) {
   const [state, action] = useActionState(resendInvitation, initialFormState);
 

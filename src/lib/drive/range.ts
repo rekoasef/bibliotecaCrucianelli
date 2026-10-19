@@ -1,7 +1,17 @@
 /**
- * Interpreta una cabecera Range de un solo rango ("bytes=0-499", "bytes=500-",
- * "bytes=-500"). Devuelve null si no hay rango utilizable (se responde el archivo
- * completo) y "invalid" si el rango no se puede satisfacer (416).
+ * Cabecera HTTP `Range` (un solo rango de bytes).
+ *
+ * @module
+ */
+
+/**
+ * Interpreta una cabecera `Range` de un solo rango ("bytes=0-499",
+ * "bytes=500-", "bytes=-500").
+ *
+ * @param header - Valor de la cabecera.
+ * @param size - Tamaño total del archivo.
+ * @returns `{ start, end }` inclusivos; `null` si no hay rango utilizable (se
+ *   responde el archivo completo); `"invalid"` si no se puede satisfacer (416).
  */
 export function parseRange(header: string | null | undefined, size: number) {
   if (!header) return null;

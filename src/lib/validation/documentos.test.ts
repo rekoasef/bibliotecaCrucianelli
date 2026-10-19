@@ -1,3 +1,9 @@
+/**
+ * Tests de validación de la clasificación de documentos.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { clasificacionFromForm, clasificacionSchema } from "./documentos";
 

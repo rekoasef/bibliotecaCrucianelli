@@ -1,6 +1,12 @@
-// Datos iniciales según docs/04-taxonomia.md. Son un punto de partida: después se
-// administran desde el panel. Los marcados "a confirmar" en el doc se cargan igual.
+/**
+ * Datos iniciales según docs/04-taxonomia.md. Son un punto de partida: después
+ * se administran desde el panel. Los marcados "a confirmar" en el doc se cargan
+ * igual.
+ *
+ * @module
+ */
 
+/** Segmentos con sus líneas y modelos. */
 export const SEED_MAQUINAS = [
   {
     segmento: "Granos gruesos",
@@ -30,6 +36,7 @@ export const SEED_MAQUINAS = [
   },
 ];
 
+/** Tipos de documento. */
 export const SEED_TIPOS = [
   "Manual",
   "Instructivo",
@@ -42,6 +49,7 @@ export const SEED_TIPOS = [
   "Solución de problemas",
 ];
 
+/** Sistemas de la máquina. */
 export const SEED_SISTEMAS = [
   "Dosificación",
   "Hidráulica",
@@ -52,6 +60,7 @@ export const SEED_SISTEMAS = [
   "Tren de siembra",
 ];
 
+/** Familias de producto. */
 export const SEED_PRODUCTOS = [
   "Sembradoras",
   "Fertilizadoras",
@@ -59,8 +68,10 @@ export const SEED_PRODUCTOS = [
   "Accesorios siembra",
 ];
 
+/** Tecnologías. */
 export const SEED_TECNOLOGIAS = ["Precision Planting", "Leaf"];
 
+/** Temas. */
 export const SEED_TEMAS = [
   "Regulación",
   "Calibración",

@@ -1,6 +1,16 @@
+/**
+ * Campo de formulario accesible.
+ *
+ * @module
+ */
+
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+/**
+ * Props de {@link Field}. `children` recibe los atributos de accesibilidad para
+ * aplicarlos al control.
+ */
 type FieldProps = {
   id: string;
   label: string;
@@ -14,7 +24,12 @@ type FieldProps = {
   }) => React.ReactNode;
 };
 
-/** Label visible + control + ayuda + error debajo, conectados por aria-describedby. */
+/**
+ * Label visible + control + ayuda + error debajo, conectados por
+ * `aria-describedby` y `aria-invalid`. Muestra solo el primer error.
+ *
+ * @param props - Ver `FieldProps`.
+ */
 export function Field({
   id,
   label,

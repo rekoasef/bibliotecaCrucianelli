@@ -1,3 +1,10 @@
+/**
+ * Sesión del usuario en el servidor: quién está mirando y guardas de acceso
+ * para páginas y Server Actions (CLAUDE.md, "Auth y permisos").
+ *
+ * @module
+ */
+
 import "server-only";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -11,6 +18,9 @@ import { PATHNAME_HEADER } from "./constants";
 import { auth, pausarUsuario } from "./auth";
 import { ACTIVIDAD_INTERVALO_MS, superaInactividad } from "./inactividad";
 
+/**
+ * Usuario autenticado tal como lo ve la app (sin datos sensibles de la base).
+ */
 export type CurrentUser = {
   id: string;
   nombre: string;
@@ -21,10 +31,17 @@ export type CurrentUser = {
 };
 
 /**
- * Usuario de la sesión actual, o null. Verifica en cada request que el usuario
- * y su concesionario sigan activos y que la cuenta no esté pausada por
- * inactividad (además de invalidar sesiones al desactivar o pausar). De paso
- * registra el uso en `ultima_actividad`, como mucho una vez por hora.
+ * Usuario de la sesión actual, o `null`.
+ *
+ * Verifica en cada request que el usuario y su concesionario sigan activos y
+ * que la cuenta no esté pausada por inactividad (además de invalidar sesiones
+ * al desactivar o pausar). De paso registra el uso en `ultima_actividad`, como
+ * mucho una vez por hora (`ACTIVIDAD_INTERVALO_MS`). Memoizado por request con
+ * `cache` de React.
+ *
+ * @returns El usuario habilitado, o `null` si no hay sesión o la cuenta no
+ *   puede usar la app. Si recién superó el plazo de inactividad, la pausa y
+ *   devuelve `null`.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -78,9 +95,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 });
 
 /**
- * Quién mira las páginas de consulta (inicio, búsqueda, máquinas, ficha): el
- * usuario con sesión o, sin sesión, un cliente final (acceso libre, docs/01).
- * `viewer` va siempre a la función de visibilidad.
+ * Quién mira las páginas de consulta (inicio, búsqueda, máquinas, ficha,
+ * archivos): el usuario con sesión o, sin sesión, un cliente final (acceso
+ * libre, docs/01).
+ *
+ * @returns `user` (o `null`) y el `viewer` que siempre se pasa a
+ *   `documentVisibilityFilter`.
  */
 export async function getViewer(): Promise<{
   user: CurrentUser | null;
@@ -90,6 +110,14 @@ export async function getViewer(): Promise<{
   return { user, viewer: user ?? CLIENTE };
 }
 
+/**
+ * Exige sesión. Va al principio de cada página privada y de cada Server Action.
+ *
+ * @returns El usuario de la sesión.
+ * @remarks Sin sesión válida redirige a `/login?next=…` con la ruta pedida
+ *   (header {@link PATHNAME_HEADER} que agrega el proxy); `redirect` corta la
+ *   ejecución.
+ */
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) {
@@ -103,7 +131,14 @@ export async function requireUser() {
   return user;
 }
 
-/** Para páginas y Server Actions del admin. A otros roles les responde 404. */
+/**
+ * Exige sesión con rol `admin`. Para páginas y Server Actions del admin: cada
+ * una lo llama (proteger el layout no protege las acciones).
+ *
+ * @returns El usuario administrador.
+ * @remarks A otros roles les responde 404 (`notFound`), sin revelar que la ruta
+ *   existe.
+ */
 export async function requireAdmin() {
   const user = await requireUser();
   if (user.rol !== "admin") notFound();

@@ -1,7 +1,17 @@
+/**
+ * Página 404.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/layout/brand-mark";
 
+/**
+ * "No encontrado", con link al inicio. También es la respuesta cuando no hay
+ * permiso (no se revela qué existe).
+ */
 export default function NotFound() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-4">

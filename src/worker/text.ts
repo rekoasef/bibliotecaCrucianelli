@@ -1,3 +1,9 @@
+/**
+ * Limpieza del texto extraído y decisión de OCR (funciones puras).
+ *
+ * @module
+ */
+
 /** Tope de texto guardado por archivo (docs/02: ~1 MB para no inflar el índice). */
 export const MAX_TEXT_CHARS = 1_000_000;
 

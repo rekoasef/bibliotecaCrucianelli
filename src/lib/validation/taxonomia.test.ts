@@ -1,3 +1,9 @@
+/**
+ * Tests de validación de taxonomía.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { lineaSchema, segmentoSchema } from "./taxonomia";
 

@@ -1,3 +1,9 @@
+/**
+ * Tests de la detección de cambios en Drive (decisiones y horario nocturno).
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { decideSync, shouldRunNightly } from "./drive-sync";
 

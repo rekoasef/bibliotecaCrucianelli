@@ -1,5 +1,11 @@
+/**
+ * Tests de normalización de texto.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
-import { normalizeTag, slugify } from "./text";
+import { containsPattern, normalizeTag, slugify } from "./text";
 
 describe("normalizeTag", () => {
   it.each([
@@ -21,5 +27,12 @@ describe("slugify", () => {
     ["  Plantor 3.0 / Plus ", "plantor-3-0-plus"],
   ])("%s → %s", (input, expected) => {
     expect(slugify(input)).toBe(expected);
+  });
+});
+
+describe("containsPattern", () => {
+  it("escapa los comodines de LIKE", () => {
+    expect(containsPattern("sensor")).toBe("%sensor%");
+    expect(containsPattern("100%_a\\b")).toBe("%100\\%\\_a\\\\b%");
   });
 });

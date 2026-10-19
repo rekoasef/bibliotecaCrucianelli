@@ -1,3 +1,9 @@
+/**
+ * Formulario de ingreso.
+ *
+ * @module
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -10,6 +16,11 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
 import { login } from "../actions";
 
+/**
+ * Email y contraseña (`login`), conservando el email si hay error.
+ *
+ * @param props - `next`: ruta a la que volver después de ingresar.
+ */
 export function LoginForm({ next }: { next?: string }) {
   const [state, action] = useActionState(login, initialFormState);
 

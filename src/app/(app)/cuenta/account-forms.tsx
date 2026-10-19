@@ -1,3 +1,9 @@
+/**
+ * Formularios de "Mi cuenta".
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -9,6 +15,11 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
 import { changePassword, updateNombre } from "./actions";
 
+/**
+ * Cambio de nombre (`updateNombre`).
+ *
+ * @param props - `nombre` actual.
+ */
 export function NombreForm({ nombre }: { nombre: string }) {
   const [state, action] = useActionState(updateNombre, initialFormState);
 
@@ -37,6 +48,7 @@ export function NombreForm({ nombre }: { nombre: string }) {
   );
 }
 
+/** Cambio de contraseña (`changePassword`). */
 export function PasswordForm() {
   const [state, action] = useActionState(changePassword, initialFormState);
 

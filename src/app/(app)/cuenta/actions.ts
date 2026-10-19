@@ -1,3 +1,9 @@
+/**
+ * Server Actions de "Mi cuenta". Cada una empieza con `requireUser()`.
+ *
+ * @module
+ */
+
 "use server";
 
 import { APIError } from "better-auth/api";
@@ -11,6 +17,13 @@ import type { FormState } from "@/components/forms/form-state";
 import { auth } from "@/lib/auth/auth";
 import { requireUser } from "@/lib/auth/session";
 
+/**
+ * Cambia el nombre del usuario de la sesión.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `nombre`.
+ * @returns Error de campo o el mensaje de éxito.
+ */
 export async function updateNombre(
   _prev: FormState,
   formData: FormData,
@@ -34,6 +47,7 @@ export async function updateNombre(
   return { success: "Nombre actualizado." };
 }
 
+/** Contraseña actual, nueva (8 a 128 caracteres) y su confirmación. */
 const changePasswordSchema = z
   .object({
     actual: z.string().min(1, "Ingresá tu contraseña actual."),
@@ -48,6 +62,14 @@ const changePasswordSchema = z
     message: "Las contraseñas no coinciden.",
   });
 
+/**
+ * Cambia la contraseña verificando la actual y cierra las sesiones en otros
+ * dispositivos.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `actual`, `nueva` y `confirmacion`.
+ * @returns Errores por campo o el mensaje de éxito.
+ */
 export async function changePassword(
   _prev: FormState,
   formData: FormData,

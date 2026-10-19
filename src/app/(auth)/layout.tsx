@@ -1,5 +1,12 @@
+/**
+ * Layout de las páginas de autenticación.
+ *
+ * @module
+ */
+
 import { BrandMark } from "@/components/layout/brand-mark";
 
+/** Barra pizarra con el logo y una columna angosta para el formulario. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-clip">

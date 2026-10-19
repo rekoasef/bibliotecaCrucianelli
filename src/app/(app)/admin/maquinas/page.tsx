@@ -1,3 +1,9 @@
+/**
+ * `/admin/maquinas`: árbol de máquinas.
+ *
+ * @module
+ */
+
 import { ChevronRight, Pencil, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -10,6 +16,10 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Máquinas" };
 
+/**
+ * Segmentos, líneas y modelos (incluidos los inactivos) con orden manual y
+ * links para editar o agregar.
+ */
 export default async function MaquinasPage() {
   // Además del layout: layout y página se renderizan en paralelo (defensa en profundidad).
   await requireAdmin();

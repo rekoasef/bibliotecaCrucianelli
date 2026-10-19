@@ -1,8 +1,15 @@
+/**
+ * Tabla (shadcn/ui) con scroll horizontal en pantallas chicas.
+ *
+ * @module
+ */
+
 "use client";
 
 import * as React from "react";
 import { cn } from "cn";
 
+/** Tabla dentro de un contenedor con scroll horizontal. */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
@@ -18,6 +25,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   );
 }
 
+/** Encabezado (`thead`). */
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
@@ -28,6 +36,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   );
 }
 
+/** Cuerpo (`tbody`). */
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
     <tbody
@@ -38,6 +47,7 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   );
 }
 
+/** Pie (`tfoot`). */
 function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
@@ -51,6 +61,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   );
 }
 
+/** Fila. */
 function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
@@ -64,6 +75,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
+/** Celda de encabezado. */
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
@@ -77,6 +89,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   );
 }
 
+/** Celda. */
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
@@ -90,6 +103,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   );
 }
 
+/** Título de la tabla. */
 function TableCaption({
   className,
   ...props

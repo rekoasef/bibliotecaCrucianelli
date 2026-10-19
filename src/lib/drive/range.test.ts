@@ -1,3 +1,9 @@
+/**
+ * Tests de la cabecera `Range`.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { parseRange } from "./range";
 

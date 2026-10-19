@@ -1,6 +1,13 @@
+/**
+ * Campo de texto (shadcn/ui).
+ *
+ * @module
+ */
+
 import * as React from "react";
 import { cn } from "cn";
 
+/** Input con el estilo de la app (alto táctil, borde y anillo de foco). */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input

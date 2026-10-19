@@ -1,3 +1,10 @@
+/**
+ * Server Actions del admin de taxonomía: catálogos (tipos, sistemas, temas,
+ * productos, tecnologías) y etiquetas. Cada una empieza con `requireAdmin()`.
+ *
+ * @module
+ */
+
 "use server";
 
 import { eq, sql } from "drizzle-orm";
@@ -13,7 +20,7 @@ import {
   nextOrden,
 } from "@/db/queries/taxonomia";
 import { documentoEtiquetas, etiquetas } from "@/db/schema";
-import type { FormState } from "@/components/forms/form-state";
+import { formValues, type FormState } from "@/components/forms/form-state";
 import { requireAdmin } from "@/lib/auth/session";
 import {
   rebuildDocumentSearch,
@@ -26,21 +33,27 @@ import {
   etiquetaSchema,
 } from "@/lib/validation/taxonomia";
 
+/** Catálogo editado. */
 const catalogoKind = z.enum(CATALOGOS);
+
+/** IDs de la base (UUID). */
 const idSchema = z.uuid();
 
-function formValues(formData: FormData) {
-  return Object.fromEntries(
-    [...formData.entries()].filter(([, v]) => typeof v === "string"),
-  ) as Record<string, string>;
-}
-
+/** Revalida la página de taxonomía. */
 function revalidate() {
   revalidatePath("/admin/taxonomia");
 }
 
 // ── Tipos, sistemas, temas ──────────────────────────────────────────────────
 
+/**
+ * Crea o renombra una entrada de un catálogo. Al renombrar, recalcula el índice
+ * de los documentos que la usan.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `kind`, `id` (si es edición) y los campos de la entrada.
+ * @returns Errores por campo (nombre o slug repetido) o el mensaje de éxito.
+ */
 export async function saveCatalogo(
   _prev: FormState,
   formData: FormData,
@@ -89,6 +102,11 @@ export async function saveCatalogo(
     : { success: `"${parsed.data.nombre}" agregado.` };
 }
 
+/**
+ * Mueve una entrada un lugar arriba o abajo.
+ *
+ * @param formData - `kind`, `id` y `direction`.
+ */
 export async function moveCatalogo(formData: FormData) {
   await requireAdmin();
   const kind = catalogoKind.parse(formData.get("kind"));
@@ -98,6 +116,12 @@ export async function moveCatalogo(formData: FormData) {
   revalidate();
 }
 
+/**
+ * Activa o desactiva una entrada (las inactivas no se ofrecen al clasificar ni
+ * como filtro).
+ *
+ * @param formData - `kind`, `id` y `activo` (`"true"`/`"false"`).
+ */
 export async function setCatalogoActivo(formData: FormData) {
   await requireAdmin();
   const kind = catalogoKind.parse(formData.get("kind"));
@@ -112,6 +136,14 @@ export async function setCatalogoActivo(formData: FormData) {
 
 // ── Etiquetas ───────────────────────────────────────────────────────────────
 
+/**
+ * Crea o renombra una etiqueta. Rechaza nombres que ya existen como otra
+ * clasificación o como otra etiqueta equivalente (sin acentos ni mayúsculas).
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `id` (si es edición) y `nombre`.
+ * @returns Errores por campo o el mensaje de éxito.
+ */
 export async function saveEtiqueta(
   _prev: FormState,
   formData: FormData,
@@ -172,7 +204,14 @@ export async function saveEtiqueta(
     : { success: `Etiqueta "${nombre}" agregada.` };
 }
 
-/** Fusiona la etiqueta `id` en otra (por nombre): los documentos pasan a la de destino. */
+/**
+ * Fusiona la etiqueta `id` en otra (por nombre): los documentos pasan a la de
+ * destino y la original se borra.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `id` y `destino` (nombre de la etiqueta destino).
+ * @returns Errores por campo; si sale bien, redirige con el aviso.
+ */
 export async function mergeEtiqueta(
   _prev: FormState,
   formData: FormData,
@@ -211,6 +250,12 @@ export async function mergeEtiqueta(
   );
 }
 
+/**
+ * Borra una etiqueta, la quita de los documentos que la usan (cascada) y
+ * recalcula su índice.
+ *
+ * @param formData - `id` de la etiqueta.
+ */
 export async function deleteEtiqueta(formData: FormData) {
   await requireAdmin();
   const id = idSchema.parse(formData.get("id"));

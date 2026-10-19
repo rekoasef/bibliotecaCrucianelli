@@ -1,7 +1,18 @@
+/**
+ * Logo de la barra superior.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 
-// Logo oficial (blanco, del sitio de Crucianelli) para fondos pizarra o rojos.
-// PNG provisorio hasta tener el SVG: public/brand/crucianelli-blanco.png (300×69).
+/**
+ * Logo oficial (blanco, del sitio de Crucianelli) para fondos pizarra o rojos,
+ * con el nombre de la biblioteca. Lleva al inicio.
+ *
+ * @remarks PNG provisorio hasta tener el SVG:
+ *   `public/brand/crucianelli-blanco.png` (300×69).
+ */
 export function BrandMark() {
   return (
     <Link

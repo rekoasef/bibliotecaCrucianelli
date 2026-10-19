@@ -1,5 +1,10 @@
-// Corre la detección de cambios en Drive una vez (además de la tarea nocturna del worker).
-//   npm run sync:drive
+/**
+ * Corre la detección de cambios en Drive una vez (además de la tarea nocturna
+ * del worker): `npm run sync:drive`.
+ *
+ * @module
+ */
+
 import "dotenv/config";
 import { syncDriveChanges } from "./drive-sync";
 

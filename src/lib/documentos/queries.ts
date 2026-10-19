@@ -1,3 +1,10 @@
+/**
+ * Consultas de documentos para usuarios (no admin): siempre filtradas por
+ * {@link documentVisibilityFilter}.
+ *
+ * @module
+ */
+
 import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -24,8 +31,8 @@ import {
 import { documentVisibilityFilter, type Viewer } from "./visibility";
 
 /**
- * Archivo tal como se manda al cliente. `driveFileId` solo viaja si el archivo es
- * de modo público (videos con link de Drive): CLAUDE.md, regla 3.
+ * Archivo tal como se manda al cliente. `driveFileId` solo viaja si el archivo
+ * es de modo público (videos con link de Drive): CLAUDE.md, regla 3.
  */
 export type ArchivoPublico = {
   id: string;
@@ -37,7 +44,14 @@ export type ArchivoPublico = {
   driveFileId: string | null;
 };
 
-/** Ficha de un documento si el usuario puede verlo; null si no existe o no tiene permiso. */
+/**
+ * Ficha de un documento con archivos, clasificación e historial de versiones.
+ * Fuera del admin solo incluye máquinas activas.
+ *
+ * @param id - ID del documento.
+ * @param viewer - Quién mira.
+ * @returns La ficha, o `null` si no existe o el lector no tiene permiso.
+ */
 export async function getDocumentoVisible(id: string, viewer: Viewer) {
   const [doc] = await db
     .select({
@@ -155,13 +169,19 @@ export async function getDocumentoVisible(id: string, viewer: Viewer) {
   };
 }
 
+/** Ficha completa que devuelve {@link getDocumentoVisible}. */
 export type FichaDocumento = NonNullable<
   Awaited<ReturnType<typeof getDocumentoVisible>>
 >;
 
 /**
- * Cadena de versiones (de la más nueva a la más vieja) recorriendo reemplazado_por_id
- * en ambas direcciones. Solo incluye las versiones que el usuario puede ver.
+ * Cadena de versiones (de la más nueva a la más vieja) recorriendo
+ * `reemplazado_por_id` en ambas direcciones (hasta 50 pasos). Solo incluye las
+ * versiones que el lector puede ver.
+ *
+ * @param id - Documento de partida.
+ * @param viewer - Quién mira.
+ * @returns Las versiones visibles, o `[]` si el documento no tiene otras.
  */
 async function getHistorial(id: string, viewer: Viewer) {
   const cadena = await db.execute<{ id: string; profundidad: number }>(sql`
@@ -206,8 +226,14 @@ async function getHistorial(id: string, viewer: Viewer) {
 }
 
 /**
- * Archivo + documento si el usuario puede ver el documento. Es la única puerta de
- * entrada de /api/archivos/[id]: usa la misma función de visibilidad que todo lo demás.
+ * Archivo y su documento si el lector puede ver el documento. Es la única
+ * puerta de entrada de `/api/archivos/[id]`: usa la misma función de
+ * visibilidad que todo lo demás.
+ *
+ * @param archivoId - ID del archivo.
+ * @param viewer - Quién mira.
+ * @returns Los datos para servirlo (incluye `driveFileId`: solo para el
+ *   servidor), o `null`.
  */
 export async function getArchivoVisible(archivoId: string, viewer: Viewer) {
   const [row] = await db
@@ -225,6 +251,12 @@ export async function getArchivoVisible(archivoId: string, viewer: Viewer) {
   return row ?? null;
 }
 
+/**
+ * Registra una apertura, descarga o reproducción en `accesos` (docs/03).
+ *
+ * @param input - Quién (`null` = cliente sin cuenta), qué documento y archivo,
+ *   y la acción.
+ */
 export async function registrarAcceso(input: {
   /** null = cliente final sin cuenta. */
   usuarioId: string | null;

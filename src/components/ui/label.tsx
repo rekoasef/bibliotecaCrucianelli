@@ -1,9 +1,16 @@
+/**
+ * Etiqueta de formulario (shadcn/ui, Radix).
+ *
+ * @module
+ */
+
 "use client";
 
 import * as React from "react";
 import { cn } from "cn";
 import { Label as LabelPrimitive } from "radix-ui";
 
+/** Etiqueta asociada a un control. */
 function Label({
   className,
   ...props

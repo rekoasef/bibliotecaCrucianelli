@@ -1,6 +1,16 @@
+/**
+ * Panel de activar o desactivar del admin.
+ *
+ * @module
+ */
+
 import { Button } from "@/components/ui/button";
 import { Panel } from "./ui";
 
+/**
+ * Props de {@link ActivoPanel}: Server Action, campos ocultos (por ejemplo,
+ * `id`), estado actual, nombre del ítem y los textos de cada caso.
+ */
 type Props = {
   action: (formData: FormData) => Promise<void>;
   fields: Record<string, string>;
@@ -10,7 +20,12 @@ type Props = {
   descripcionReactivar: string;
 };
 
-/** Panel separado para activar/desactivar (acción reversible, lejos del botón Guardar). */
+/**
+ * Panel separado para activar o desactivar (acción reversible, lejos del botón
+ * Guardar). Envía `activo` con el valor opuesto al actual.
+ *
+ * @param props - Ver `Props`.
+ */
 export function ActivoPanel({
   action,
   fields,

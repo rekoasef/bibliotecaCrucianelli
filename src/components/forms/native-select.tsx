@@ -1,7 +1,18 @@
+/**
+ * Selector nativo con el estilo de los inputs.
+ *
+ * @module
+ */
+
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** <select> nativo con el estilo de los inputs: en el celular abre el selector del sistema. */
+/**
+ * `<select>` nativo con el estilo de los inputs: en el celular abre el selector
+ * del sistema.
+ *
+ * @param props - Props de `<select>`; `className` se aplica al contenedor.
+ */
 export function NativeSelect({
   className,
   children,

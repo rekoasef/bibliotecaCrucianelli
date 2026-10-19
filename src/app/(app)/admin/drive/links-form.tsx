@@ -1,3 +1,9 @@
+/**
+ * Incorporación pegando links de Drive.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -7,7 +13,12 @@ import { initialFormState } from "@/components/forms/form-state";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { incorporarDesdeLinks } from "./actions";
 
-/** Pegar uno o varios links de Drive en vez de navegar las carpetas. */
+/**
+ * Pegar uno o varios links de Drive en vez de navegar las carpetas
+ * (`incorporarDesdeLinks`).
+ *
+ * @param props - `agregarA`: documento al que agregarlos, si corresponde.
+ */
 export function LinksForm({ agregarA }: { agregarA?: string }) {
   const [state, action] = useActionState(
     incorporarDesdeLinks,

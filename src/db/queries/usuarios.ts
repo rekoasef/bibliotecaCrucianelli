@@ -1,3 +1,9 @@
+/**
+ * Consultas de usuarios y concesionarios para el admin.
+ *
+ * @module
+ */
+
 import "server-only";
 import { and, asc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
@@ -10,22 +16,33 @@ import {
   type RolUsuario,
 } from "@/db/schema";
 
-/** true si el usuario ya definió su contraseña (aceptó la invitación). */
+/** `true` si el usuario ya definió su contraseña (aceptó la invitación). */
 const tienePassword = sql<boolean>`exists (select 1 from cuentas c where c.user_id = ${usuarios.id})`;
 
+/** Estado mostrado en el admin. */
 export type EstadoUsuario = "activo" | "inactivo" | "pendiente" | "pausado";
 
-/** Pausado por inactividad (guardado, o ya vencido el plazo aunque no haya vuelto a entrar). */
+/**
+ * Pausado por inactividad (guardado, o ya vencido el plazo aunque no haya
+ * vuelto a entrar).
+ */
 const pausado = () => pausadoSql(env().INACTIVIDAD_DIAS);
+
 /** Último uso de la app: actividad o, para cuentas viejas, último ingreso. */
 const ultimoUso = sql<Date | null>`greatest(${usuarios.ultimaActividad}, ${usuarios.ultimoIngreso})`;
 
+/** Filtros del listado de usuarios. */
 export type UsuarioFilters = {
   rol?: RolUsuario;
   concesionarioId?: string;
   estado?: EstadoUsuario;
 };
 
+/**
+ * Usuarios con su estado, por nombre.
+ *
+ * @param filters - Rol, concesionario y estado.
+ */
 export async function listUsuarios(filters: UsuarioFilters = {}) {
   const where: SQL[] = [];
   if (filters.rol) where.push(eq(usuarios.rol, filters.rol));
@@ -61,8 +78,15 @@ export async function listUsuarios(filters: UsuarioFilters = {}) {
     .orderBy(asc(usuarios.nombre));
 }
 
+/** Fila de {@link listUsuarios}. */
 export type UsuarioListItem = Awaited<ReturnType<typeof listUsuarios>>[number];
 
+/**
+ * Ficha de un usuario para el admin.
+ *
+ * @param id - ID del usuario.
+ * @returns La ficha, o `null`.
+ */
 export async function getUsuario(id: string) {
   const [row] = await db
     .select({
@@ -84,6 +108,12 @@ export async function getUsuario(id: string) {
   return row ?? null;
 }
 
+/**
+ * Estado de un usuario: inactivo, pausado, pendiente (sin contraseña) o activo,
+ * en ese orden de prioridad.
+ *
+ * @param u - Datos de {@link listUsuarios} o {@link getUsuario}.
+ */
 export function estadoUsuario(u: {
   activo: boolean;
   tienePassword: boolean;
@@ -94,6 +124,7 @@ export function estadoUsuario(u: {
   return u.tienePassword ? "activo" : "pendiente";
 }
 
+/** Concesionarios con su cantidad de usuarios, por nombre. */
 export async function listConcesionarios() {
   return db
     .select({
@@ -108,6 +139,12 @@ export async function listConcesionarios() {
     .orderBy(asc(concesionarios.nombre));
 }
 
+/**
+ * Un concesionario.
+ *
+ * @param id - ID del concesionario.
+ * @returns La fila, o `null`.
+ */
 export async function getConcesionario(id: string) {
   const [row] = await db
     .select()
@@ -116,12 +153,21 @@ export async function getConcesionario(id: string) {
   return row ?? null;
 }
 
-/** Cierra todas las sesiones de un usuario (al desactivarlo). */
+/**
+ * Cierra todas las sesiones de un usuario (al desactivarlo o cambiar su rol).
+ *
+ * @param usuarioId - Usuario.
+ */
 export async function revokeSesionesUsuario(usuarioId: string) {
   await db.delete(sesiones).where(eq(sesiones.userId, usuarioId));
 }
 
-/** Cierra las sesiones de todos los usuarios de un concesionario (al desactivarlo). */
+/**
+ * Cierra las sesiones de todos los usuarios de un concesionario (al
+ * desactivarlo).
+ *
+ * @param concesionarioId - Concesionario.
+ */
 export async function revokeSesionesConcesionario(concesionarioId: string) {
   await db.execute(sql`
     DELETE FROM sesiones

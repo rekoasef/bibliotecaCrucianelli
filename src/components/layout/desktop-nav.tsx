@@ -1,3 +1,9 @@
+/**
+ * Navegación en el header desde `md`.
+ *
+ * @module
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -5,6 +11,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getNavItems, isActive, type NavMode } from "./nav-items";
 
+/**
+ * Links de navegación en la barra superior (escritorio y tablet).
+ *
+ * @param props - `mode`: qué ítems mostrar según quién mira.
+ */
 export function DesktopNav({ mode }: { mode: NavMode }) {
   const pathname = usePathname();
   const navItems = getNavItems(mode);

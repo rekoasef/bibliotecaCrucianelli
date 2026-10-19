@@ -1,3 +1,9 @@
+/**
+ * `/buscar`: búsqueda y filtros (docs/05). Todo el estado está en la URL.
+ *
+ * @module
+ */
+
 import { Clock, SearchX, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,6 +29,7 @@ import { FiltersSheet } from "./filters-sheet";
 
 export const metadata: Metadata = { title: "Buscar" };
 
+/** Filtros que se muestran como chips quitables. */
 const FILTER_KEYS = [
   "producto",
   "tecnologia",
@@ -33,13 +40,19 @@ const FILTER_KEYS = [
   "tema",
   "etiqueta",
 ] as const;
+
+/** Un filtro de {@link FILTER_KEYS}. */
 type FilterKey = (typeof FILTER_KEYS)[number];
 
+/**
+ * Primer valor de un parámetro de la URL, recortado a `max` caracteres; vacío →
+ * `undefined`.
+ */
 function str(v: string | string[] | undefined, max = 100) {
   return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
 }
 
-/** URL de /buscar con estos parámetros (sin vacíos). */
+/** URL de `/buscar` con estos parámetros (sin vacíos). */
 function buscarUrl(params: Record<string, string | undefined>) {
   const qs = new URLSearchParams(
     Object.entries(params).filter((e): e is [string, string] => Boolean(e[1])),
@@ -47,6 +60,15 @@ function buscarUrl(params: Record<string, string | undefined>) {
   return qs ? `/buscar?${qs}` : "/buscar";
 }
 
+/**
+ * Resultados exactos y aproximados, corrección de la consulta, filtros (columna
+ * en escritorio, panel inferior en celular), chips de filtros activos y "Cargar
+ * más" (hasta 25 páginas).
+ *
+ * @remarks Normaliza `?maquina=linea:x` (del selector) a `?linea=x` o
+ *   `?modelo=x`. Sin cuenta, limita las búsquedas por IP. Registra la búsqueda
+ *   solo en la primera página.
+ */
 export default async function BuscarPage({
   searchParams,
 }: PageProps<"/buscar">) {
@@ -288,6 +310,7 @@ export default async function BuscarPage({
   );
 }
 
+/** Texto del chip de un filtro activo (nombre de la opción, no el slug). */
 function chipLabel(key: FilterKey, value: string, o: SearchOptions) {
   const lineas = o.maquinas.flatMap((s) => s.lineas);
   switch (key) {
@@ -313,6 +336,7 @@ function chipLabel(key: FilterKey, value: string, o: SearchOptions) {
   }
 }
 
+/** Mensaje sin resultados, con sugerencias según haya filtros o texto. */
 function EmptyState({ hayFiltros, q }: { hayFiltros: boolean; q?: string }) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-dashed bg-card p-5">

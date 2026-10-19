@@ -1,3 +1,10 @@
+/**
+ * Server Actions del explorador de Drive: incorporar archivos y elegir la foto
+ * de una línea. Cada una empieza con `requireAdmin()`.
+ *
+ * @module
+ */
+
 "use server";
 
 import { eq } from "drizzle-orm";
@@ -17,34 +24,48 @@ import {
   incorporarDesdeDrive,
 } from "@/lib/documentos/service";
 
-export async function incorporar(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const admin = await requireAdmin();
-  const ids = formData
-    .getAll("archivos")
-    .filter((v): v is string => typeof v === "string");
+/**
+ * Destino de la incorporación: documento existente (`agregarA`) y modo de
+ * agrupado.
+ *
+ * @param formData - Formulario con `agregarA` (UUID opcional) y `modo`.
+ */
+function destino(formData: FormData) {
   const agregarA = z
     .uuid()
     .optional()
     .safeParse(formData.get("agregarA") || undefined).data;
   const modo =
     formData.get("modo") === "uno-con-todos"
-      ? "uno-con-todos"
-      : "uno-por-archivo";
+      ? ("uno-con-todos" as const)
+      : ("uno-por-archivo" as const);
+  return { agregarA, modo };
+}
 
-  if (ids.length === 0) return { error: "Marcá al menos un archivo." };
-
+/**
+ * Incorpora los archivos como borradores (o los agrega a `agregarA`) y redirige
+ * al resultado.
+ *
+ * @param ids - IDs de Drive.
+ * @param destino - Documento destino y modo de agrupado.
+ * @param adminId - Admin que incorpora.
+ * @param values - Valores del formulario para devolver si hay error.
+ * @returns Error de formulario si la validación de Drive falla; si no,
+ *   redirige.
+ */
+async function incorporarIds(
+  ids: string[],
+  { agregarA, modo }: ReturnType<typeof destino>,
+  adminId: string,
+  values?: Record<string, string>,
+): Promise<FormState> {
   let creados: string[] = [];
   try {
-    if (agregarA) {
-      await agregarArchivos(agregarA, ids, admin.id);
-    } else {
-      creados = await incorporarDesdeDrive(ids, modo, admin.id);
-    }
+    if (agregarA) await agregarArchivos(agregarA, ids, adminId);
+    else creados = await incorporarDesdeDrive(ids, modo, adminId);
   } catch (error) {
-    if (error instanceof DocumentoError) return { error: error.message };
+    if (error instanceof DocumentoError)
+      return { error: error.message, values };
     throw error;
   }
 
@@ -56,7 +77,32 @@ export async function incorporar(
   redirect(`/admin/documentos?estado=borrador&creados=${creados.length}`);
 }
 
-/** Foto de una línea (docs/05, admin de máquinas): una imagen dentro de las raíces. */
+/**
+ * Incorpora los archivos marcados en el explorador.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `archivos` (IDs marcados), `agregarA` y `modo`.
+ */
+export async function incorporar(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireAdmin();
+  const ids = formData
+    .getAll("archivos")
+    .filter((v): v is string => typeof v === "string");
+  if (ids.length === 0) return { error: "Marcá al menos un archivo." };
+  return incorporarIds(ids, destino(formData), admin.id);
+}
+
+/**
+ * Foto de una línea (docs/05, admin de máquinas): una imagen dentro de las
+ * raíces (con explorador) o compartida con link.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `fotoLinea` (ID de la línea) y `foto` (ID o link de Drive).
+ * @returns Error si no es una imagen accesible; si no, redirige a la línea.
+ */
 export async function elegirFotoLinea(
   _prev: FormState,
   formData: FormData,
@@ -89,9 +135,16 @@ export async function elegirFotoLinea(
 }
 
 /**
- * Incorporar pegando links de Drive (alternativa a navegar el explorador).
- * Los archivos siguen siendo privados: se leen con la cuenta de servicio y pasan
- * por las mismas validaciones (carpetas raíz, no duplicados).
+ * Incorporar pegando links de Drive (alternativa a navegar el explorador; con
+ * links públicos es la única forma). Pasan por las mismas validaciones que el
+ * explorador: que se puedan abrir, carpetas raíz si hay explorador, no
+ * duplicados.
+ *
+ * Un único link de carpeta abre el explorador en esa carpeta (si hay
+ * explorador). Los Google Docs nativos se rechazan: hay que exportarlos a PDF.
+ *
+ * @param _prev - Estado anterior del formulario (no se usa).
+ * @param formData - `links` (texto pegado), `agregarA` y `modo`.
  */
 export async function incorporarDesdeLinks(
   _prev: FormState,
@@ -99,14 +152,7 @@ export async function incorporarDesdeLinks(
 ): Promise<FormState> {
   const admin = await requireAdmin();
   const texto = String(formData.get("links") ?? "");
-  const agregarA = z
-    .uuid()
-    .optional()
-    .safeParse(formData.get("agregarA") || undefined).data;
-  const modo =
-    formData.get("modo") === "uno-con-todos"
-      ? "uno-con-todos"
-      : "uno-por-archivo";
+  const { agregarA, modo } = destino(formData);
   const values = { links: texto };
 
   const { ok, invalidos } = parseDriveLinks(texto);
@@ -148,21 +194,10 @@ export async function incorporarDesdeLinks(
     };
   }
 
-  const ids = ok.map((l) => l.id);
-  let creados: string[] = [];
-  try {
-    if (agregarA) await agregarArchivos(agregarA, ids, admin.id);
-    else creados = await incorporarDesdeDrive(ids, modo, admin.id);
-  } catch (error) {
-    if (error instanceof DocumentoError)
-      return { error: error.message, values };
-    throw error;
-  }
-
-  revalidatePath("/admin", "layout");
-  if (agregarA)
-    redirect(`/admin/documentos/${agregarA}?agregados=${ids.length}`);
-  if (creados.length === 1)
-    redirect(`/admin/documentos/${creados[0]}?creado=1`);
-  redirect(`/admin/documentos?estado=borrador&creados=${creados.length}`);
+  return incorporarIds(
+    ok.map((l) => l.id),
+    { agregarA, modo },
+    admin.id,
+    values,
+  );
 }

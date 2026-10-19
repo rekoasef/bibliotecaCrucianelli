@@ -1,9 +1,20 @@
+/**
+ * Campo de contraseña con botón para mostrarla.
+ *
+ * @module
+ */
+
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
+/**
+ * Input de contraseña con un botón (44 px) para mostrar u ocultar lo escrito.
+ *
+ * @param props - Props de `Input` (salvo `type`).
+ */
 export function PasswordInput(
   props: Omit<React.ComponentProps<typeof Input>, "type">,
 ) {

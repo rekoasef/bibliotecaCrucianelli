@@ -1,3 +1,9 @@
+/**
+ * Formulario de filtros de búsqueda.
+ *
+ * @module
+ */
+
 import { NativeSelect } from "@/components/forms/native-select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,6 +13,7 @@ import type { SearchFilters } from "@/lib/search/search";
 /**
  * Formulario GET de filtros. Se usa en la columna de escritorio y dentro del
  * panel inferior en celular (por eso `idPrefix`: los IDs no se repiten).
+ * Conserva el texto buscado.
  */
 export function FiltersForm({
   idPrefix,
@@ -116,6 +123,7 @@ export function FiltersForm({
   );
 }
 
+/** Selector de un filtro con su etiqueta y una opción vacía (sin filtrar). */
 function Select({
   id,
   name,

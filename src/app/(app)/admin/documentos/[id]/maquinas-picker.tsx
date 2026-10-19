@@ -1,7 +1,14 @@
+/**
+ * Selector de máquinas del formulario de documento.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useState } from "react";
 
+/** Línea con sus modelos, como las devuelve `opcionesMaquinas`. */
 type Linea = {
   id: string;
   nombre: string;
@@ -11,7 +18,8 @@ type Linea = {
 
 /**
  * Máquinas en dos niveles (docs/03): marcar la línea completa cubre todos sus
- * modelos, presentes y futuros; si no, se marcan modelos puntuales.
+ * modelos, presentes y futuros; si no, se marcan modelos puntuales. Envía
+ * `lineaIds` y `modeloIds`.
  */
 export function MaquinasPicker({
   segmentos,

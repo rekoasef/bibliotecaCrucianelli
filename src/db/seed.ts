@@ -1,5 +1,13 @@
-// Seed inicial: admin desde ADMIN_EMAIL (docs/03). Idempotente: se puede correr varias veces.
-// Corre con `npm run db:seed` (condición react-server para poder importar módulos "server-only").
+/**
+ * Seed inicial: admin desde `ADMIN_EMAIL` (con invitación), máquinas y
+ * taxonomía de docs/04. Idempotente: se puede correr varias veces.
+ *
+ * Corre con `npm run db:seed` (condición `react-server` para poder importar
+ * módulos "server-only").
+ *
+ * @module
+ */
+
 import "dotenv/config";
 import { eq } from "drizzle-orm";
 import { sendInvitation } from "@/lib/auth/invitations";
@@ -25,6 +33,7 @@ import {
   usuarios,
 } from "./schema";
 
+/** Crea el admin de `ADMIN_EMAIL` y le manda la invitación, si no existe. */
 async function seedAdmin() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   if (!email) {
@@ -49,7 +58,10 @@ async function seedAdmin() {
   console.info(`Admin ${email} creado. Se envió la invitación.`);
 }
 
-// Inserta solo lo que falta (por slug): no pisa cambios hechos desde el panel.
+/**
+ * Segmentos, líneas y modelos de {@link SEED_MAQUINAS}. Inserta solo lo que
+ * falta (por slug): no pisa cambios hechos desde el panel.
+ */
 async function seedMaquinas() {
   for (const [i, s] of SEED_MAQUINAS.entries()) {
     await db
@@ -92,6 +104,7 @@ async function seedMaquinas() {
   console.info("Máquinas: listo.");
 }
 
+/** Tipos, sistemas, temas, productos y tecnologías (solo los que faltan). */
 async function seedCatalogos() {
   const catalogos = [
     [tipos, SEED_TIPOS],
@@ -115,6 +128,7 @@ async function seedCatalogos() {
   console.info("Tipos, sistemas, temas, productos y tecnologías: listo.");
 }
 
+/** Admin, máquinas y catálogos, en ese orden. */
 async function main() {
   await seedAdmin();
   await seedMaquinas();

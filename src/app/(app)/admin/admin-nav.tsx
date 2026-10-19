@@ -1,3 +1,9 @@
+/**
+ * Navegación entre secciones del admin.
+ *
+ * @module
+ */
+
 "use client";
 
 import {
@@ -15,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+/** Secciones del admin. */
 const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
@@ -26,7 +33,10 @@ const items: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/registros", label: "Registros", icon: History },
 ];
 
-// Menú lateral en escritorio; pestañas con scroll horizontal en celular.
+/**
+ * Menú lateral en escritorio; pestañas con scroll horizontal en celular. Marca
+ * la sección actual.
+ */
 export function AdminNav() {
   const pathname = usePathname();
 

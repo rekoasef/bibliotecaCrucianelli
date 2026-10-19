@@ -1,18 +1,23 @@
+/**
+ * Tarjeta de resultado de búsqueda.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
+import { fileKindLabel } from "@/components/file-icon";
 import { TipoIcon } from "@/components/tipo-icon";
-import { fileKind } from "@/lib/drive/mime";
 import type { PaginasArchivo, SearchResult } from "@/lib/search/search";
 import { Highlight } from "./highlight";
 
-const FORMATO: Record<string, string> = {
-  pdf: "PDF",
-  video: "Video",
-  imagen: "Imagen",
-  documento: "Documento",
-  otro: "Archivo",
-};
-
+/**
+ * Tarjeta de un documento en resultados y listados: título, estado si no está
+ * vigente, fragmento resaltado, páginas del PDF donde aparece lo buscado, tipo,
+ * máquinas y formatos.
+ *
+ * @param props - `result` y `compact` (sin fragmento ni páginas).
+ */
 export function ResultCard({
   result: r,
   compact = false,
@@ -20,7 +25,7 @@ export function ResultCard({
   result: SearchResult;
   compact?: boolean;
 }) {
-  const formatos = [...new Set(r.mimeTypes.map((m) => FORMATO[fileKind(m)]))];
+  const formatos = [...new Set(r.mimeTypes.map(fileKindLabel))];
 
   return (
     <Link
@@ -73,7 +78,11 @@ export function ResultCard({
   );
 }
 
-/** "Pág. 12", "Págs. 12, 40 y 47", "Págs. 3, 5, 8, 9, 12 y 4 más". */
+/**
+ * "Pág. 12", "Págs. 12, 40 y 47", "Págs. 3, 5, 8, 9, 12 y 4 más".
+ *
+ * @param archivo - Páginas listadas y cuántas más coinciden.
+ */
 function paginasLabel({ paginas, mas }: PaginasArchivo) {
   if (paginas.length === 1 && !mas) return `Pág. ${paginas[0]}`;
   const lista = mas

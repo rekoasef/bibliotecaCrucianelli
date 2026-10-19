@@ -1,10 +1,19 @@
+/**
+ * Franja roja de cabecera (sistema visual "Pintura de máquina", DESIGN.md).
+ *
+ * @module
+ */
+
 import { cn } from "@/lib/utils";
 
 /**
  * Franja roja Crucianelli: la cabecera de cada página, con el doble trazo de
  * fondo, como la pintura de la máquina. Una sola por pantalla y siempre de
  * borde a borde; el contenido queda alineado con el resto de la página.
- * Tiene que ser hija directa del contenedor de la página (ancho de `main`).
+ *
+ * @param props - Contenido y `className` del contenedor interno.
+ * @remarks Tiene que ser hija directa del contenedor de la página (ancho de
+ *   `main`).
  */
 export function Franja({
   children,

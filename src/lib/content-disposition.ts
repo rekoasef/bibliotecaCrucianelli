@@ -1,4 +1,17 @@
-/** Content-Disposition con nombre UTF-8 (RFC 6266) y un fallback ASCII. */
+/**
+ * Cabecera `Content-Disposition` para descargas.
+ *
+ * @module
+ */
+
+/**
+ * `Content-Disposition` con nombre UTF-8 (RFC 6266, `filename*`) y un fallback
+ * ASCII (`filename`).
+ *
+ * @param type - `inline` (ver en el navegador) o `attachment` (descargar).
+ * @param filename - Nombre del archivo, con acentos o cualquier carácter.
+ * @returns El valor de la cabecera.
+ */
 export function contentDisposition(
   type: "inline" | "attachment",
   filename: string,

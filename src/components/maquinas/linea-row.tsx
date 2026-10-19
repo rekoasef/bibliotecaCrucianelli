@@ -1,10 +1,19 @@
+/**
+ * Listas de líneas de máquinas.
+ *
+ * @module
+ */
+
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DobleTrazo } from "@/components/brand/doble-trazo";
 
 /**
  * Fila de una línea de sembradoras, con el nombre en mayúsculas como la calco
- * de la máquina. Va dentro de una lista con separadores (`LineaList`).
+ * de la máquina y la foto si tiene. Va dentro de {@link LineaList}.
+ *
+ * @param props - Destino, nombre, detalle (modelos u otra aclaración) y URL de
+ *   la foto.
  */
 export function LineaRow({
   href,
@@ -57,7 +66,12 @@ export function LineaRow({
   );
 }
 
-/** Lista de líneas de un segmento: panel blanco con separadores. */
+/**
+ * Lista de líneas de un segmento: panel blanco con separadores y el nombre del
+ * segmento como título.
+ *
+ * @param props - Nombre del segmento, nivel del título (2 o 3) y las filas.
+ */
 export function LineaList({
   segmento,
   headingLevel = 3,

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Biblioteca Técnica Crucianelli",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.test.ts", "src/db/migrations/**"],
+  "out": "api-docs",
+  "tsconfig": "tsconfig.json",
+  "readme": "none",
+  "excludeExternals": true,
+  "sort": ["source-order"],
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

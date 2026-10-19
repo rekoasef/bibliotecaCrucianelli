@@ -1,3 +1,10 @@
+/**
+ * `/admin/registros`: accesos, búsquedas sin resultados y recurrencia
+ * (docs/05).
+ *
+ * @module
+ */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
@@ -30,14 +37,18 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Registros" };
 
+/** Pestañas: `[id, texto]`. */
 const TABS = [
   ["accesos", "Accesos a documentos"],
   ["frecuentes", "Búsquedas frecuentes"],
   ["documentos", "Documentos más consultados"],
   ["busquedas", "Búsquedas sin resultados"],
 ] as const;
+
+/** Pestaña activa. */
 type Tab = (typeof TABS)[number][0];
 
+/** Períodos de recurrencia (días; 0 = todo). */
 const PERIODOS = [
   [30, "Últimos 30 días"],
   [90, "Últimos 90 días"],
@@ -45,20 +56,28 @@ const PERIODOS = [
   [0, "Desde el principio"],
 ] as const;
 
+/** Opciones de quién (con cuenta o clientes). */
 const QUIEN = {
   todos: "Todos",
   usuarios: "Con cuenta (fábrica y concesionarios)",
   clientes: "Clientes sin cuenta",
 } as const;
 
+/** Opciones de orden. */
 const ORDEN = {
   veces: "Más veces",
   az: "A → Z",
   za: "Z → A",
 } as const;
 
+/** Parámetros de la URL. */
 type SearchParams = Record<string, string | string[] | undefined>;
 
+/**
+ * Período, quién y orden desde la URL (valores inválidos → por defecto).
+ *
+ * @param sp - Parámetros de la URL.
+ */
 function recurrencia(sp: SearchParams): Recurrencia {
   return {
     dias: z.coerce
@@ -74,12 +93,14 @@ function recurrencia(sp: SearchParams): Recurrencia {
   };
 }
 
+/** Texto de cada acción de acceso. */
 const ACCION = {
   ver: "Vio",
   descargar: "Descargó",
   video: "Reprodujo video",
 } as const;
 
+/** Página con pestañas; cada una carga solo sus datos. */
 export default async function RegistrosPage({
   searchParams,
 }: PageProps<"/admin/registros">) {
@@ -117,6 +138,10 @@ export default async function RegistrosPage({
   );
 }
 
+/**
+ * Pestaña de accesos con filtros (usuario, clientes, concesionario, documento,
+ * fechas).
+ */
 async function Accesos({ sp }: { sp: SearchParams }) {
   const [usuarios, concesionarios] = await Promise.all([
     listUsuarios(),
@@ -269,6 +294,7 @@ async function Accesos({ sp }: { sp: SearchParams }) {
   );
 }
 
+/** Pestaña de búsquedas sin resultados de los últimos 90 días. */
 async function Busquedas() {
   const rows = await busquedasSinResultados(90, 200);
 
@@ -314,7 +340,10 @@ async function Busquedas() {
   );
 }
 
-/** Período, quién y orden (A→Z / Z→A / más veces) para las pestañas de recurrencia. */
+/**
+ * Período, quién y orden (A→Z / Z→A / más veces) para las pestañas de
+ * recurrencia.
+ */
 function RecurrenciaControles({ tab, r }: { tab: Tab; r: Recurrencia }) {
   const ordenHref = (orden: Recurrencia["orden"]) => {
     const params = new URLSearchParams({
@@ -374,6 +403,7 @@ function RecurrenciaControles({ tab, r }: { tab: Tab; r: Recurrencia }) {
   );
 }
 
+/** Mensaje de lista vacía. */
 function Vacio({ children }: { children: React.ReactNode }) {
   return (
     <p className="rounded-xl border border-dashed bg-card p-5 text-muted-foreground">
@@ -382,6 +412,7 @@ function Vacio({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Pestaña de textos más buscados. */
 async function BusquedasFrecuentes({ r }: { r: Recurrencia }) {
   const rows = await busquedasFrecuentes(r);
 
@@ -439,6 +470,7 @@ async function BusquedasFrecuentes({ r }: { r: Recurrencia }) {
   );
 }
 
+/** Pestaña de documentos más consultados. */
 async function DocumentosConsultados({ r }: { r: Recurrencia }) {
   const rows = await documentosConsultados(r);
 

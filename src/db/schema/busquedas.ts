@@ -1,3 +1,10 @@
+/**
+ * Tablas de búsqueda: registro de consultas y vocabulario para corregir errores
+ * de tipeo.
+ *
+ * @module
+ */
+
 import {
   bigserial,
   index,
@@ -11,7 +18,10 @@ import {
 import { sql } from "drizzle-orm";
 import { usuarios } from "./usuarios";
 
-// Registro de búsquedas (docs/03): sirve para ver qué se busca y no se encuentra.
+/**
+ * Registro de búsquedas (docs/03): sirve para ver qué se busca y no se
+ * encuentra, y para las búsquedas recientes de cada usuario.
+ */
 export const busquedas = pgTable(
   "busquedas",
   {
@@ -37,10 +47,14 @@ export const busquedas = pgTable(
   ],
 );
 
-// Palabras (sin acentos, en minúscula) que aparecen en los documentos, para
-// corregir errores de tipeo ("dosificacin" → "dosificacion"). La llena
-// rebuild_document_search (migración 0008). Solo crece: una palabra que ya no
-// está en ningún documento visible nunca se propone (search.ts lo verifica).
+/**
+ * Palabras (sin acentos, en minúscula) que aparecen en los documentos, para
+ * corregir errores de tipeo ("dosificacin" → "dosificacion"). La llena
+ * `rebuild_document_search` (migración 0008).
+ *
+ * @remarks Solo crece: una palabra que ya no está en ningún documento visible
+ *   nunca se propone (`search.ts` lo verifica).
+ */
 export const vocabulario = pgTable(
   "vocabulario",
   { palabra: text("palabra").primaryKey() },

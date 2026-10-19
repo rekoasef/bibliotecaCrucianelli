@@ -1,3 +1,9 @@
+/**
+ * Formularios del explorador de Drive.
+ *
+ * @module
+ */
+
 "use client";
 
 import { useActionState } from "react";
@@ -6,7 +12,12 @@ import { initialFormState } from "@/components/forms/form-state";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { elegirFotoLinea, incorporar } from "./actions";
 
-/** Envoltorio del listado: las casillas de los archivos van como `children`. */
+/**
+ * Envoltorio del listado: las casillas de los archivos van como `children`.
+ * Ofrece el modo de agrupado (salvo al agregar a un documento existente).
+ *
+ * @param props - `agregarA` (documento destino) y las casillas.
+ */
 export function IncorporarForm({
   agregarA,
   children,
@@ -56,6 +67,10 @@ export function IncorporarForm({
   );
 }
 
+/**
+ * Envoltorio del listado de imágenes para elegir la foto de una línea
+ * (`elegirFotoLinea`).
+ */
 export function FotoLineaForm({
   lineaId,
   children,
@@ -79,7 +94,11 @@ export function FotoLineaForm({
   );
 }
 
-/** Foto de la línea pegando un link (modo links públicos). */
+/**
+ * Foto de la línea pegando un link (modo links públicos).
+ *
+ * @param props - `lineaId`.
+ */
 export function FotoLinkForm({ lineaId }: { lineaId: string }) {
   const [state, action] = useActionState(elegirFotoLinea, initialFormState);
 

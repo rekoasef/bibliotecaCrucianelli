@@ -1,3 +1,9 @@
+/**
+ * `/admin/taxonomia`: catálogos de clasificación y etiquetas.
+ *
+ * @module
+ */
+
 import { Search } from "lucide-react";
 import { FormMessage } from "@/components/forms/form-message";
 import type { Metadata } from "next";
@@ -20,6 +26,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Taxonomía" };
 
+/** Pestañas: un catálogo cada una, más etiquetas. */
 const TABS = [
   {
     id: "tipos",
@@ -51,8 +58,13 @@ const TABS = [
   },
 ] as const;
 
+/** Pestaña activa. */
 type Tab = (typeof TABS)[number]["id"];
 
+/**
+ * Página con pestañas y avisos de fusión o eliminación de etiquetas (según la
+ * URL).
+ */
 export default async function TaxonomiaPage({
   searchParams,
 }: PageProps<"/admin/taxonomia">) {
@@ -108,6 +120,7 @@ export default async function TaxonomiaPage({
   );
 }
 
+/** Entradas de un catálogo con orden, edición, activación y alta. */
 async function CatalogoTab({ kind }: { kind: Catalogo }) {
   const items = await listCatalogo(kind);
 
@@ -169,6 +182,7 @@ async function CatalogoTab({ kind }: { kind: Catalogo }) {
   );
 }
 
+/** Etiquetas con búsqueda, usos, renombrar, fusionar y eliminar. */
 async function EtiquetasTab({ q }: { q: string }) {
   const [items, total] = await Promise.all([
     listEtiquetas(q),

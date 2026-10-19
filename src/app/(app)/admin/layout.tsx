@@ -1,6 +1,17 @@
+/**
+ * Layout del admin.
+ *
+ * @module
+ */
+
 import { requireAdmin } from "@/lib/auth/session";
 import { AdminNav } from "./admin-nav";
 
+/**
+ * Layout de `/admin` con la navegación de secciones. Exige rol admin, pero cada
+ * página y Server Action lo vuelve a verificar (se renderizan en paralelo y las
+ * acciones no pasan por el layout).
+ */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   await requireAdmin();
 

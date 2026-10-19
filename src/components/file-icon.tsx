@@ -1,3 +1,9 @@
+/**
+ * Ícono y nombre del formato de un archivo.
+ *
+ * @module
+ */
+
 import {
   File,
   FileImage,
@@ -9,6 +15,7 @@ import {
 import { fileKind } from "@/lib/drive/mime";
 import { cn } from "@/lib/utils";
 
+/** Ícono por categoría de archivo. */
 const ICONS = {
   pdf: FileText,
   video: FileVideo,
@@ -17,6 +24,11 @@ const ICONS = {
   otro: File,
 };
 
+/**
+ * Ícono del archivo según su tipo (o de carpeta). Decorativo (`aria-hidden`).
+ *
+ * @param props - `mimeType`, `folder` (muestra una carpeta) y `className`.
+ */
 export function FileIcon({
   mimeType,
   folder = false,
@@ -30,6 +42,7 @@ export function FileIcon({
   return <Icon aria-hidden className={cn("size-6 shrink-0", className)} />;
 }
 
+/** Nombre del formato por categoría de archivo. */
 const LABELS = {
   pdf: "PDF",
   video: "Video",
@@ -38,6 +51,11 @@ const LABELS = {
   otro: "Archivo",
 };
 
+/**
+ * Nombre del formato para mostrar ("PDF", "Video"…).
+ *
+ * @param mimeType - Tipo del archivo.
+ */
 export function fileKindLabel(mimeType: string) {
   return LABELS[fileKind(mimeType)];
 }

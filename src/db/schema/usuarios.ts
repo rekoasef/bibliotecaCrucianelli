@@ -1,3 +1,9 @@
+/**
+ * Concesionarios y usuarios.
+ *
+ * @module
+ */
+
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -11,12 +17,14 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 
+/** Roles con cuenta. El cliente final no tiene cuenta (ver `RolLector`). */
 export const rolUsuario = pgEnum("rol_usuario", [
   "admin",
   "fabrica",
   "concesionario",
 ]);
 
+/** Concesionario de la red. Desactivarlo bloquea a todos sus usuarios. */
 export const concesionarios = pgTable("concesionarios", {
   id: uuid("id").primaryKey().defaultRandom(),
   nombre: text("nombre").notNull().unique(),
@@ -26,8 +34,14 @@ export const concesionarios = pgTable("concesionarios", {
   ...timestamps,
 });
 
-// También es la tabla de usuarios de Better Auth (ver src/lib/auth/auth.ts):
-// `nombre`, `email_verificado` e `imagen` son los campos que la librería exige.
+/**
+ * Usuarios de la app. También es la tabla de usuarios de Better Auth (ver
+ * `src/lib/auth/auth.ts`): `nombre`, `email_verificado` e `imagen` son los
+ * campos que la librería exige.
+ *
+ * @remarks Un usuario de concesionario tiene que tener concesionario, y solo
+ *   él; el email se guarda en minúsculas.
+ */
 export const usuarios = pgTable(
   "usuarios",
   {
@@ -59,6 +73,11 @@ export const usuarios = pgTable(
   ],
 );
 
+/** Fila de `concesionarios`. */
 export type Concesionario = typeof concesionarios.$inferSelect;
+
+/** Fila de `usuarios`. */
 export type Usuario = typeof usuarios.$inferSelect;
+
+/** Rol de un usuario con cuenta. */
 export type RolUsuario = (typeof rolUsuario.enumValues)[number];

@@ -1,6 +1,16 @@
+/**
+ * Botones para reordenar listas del admin.
+ *
+ * @module
+ */
+
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Props de {@link MoveButtons}: Server Action, campos ocultos, nombre del ítem
+ * (para la etiqueta accesible) y si es el primero o el último.
+ */
 type Props = {
   action: (formData: FormData) => Promise<void>;
   fields: Record<string, string>;
@@ -9,7 +19,12 @@ type Props = {
   isLast: boolean;
 };
 
-/** Botones ↑ ↓ para reordenar: táctiles y sin JavaScript (cada uno es un form). */
+/**
+ * Botones ↑ ↓ para reordenar: táctiles y sin JavaScript (cada uno es un form
+ * que envía `direction`).
+ *
+ * @param props - Ver `Props`.
+ */
 export function MoveButtons({ action, fields, label, isFirst, isLast }: Props) {
   return (
     <div className="flex shrink-0">

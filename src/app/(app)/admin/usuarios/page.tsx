@@ -1,3 +1,9 @@
+/**
+ * `/admin/usuarios`: listado de usuarios.
+ *
+ * @module
+ */
+
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -25,6 +31,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
+/** Opciones del filtro de estado. */
 const ESTADOS = {
   activo: "Activo",
   pendiente: "Invitación pendiente",
@@ -32,6 +39,7 @@ const ESTADOS = {
   inactivo: "Inactivo",
 } as const;
 
+/** Valor de la URL si es una de las opciones válidas; si no, `undefined`. */
 function pick<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -42,6 +50,7 @@ function pick<T extends string>(
     : undefined;
 }
 
+/** Usuarios con filtros por rol, concesionario y estado, y su último uso. */
 export default async function UsuariosPage({
   searchParams,
 }: PageProps<"/admin/usuarios">) {
@@ -179,6 +188,7 @@ export default async function UsuariosPage({
   );
 }
 
+/** Selector de filtro con su etiqueta (formulario GET). */
 function FilterSelect({
   id,
   name,

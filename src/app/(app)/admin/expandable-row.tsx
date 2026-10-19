@@ -1,10 +1,19 @@
+/**
+ * Fila desplegable de las listas del admin.
+ *
+ * @module
+ */
+
 "use client";
 
 import { ChevronDown } from "lucide-react";
 import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/** Fila de lista con un botón "Editar" que despliega el contenido debajo. */
+/**
+ * Fila de lista con un botón "Editar" que despliega el contenido (normalmente
+ * un formulario) debajo.
+ */
 export function ExpandableRow({
   row,
   label,

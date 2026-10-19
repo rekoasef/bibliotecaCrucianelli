@@ -1,6 +1,18 @@
+/**
+ * Resaltado de coincidencias de la búsqueda.
+ *
+ * @module
+ */
+
 import { MARK_END, MARK_START } from "@/lib/search/markers";
 
-/** Fragmento con coincidencias resaltadas. Convierte los marcadores en <mark> (sin HTML crudo). */
+/**
+ * Fragmento con coincidencias resaltadas. Convierte los marcadores
+ * (`MARK_START`/`MARK_END`) en `<mark>`, sin interpretar HTML: el texto de los
+ * documentos nunca se inyecta como HTML.
+ *
+ * @param props - `text`: fragmento con marcadores.
+ */
 export function Highlight({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
   let rest = text;

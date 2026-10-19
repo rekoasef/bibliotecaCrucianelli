@@ -1,3 +1,9 @@
+/**
+ * Tests de tipos MIME.
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import {
   canDisplayInline,

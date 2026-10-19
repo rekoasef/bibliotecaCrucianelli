@@ -1,3 +1,9 @@
+/**
+ * Tests de las reglas de documentos (publicación, advertencias, etiquetas).
+ *
+ * @module
+ */
+
 import { describe, expect, it } from "vitest";
 import { normalizeTag } from "@/lib/text";
 import {
